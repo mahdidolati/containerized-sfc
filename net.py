@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from itertools import combinations
 import heapq
 from constants import Const
+from sfc import LayerDownload
 
 
 class MyNetwork:
@@ -15,8 +16,8 @@ class MyNetwork:
         visited = set()
         counter = 0
         heapq.heappush(h, (-np.infty, counter, c, [], 0, []))
-        while True:
-            bw, _, n, cur_path, path_delay, cur_links = heapq.heappop(h)
+        while len(h) > 0:
+            bw, cnt, n, cur_path, path_delay, cur_links = heapq.heappop(h)
             if n == d:
                 return -bw, path_delay, cur_links
             if n in visited:
@@ -37,6 +38,7 @@ class MyNetwork:
                                                counter, m, new_path,
                                                path_delay + link_delay,
                                                new_links))
+        return 0, np.infty, []
 
     def get_closest(self, n):
         bestDelay = np.infty
@@ -55,6 +57,33 @@ class MyNetwork:
                 C.append(n)
         return np.random.choice(C)
 
+    def get_missing_layers(self, server, chain_req, vnf_i):
+        R = dict()
+        d = 0
+        for r in chain_req.vnfs[vnf_i].layers:
+            if r not in self.g.nodes[server]["nd"].layers:
+                R[r] = chain_req.vnfs[vnf_i].layers[r]
+                d = d + R[r]
+        return R, d
+
+    def do_layer_dl_test(self, server, volume, start_t, end_t):
+        dl_rate = volume / (end_t - start_t + 1)
+        layer_download = LayerDownload()
+        for tt in range(start_t, end_t + 1):
+            path_bw, path_delay, links = self.get_biggest_path(server, "c", tt)
+            if path_bw < dl_rate:
+                layer_download.cancel_download()
+                return False, None
+            for l in links:
+                layer_download.add_data(tt, l, dl_rate)
+        return True, layer_download
+
+    def evict_sfc(self, chain_req):
+        for n in self.g.nodes():
+            self.g.nodes[n]["nd"].evict()
+        for e in self.g.edges():
+            self.g[e[0]][e[1]]["li"].evict()
+
 
 class Link:
     def __init__(self, tp, s, d):
@@ -67,7 +96,7 @@ class Link:
             self.bw = np.random.randint(*Const.LINK_BW)
         else:
             self.bw = 0
-        self.delay = np.linalg.norm(self.src.loc - self.dst.loc)
+        self.delay = 10 * np.linalg.norm(self.src.loc - self.dst.loc)
         self.embeds = dict()
         self.dl = dict()
 
@@ -92,13 +121,28 @@ class Link:
         else:
             self.src.mm_embed(chain_req, i)
 
-    def set_dl(self, t, r):
+    def evict(self, chain_req):
+        if self.type == "wired":
+            if chain_req in self.embeds:
+                del self.embeds[chain_req]
+        else:
+            self.src.mm_evict(chain_req)
+
+    def add_dl(self, t, r):
         if self.type == "wired":
             if t not in self.dl:
                 self.dl[t] = 0
             self.dl[t] = self.dl[t] + r
         else:
-            self.src.mm_dl(t, r)
+            self.src.add_mm_dl(t, r)
+
+    def rm_dl(self, t, r):
+        if self.type == "wired":
+            if t not in self.dl:
+                return
+            self.dl[t] = self.dl[t] - r
+        else:
+            self.src.rm_mm_dl(t, r)
 
     def __str__(self):
         return "{}: {}".format(self.type, self.src.id)
@@ -157,6 +201,10 @@ class Node:
             self.embeds[chain_req] = set()
         self.embeds[chain_req].add(i)
 
+    def evict(self, chain_req):
+        if chain_req in self.embeds:
+            del self.embeds[chain_req]
+
     def mm_avail(self, t):
         u = 0
         for r in self.mm_embeds:
@@ -172,10 +220,19 @@ class Node:
             self.mm_embeds[chain_req] = set()
         self.mm_embeds[chain_req].add(i)
 
-    def mm_dl(self, t, r):
+    def mm_evict(self, chain_req):
+        if chain_req in self.mm_embeds:
+            del self.mm_embeds[chain_req]
+
+    def add_mm_dl(self, t, r):
         if t not in self.dl_embeds:
             self.dl_embeds[t] = 0
         self.dl_embeds[t] = self.dl_embeds[t] + r
+
+    def rm_mm_dl(self, t, r):
+        if t not in self.dl_embeds:
+            return
+        self.dl_embeds[t] = self.dl_embeds[t] - r
 
 
 class NetGenerator:
@@ -230,7 +287,7 @@ class NetGenerator:
                     line_t = 'b-'
                 ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
                         [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
-        plt.show()
+        # plt.show()
         return MyNetwork(self.g)
 
     def get_closest(self, b):

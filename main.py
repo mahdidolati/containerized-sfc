@@ -5,11 +5,11 @@ from solution import solve
 
 def main():
     my_net = NetGenerator().get_g()
-    g = SfcGenerator(my_net)
-    t = 0
-    s = g.get_chain(t)
-    res = solve(my_net, s, t)
-    print(res)
+    sfc_gen = SfcGenerator(my_net)
+    for t in range(10):
+        s = sfc_gen.get_chain(t)
+        res = solve(my_net, s, t)
+        print(res)
 
 
 if __name__ == "__main__":

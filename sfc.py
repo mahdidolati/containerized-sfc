@@ -1,6 +1,24 @@
 import numpy as np
 from constants import Const
 
+
+class LayerDownload:
+    def __init__(self):
+        self.download_data = dict()
+
+    def add_data(self, t, l, r):
+        if t not in self.download_data:
+            self.download_data[t] = list()
+        l.add_dl(t, r)
+        self.download_data[t].append((r, l))
+
+    def cancel_download(self):
+        for t in self.download_data:
+            for r, l in self.download_data[t]:
+                l.rm_dl(t, r)
+        self.download_data = dict()
+
+
 class Vnf:
     def __init__(self, all_layers):
         self.cpu = np.random.randint(*Const.VNF_CPU)
@@ -59,4 +77,11 @@ class SfcGenerator:
             vnfs.append(self.vnfs[i])
         new_sfc = Sfc(t, vnfs)
         new_sfc.entry_point = self.my_net.get_random_base_state()
+        return new_sfc
+
+    def get_download(self, t1, t2, r):
+        new_sfc = Sfc(t1, [])
+        new_sfc.tau1 = t1
+        new_sfc.tau2 = t2
+        new_sfc.traffic_rate = r
         return new_sfc
