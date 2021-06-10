@@ -6,8 +6,9 @@ def main():
     g = SfcGenerator()
     s = g.get_chain(0)
     print(s)
-    net_g = NetGenerator()
-    print(net_g.get_g())
+    my_net = NetGenerator().get_g()
+    print(my_net.g.edges())
+    print(my_net.get_biggest_path("e0", "c"))
 
 
 if __name__ == "__main__":

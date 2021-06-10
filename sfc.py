@@ -7,7 +7,10 @@ class Vnf:
         self.cpu = np.random.randint(*Const.VNF_CPU)
         self.ram = np.random.randint(*Const.VNF_RAM)
         self.alpha = np.random.uniform(*Const.ALPHA_RANGE)
-        self.layers = np.random.choice(a=all_layers, size=np.random.randint(*Const.VNF_LAYER))
+        layer_ids = np.random.choice(a=list(all_layers.keys()), size=np.random.randint(*Const.VNF_LAYER))
+        self.layers = dict()
+        for i in layer_ids:
+            self.layers[i] = all_layers[i]
 
 
 class Sfc:
@@ -17,6 +20,19 @@ class Sfc:
         self.tau1 = t + np.random.randint(*Const.TAU1)
         self.tau2 = self.tau1 + np.random.randint(*Const.TAU2)
         self.vnfs = vnfs
+        self.entry_point = None
+
+    def vnf_in_rate(self, i):
+        a = 1.0
+        for j in range(i-1):
+            a = a * self.vnfs[j].alpha
+        return a * self.traffic_rate
+
+    def cpu_req(self, i):
+        return self.vnf_in_rate(i) * self.vnfs[i].cpu
+
+    def ram_req(self, i):
+        return self.vnf_in_rate(i) * self.vnfs[i].ram
 
     def __str__(self):
         return "max_delay: {}\nt1-t2: {}-{}".format(self.max_delay, self.tau1, self.tau2)
@@ -30,7 +46,7 @@ class SfcGenerator:
         self.vnfs = dict()
         self.vnf_num = Const.VNF_NUM
         for i in range(self.vnf_num):
-            self.vnfs[i] = Vnf(list(self.layers.keys()))
+            self.vnfs[i] = Vnf(self.layers)
 
     def get_chain(self, t):
         vnfs = list()
