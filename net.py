@@ -9,40 +9,62 @@ class MyNetwork:
     def __init__(self, g):
         self.g = g
 
-    def get_biggest_path(self, c, d):
+    def get_biggest_path(self, c, d, t, delay_cap=np.infty):
         h = []
         counter = 0
-        heapq.heappush(h, (-np.infty, counter, c, []))
+        heapq.heappush(h, (-np.infty, counter, c, [], 0, []))
         while True:
-            bw, _, n, p = heapq.heappop(h)
+            bw, _, n, cur_path, path_delay, cur_links = heapq.heappop(h)
             if n == d:
-                return -bw, p
+                return -bw, path_delay, cur_links
             for m in self.g.neighbors(n):
-                if m not in p:
+                if m not in cur_path:
                     for j in self.g[n][m]:
-                        bw_avail = self.g[n][m][j]["li"].bw_avail()
-                        counter = counter + 1
-                        pp = list(p)
-                        pp.append(n)
-                        heapq.heappush(h, (max(bw, -bw_avail), counter, m, pp))
+                        bw_avail = self.g[n][m][j]["li"].bw_avail(t)
+                        link_delay = self.g[n][m][j]["li"].delay
+                        if path_delay + link_delay <= delay_cap:
+                            counter = counter + 1
+                            new_path = list(cur_path)
+                            new_path.append(n)
+                            new_links = list(cur_links)
+                            new_links.append(self.g[n][m][j]["li"])
+                            heapq.heappush(h, (max(bw, -bw_avail),
+                                               counter, m, new_path,
+                                               path_delay + link_delay,
+                                               new_links))
+
+    def get_closest(self, n):
+        bestDelay = np.infty
+        bestNeighbor = None
+        for m in self.g.neighbors(n):
+            for j in self.g[n][m]:
+                if bestNeighbor is None or bestDelay > self.g[m][n][j]["delay"]:
+                    bestDelay = self.g[m][n][j]["delay"]
+                    bestNeighbor = (n, j)
+        return bestNeighbor
 
 
 class Link:
-    def __init__(self, t, s):
-        self.type = t
+    def __init__(self, tp, s):
+        self.type = tp
         self.src = s
         self.bw = 1
+        self.delay = 1
         self.embeds = dict()
+        self.dl = dict()
 
-    def bw_avail(self):
+    def bw_avail(self, t):
         if self.type == "wired":
             u = 0
             for r in self.embeds:
-                for i in self.embeds[r]:
-                    u = u + r.vnf_in_rate(i)
+                if r.tau1 <= t <= r.tau2:
+                    for i in self.embeds[r]:
+                        u = u + r.vnf_in_rate(i)
+            if t in self.dl:
+                u = u + self.dl[t]
             return self.bw - u
         else:
-            return self.src.mm_avail()
+            return self.src.mm_avail(t)
 
     def embed(self, chain_req, i):
         if self.type == "wired":
@@ -52,9 +74,24 @@ class Link:
         else:
             self.src.mm_embed(chain_req, i)
 
+    def set_dl(self, t, r):
+        if self.type == "wired":
+            if t not in self.dl:
+                self.dl[t] = 0
+            self.dl[t] = self.dl[t] + r
+        else:
+            self.src.mm_dl(t, r)
+
+    def __str__(self):
+        return "{}: {}".format(self.type, self.src.id)
+
+    def __repr__(self):
+        return self.__str__()
+
 
 class Node:
-    def __init__(self, t, loc):
+    def __init__(self, t, loc, id):
+        self.id = id
         self.type = t
         self.loc = loc
         self.cpu = 1
@@ -64,19 +101,22 @@ class Node:
         self.layers = dict()
         self.embeds = dict()
         self.mm_embeds = dict()
+        self.mm_dl = dict()
 
-    def cpu_avail(self):
+    def cpu_avail(self, t):
         u = 0
         for r in self.embeds:
-            for i in self.embeds[r]:
-                u = u + r.cpu_req(i)
+            if r.tau1 <= t <= r.tau2:
+                for i in self.embeds[r]:
+                    u = u + r.cpu_req(i)
         return self.cpu - u
 
-    def ram_avail(self):
+    def ram_avail(self, t):
         u = 0
         for r in self.embeds:
-            for i in self.embeds[r]:
-                u = u + r.ram_req(i)
+            if r.tau1 <= t <= r.tau2:
+                for i in self.embeds[r]:
+                    u = u + r.ram_req(i)
         return self.ram - u
 
     def disk_avail(self):
@@ -90,17 +130,25 @@ class Node:
             self.embeds[chain_req] = set()
         self.embeds[chain_req].add(i)
 
-    def mm_avail(self):
+    def mm_avail(self, t):
         u = 0
         for r in self.mm_embeds:
-            for i in self.mm_embeds[r]:
-                u = u + r.vnf_in_rate(i)
+            if r.tau1 <= t <= r.tau2:
+                for i in self.mm_embeds[r]:
+                    u = u + r.vnf_in_rate(i)
+        if t in self.mm_dl:
+            u = u + self.mm_dl[t]
         return self.mm_bw - u
 
     def mm_embed(self, chain_req, i):
         if chain_req not in self.mm_embeds:
             self.mm_embeds[chain_req] = set()
         self.mm_embeds[chain_req].add(i)
+
+    def mm_dl(self, t, r):
+        if t not in self.mm_dl:
+            self.mm_dl[t] = 0
+        self.mm_dl[t] = self.mm_dl[t] + r
 
 
 class NetGenerator:
@@ -109,14 +157,17 @@ class NetGenerator:
         cloud_loc = (10, 3)
         self.g = nx.MultiGraph()
         for n in range(len(base_station_loc)):
-            nd = Node("base-station", base_station_loc[n])
-            self.g.add_node("b{}".format(n), nd=nd)
+            n_id = "b{}".format(n)
+            nd = Node("base-station", base_station_loc[n], n_id)
+            self.g.add_node(n_id, nd=nd)
         self.edge_num = 15
         for n in range(self.edge_num):
-            nd = Node("edge", np.random.uniform(0.5, 5.5, 2))
-            self.g.add_node("e{}".format(n), nd=nd)
-        nd = Node("cloud", cloud_loc)
-        self.g.add_node("c", nd=nd)
+            n_id = "e{}".format(n)
+            nd = Node("edge", np.random.uniform(0.5, 5.5, 2), n_id)
+            self.g.add_node(n_id, nd=nd)
+        n_id = "c"
+        nd = Node("cloud", cloud_loc, n_id)
+        self.g.add_node(n_id, nd=nd)
         #
         for n in range(len(base_station_loc)):
             c = self.get_closest("b{}".format(n))

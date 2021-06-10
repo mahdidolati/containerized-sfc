@@ -37,6 +37,9 @@ class Sfc:
     def __str__(self):
         return "max_delay: {}\nt1-t2: {}-{}".format(self.max_delay, self.tau1, self.tau2)
 
+    def __repr__(self):
+        return self.__str__()
+
 
 class SfcGenerator:
     def __init__(self):

@@ -1,21 +1,10 @@
 import numpy as np
 
 
-def get_closest(g, n):
-    bestDelay = np.infty
-    bestNeighbor = None
-    for m in g.neighbors(n):
-        for j in g[n][m]:
-            if bestNeighbor is None or bestDelay > g[m][n][j]["delay"]:
-                bestDelay = g[m][n][j]["delay"]
-                bestNeighbor = (n, j)
-    return bestNeighbor
-
-
 def usable_node(my_net, s, c, chain_req, i, t):
-    if my_net.g.nodes[c]["nd"].avail_cpu() < chain_req.cpu_req(i):
+    if my_net.g.nodes[c]["nd"].cpu_avail(t) < chain_req.cpu_req(i):
         return False
-    if my_net.g.nodes[c]["nd"].avail_ram() < chain_req.ramsk_req(i):
+    if my_net.g.nodes[c]["nd"].ram_avail(t) < chain_req.ramsk_req(i):
         return False
     R = dict()
     for r in chain_req.vnfs[i].layers:
@@ -24,15 +13,20 @@ def usable_node(my_net, s, c, chain_req, i, t):
     d = 0
     for r in R:
         d = d + R[r]
-    if my_net.g.nodes[c]["nd"].avail_ram() < d:
+    if my_net.g.nodes[c]["nd"].disk_avail(t) < d:
         return False
     if d > 0:
-        bw, path = my_net.get_biggest_path(c, "c")
-        if chain_req.tau1 - t < np.ceil(d / bw) + 1:
+        path_bw, path_delay, links = my_net.get_biggest_path(c, "c")
+        if chain_req.tau1 - t < np.ceil(d / path_bw) + 1:
             return False
+        dl_rate = d / (chain_req.tau1 - t)
+        for l in links:
+            for tt in range(t, chain_req.tau1+1):
+                l.set_dl(tt, dl_rate)
+
     if i > 0:
-        bw, path = my_net.get_biggest_path(s, c)
-        if bw < chain_req.vnf_in_rate(i):
+        path_bw, path_delay, links = my_net.get_biggest_path(s, c, t)
+        if path_bw < chain_req.vnf_in_rate(i):
             return False
     return True
 
@@ -40,7 +34,7 @@ def usable_node(my_net, s, c, chain_req, i, t):
 def solve(my_net, chain_req, t):
     delay_budge = chain_req.max_delay
     prev = None
-    cur = get_closest(my_net, chain_req.entry_point)
+    cur = my_net.get_closest(chain_req.entry_point)
     for i in range(len(chain_req.vnfs)):
         N1 = set()
         N2 = set()

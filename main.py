@@ -8,7 +8,7 @@ def main():
     print(s)
     my_net = NetGenerator().get_g()
     print(my_net.g.edges())
-    print(my_net.get_biggest_path("e0", "c"))
+    print(my_net.get_biggest_path("e0", "c", 0))
 
 
 if __name__ == "__main__":
