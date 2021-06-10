@@ -57,6 +57,13 @@ class MyNetwork:
                 C.append(n)
         return np.random.choice(C)
 
+    def get_random_edge_nodes(self, sr):
+        E = list()
+        for n in self.g.nodes():
+            if n[0] == "e":
+                E.append(n)
+        return np.random.choice(E, int(sr * len(E)))
+
     def get_missing_layers(self, server, chain_req, vnf_i):
         R = dict()
         d = 0

@@ -22,13 +22,14 @@ def usable_node(my_net, s, c, chain_req, i, t, delay_budget):
     return True
 
 
-def solve(my_net, chain_req, t):
+def solve(my_net, chain_req, t, sr):
     prev = chain_req.entry_point
     delay_budge = chain_req.max_delay
     active_dls = []
     for i in range(len(chain_req.vnfs)):
         cur_budge = delay_budge / (len(chain_req.vnfs) - i)
-        N1 = my_net.g.nodes()
+        N1 = my_net.get_random_edge_nodes(sr)
+        # np.append(N1, my_net.g.nodes["c"])
         C = list()
         for c in N1:
             if usable_node(my_net, prev, c, chain_req, i, t, cur_budge):

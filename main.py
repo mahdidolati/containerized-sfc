@@ -6,10 +6,14 @@ from solution import solve
 def main():
     my_net = NetGenerator().get_g()
     sfc_gen = SfcGenerator(my_net)
-    for t in range(10):
-        s = sfc_gen.get_chain(t)
-        res = solve(my_net, s, t)
-        print(res)
+    rate = 0.0
+    sampling_rate = 1.0
+    n = 300
+    for t in range(n):
+        s = sfc_gen.get_chain(t*3)
+        if solve(my_net, s, t*3, sampling_rate):
+            rate = rate + 1
+    print(rate / n)
 
 
 if __name__ == "__main__":
