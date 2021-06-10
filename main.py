@@ -7,7 +7,7 @@ def main():
     my_net = NetGenerator().get_g()
     sfc_gen = SfcGenerator(my_net)
     rate = 0.0
-    sampling_rate = 1.0
+    sampling_rate = 0.7
     n = 300
     for t in range(n):
         s = sfc_gen.get_chain(t*3)
