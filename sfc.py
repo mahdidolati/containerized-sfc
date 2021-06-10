@@ -1,7 +1,6 @@
 import numpy as np
 from constants import Const
 
-
 class Vnf:
     def __init__(self, all_layers):
         self.cpu = np.random.randint(*Const.VNF_CPU)
@@ -42,7 +41,8 @@ class Sfc:
 
 
 class SfcGenerator:
-    def __init__(self):
+    def __init__(self, my_net):
+        self.my_net = my_net
         self.layers = dict()
         for i in range(Const.LAYER_NUM):
             self.layers[i] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
@@ -57,4 +57,6 @@ class SfcGenerator:
         for _ in range(n):
             i = np.random.randint(0, self.vnf_num)
             vnfs.append(self.vnfs[i])
-        return Sfc(t, vnfs)
+        new_sfc = Sfc(t, vnfs)
+        new_sfc.entry_point = self.my_net.get_random_base_state()
+        return new_sfc

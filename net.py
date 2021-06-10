@@ -39,9 +39,16 @@ class MyNetwork:
         for m in self.g.neighbors(n):
             for j in self.g[n][m]:
                 if bestNeighbor is None or bestDelay > self.g[m][n][j]["delay"]:
-                    bestDelay = self.g[m][n][j]["delay"]
+                    bestDelay = self.g[m][n][j]["li"].delay
                     bestNeighbor = (n, j)
         return bestNeighbor
+
+    def get_random_base_state(self):
+        C = list()
+        for n in self.g.nodes():
+            if n[0] == "b":
+                C.append(n)
+        return np.random.choice(C)
 
 
 class Link:

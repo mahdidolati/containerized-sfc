@@ -1,14 +1,15 @@
 from sfc import SfcGenerator
 from net import NetGenerator
+from solution import solve
 
 
 def main():
-    g = SfcGenerator()
-    s = g.get_chain(0)
-    print(s)
     my_net = NetGenerator().get_g()
-    print(my_net.g.edges())
-    print(my_net.get_biggest_path("e0", "c", 0))
+    g = SfcGenerator(my_net)
+    t = 0
+    s = g.get_chain(t)
+    res = solve(my_net, s, t)
+    print(res)
 
 
 if __name__ == "__main__":
