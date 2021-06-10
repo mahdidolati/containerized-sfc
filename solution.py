@@ -44,10 +44,10 @@ def solve(my_net, chain_req, t):
     for i in range(len(chain_req.vnfs)):
         cur_budge = delay_budge / (len(chain_req.vnfs) - i)
         N1 = my_net.g.nodes()
-        C = set()
+        C = list()
         for c in N1:
             if usable_node(my_net, prev, c, chain_req, i, t, cur_budge):
-                C.add(c)
+                C.append(c)
         if len(C) == 0:
             return False
         m = np.random.choice(C)

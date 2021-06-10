@@ -12,14 +12,18 @@ class MyNetwork:
 
     def get_biggest_path(self, c, d, t, delay_cap=np.infty):
         h = []
+        visited = set()
         counter = 0
         heapq.heappush(h, (-np.infty, counter, c, [], 0, []))
         while True:
             bw, _, n, cur_path, path_delay, cur_links = heapq.heappop(h)
             if n == d:
                 return -bw, path_delay, cur_links
+            if n in visited:
+                continue
+            visited.add(n)
             for m in self.g.neighbors(n):
-                if m not in cur_path:
+                if m not in visited and m not in cur_path and self.g.nodes[m]["nd"].id[0] != "b":
                     for j in self.g[n][m]:
                         bw_avail = self.g[n][m][j]["li"].bw_avail(t)
                         link_delay = self.g[n][m][j]["li"].delay
@@ -57,7 +61,9 @@ class Link:
         self.type = tp
         self.src = s
         self.dst = d
-        if self.type == "wired":
+        if self.src.id[0] == "c" or self.dst.id[0] == "c":
+            self.bw = np.infty
+        elif self.type == "wired":
             self.bw = np.random.randint(*Const.LINK_BW)
         else:
             self.bw = 0
@@ -122,7 +128,7 @@ class Node:
         self.layers = dict()
         self.embeds = dict()
         self.mm_embeds = dict()
-        self.mm_dl = dict()
+        self.dl_embeds = dict()
 
     def cpu_avail(self, t):
         u = 0
@@ -157,8 +163,8 @@ class Node:
             if r.tau1 <= t <= r.tau2:
                 for i in self.mm_embeds[r]:
                     u = u + r.vnf_in_rate(i)
-        if t in self.mm_dl:
-            u = u + self.mm_dl[t]
+        if t in self.dl_embeds:
+            u = u + self.dl_embeds[t]
         return self.mm_bw - u
 
     def mm_embed(self, chain_req, i):
@@ -167,9 +173,9 @@ class Node:
         self.mm_embeds[chain_req].add(i)
 
     def mm_dl(self, t, r):
-        if t not in self.mm_dl:
-            self.mm_dl[t] = 0
-        self.mm_dl[t] = self.mm_dl[t] + r
+        if t not in self.dl_embeds:
+            self.dl_embeds[t] = 0
+        self.dl_embeds[t] = self.dl_embeds[t] + r
 
 
 class NetGenerator:
