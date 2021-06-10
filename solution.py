@@ -4,16 +4,16 @@ import numpy as np
 def usable_node(my_net, s, c, chain_req, i, t):
     if my_net.g.nodes[c]["nd"].cpu_avail(t) < chain_req.cpu_req(i):
         return False
-    if my_net.g.nodes[c]["nd"].ram_avail(t) < chain_req.ramsk_req(i):
+    if my_net.g.nodes[c]["nd"].ram_avail(t) < chain_req.ram_req(i):
         return False
     R = dict()
     for r in chain_req.vnfs[i].layers:
         if r not in my_net.g.nodes[c]["nd"].layers:
-            R[r] = my_net.g.nodes[c]["nd"].layers[r]
+            R[r] = chain_req.vnfs[i].layers[r]
     d = 0
     for r in R:
         d = d + R[r]
-    if my_net.g.nodes[c]["nd"].disk_avail(t) < d:
+    if my_net.g.nodes[c]["nd"].disk_avail() < d:
         return False
     dl_rate = d / (chain_req.tau1 - t)
     links = []

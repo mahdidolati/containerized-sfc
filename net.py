@@ -3,6 +3,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from itertools import combinations
 import heapq
+from constants import Const
 
 
 class MyNetwork:
@@ -52,11 +53,15 @@ class MyNetwork:
 
 
 class Link:
-    def __init__(self, tp, s):
+    def __init__(self, tp, s, d):
         self.type = tp
         self.src = s
-        self.bw = 1
-        self.delay = 1
+        self.dst = d
+        if self.type == "wired":
+            self.bw = np.random.randint(*Const.LINK_BW)
+        else:
+            self.bw = 0
+        self.delay = np.linalg.norm(self.src.loc - self.dst.loc)
         self.embeds = dict()
         self.dl = dict()
 
@@ -101,10 +106,10 @@ class Node:
         self.id = id
         self.type = t
         self.loc = loc
-        self.cpu = 1
-        self.ram = 2
-        self.disk = 3
-        self.mm_bw = 1
+        self.cpu = np.random.randint(*Const.SERVER_CPU)
+        self.ram = np.random.randint(*Const.SERVER_RAM)
+        self.disk = np.random.randint(*Const.SERVER_DISK)
+        self.mm_bw = np.random.randint(*Const.MM_BW)
         self.layers = dict()
         self.embeds = dict()
         self.mm_embeds = dict()
@@ -178,19 +183,19 @@ class NetGenerator:
         #
         for n in range(len(base_station_loc)):
             c = self.get_closest("b{}".format(n))
-            li = Link("wired", self.g.nodes["b{}".format(n)]["nd"])
+            li = Link("wired", self.g.nodes["b{}".format(n)]["nd"], self.g.nodes["e{}".format(c)]["nd"])
             self.g.add_edge("b{}".format(n), "e{}".format(c), li=li)
         c = self.get_closest("c")
-        li = Link("wired", self.g.nodes["c"]["nd"])
+        li = Link("wired", self.g.nodes["c"]["nd"], self.g.nodes["e{}".format(c)]["nd"])
         self.g.add_edge("c", "e{}".format(c), li=li)
         for l in combinations(range(self.edge_num), 2):
             e1 = "e{}".format(l[0])
             e2 = "e{}".format(l[1])
             if np.random.uniform(0, 1.0) < 0.1:
-                li = Link("wired", self.g.nodes[e1]["nd"])
+                li = Link("wired", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
                 self.g.add_edge(e1, e2, li=li)
             if np.linalg.norm(self.g.nodes[e1]["nd"].loc - self.g.nodes[e2]["nd"].loc) < 2.0:
-                li = Link("mmWave", self.g.nodes[e1]["nd"])
+                li = Link("mmWave", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
                 self.g.add_edge(e1, e2, li=li)
 
     def get_g(self):
