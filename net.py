@@ -41,7 +41,7 @@ class MyNetwork:
             for j in self.g[n][m]:
                 if bestNeighbor is None or bestDelay > self.g[m][n][j]["delay"]:
                     bestDelay = self.g[m][n][j]["li"].delay
-                    bestNeighbor = (n, j)
+                    bestNeighbor = (n, m, j)
         return bestNeighbor
 
     def get_random_base_state(self):
@@ -106,9 +106,18 @@ class Node:
         self.id = id
         self.type = t
         self.loc = loc
-        self.cpu = np.random.randint(*Const.SERVER_CPU)
-        self.ram = np.random.randint(*Const.SERVER_RAM)
-        self.disk = np.random.randint(*Const.SERVER_DISK)
+        if self.type[0] == "b":
+            self.cpu = 0
+            self.ram = 0
+            self.disk = 0
+        elif self.type[0] == "e":
+            self.cpu = np.random.randint(*Const.SERVER_CPU)
+            self.ram = np.random.randint(*Const.SERVER_RAM)
+            self.disk = np.random.randint(*Const.SERVER_DISK)
+        else:
+            self.cpu = np.infty
+            self.ram = np.infty
+            self.disk = np.infty
         self.mm_bw = np.random.randint(*Const.MM_BW)
         self.layers = dict()
         self.embeds = dict()

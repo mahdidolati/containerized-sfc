@@ -14,7 +14,7 @@ class Vnf:
 
 class Sfc:
     def __init__(self, t, vnfs):
-        self.max_delay = 1.0
+        self.max_delay = np.random.uniform(*Const.SFC_DELAY)
         self.traffic_rate = np.random.uniform(*Const.LAMBDA_RANGE)
         self.tau1 = t + np.random.randint(*Const.TAU1)
         self.tau2 = self.tau1 + np.random.randint(*Const.TAU2)

@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def usable_node(my_net, s, c, chain_req, i, t):
+def usable_node(my_net, s, c, chain_req, i, t, delay_budget):
     if my_net.g.nodes[c]["nd"].cpu_avail(t) < chain_req.cpu_req(i):
         return False
     if my_net.g.nodes[c]["nd"].ram_avail(t) < chain_req.ram_req(i):
@@ -18,14 +18,14 @@ def usable_node(my_net, s, c, chain_req, i, t):
     dl_rate = d / (chain_req.tau1 - t)
     links = []
     if d > 0:
-        path_bw, path_delay, links = my_net.get_biggest_path(c, "c")
+        path_bw, path_delay, links = my_net.get_biggest_path(c, "c", t)
         if chain_req.tau1 - t < np.ceil(d / path_bw) + 1:
             return False
         for l in links:
             for tt in range(t, chain_req.tau1+1):
                 l.set_dl(tt, dl_rate)
     if i > 0:
-        path_bw, path_delay, links = my_net.get_biggest_path(s, c, t)
+        path_bw, path_delay, links = my_net.get_biggest_path(s, c, t, delay_budget)
         for l in links:
             for tt in range(t, chain_req.tau1+1):
                 l.set_dl(tt, dl_rate)
@@ -39,13 +39,14 @@ def usable_node(my_net, s, c, chain_req, i, t):
 
 
 def solve(my_net, chain_req, t):
+    _, prev, _ = my_net.get_closest(chain_req.entry_point)
     delay_budge = chain_req.max_delay
-    prev = my_net.get_closest(chain_req.entry_point)
     for i in range(len(chain_req.vnfs)):
+        cur_budge = delay_budge / (len(chain_req.vnfs) - i)
         N1 = my_net.g.nodes()
         C = set()
         for c in N1:
-            if usable_node(my_net, prev, c, chain_req, i, t):
+            if usable_node(my_net, prev, c, chain_req, i, t, cur_budge):
                 C.add(c)
         if len(C) == 0:
             return False
@@ -53,6 +54,7 @@ def solve(my_net, chain_req, t):
         my_net.g.nodes[m]["nd"].embed(chain_req, i)
         if prev != m:
             path_bw, path_delay, links = my_net.get_biggest_path(prev, m, t)
+            delay_budge = delay_budge - path_delay
             for l in links:
                 l.embed(chain_req, i)
         prev = m
