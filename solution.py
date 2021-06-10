@@ -24,7 +24,7 @@ def usable_node(my_net, s, c, chain_req, i, t, delay_budget):
         for l in links:
             for tt in range(t, chain_req.tau1+1):
                 l.set_dl(tt, dl_rate)
-    if i > 0:
+    if s != c:
         path_bw, path_delay, links = my_net.get_biggest_path(s, c, t, delay_budget)
         for l in links:
             for tt in range(t, chain_req.tau1+1):
@@ -39,7 +39,7 @@ def usable_node(my_net, s, c, chain_req, i, t, delay_budget):
 
 
 def solve(my_net, chain_req, t):
-    _, prev, _ = my_net.get_closest(chain_req.entry_point)
+    prev = chain_req.entry_point
     delay_budge = chain_req.max_delay
     for i in range(len(chain_req.vnfs)):
         cur_budge = delay_budge / (len(chain_req.vnfs) - i)
