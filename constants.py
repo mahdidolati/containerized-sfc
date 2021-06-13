@@ -2,11 +2,11 @@ class Const:
     VNF_NUM = 10
     VNF_CPU = [1, 4]
     VNF_RAM = [1, 3]
-    VNF_LAYER = [1, 2]  # [5, 12]
+    VNF_LAYER = [5, 12]  # [5, 12]
     TAU1 = [1, 5]
     TAU2 = [5, 10]
     LAYER_NUM = 60
-    LAYER_SIZE = [10, 350]  # [2, 70]
+    LAYER_SIZE = [15, 350]  # [2, 70]
     SFC_LEN = [1, 7]
     SFC_DELAY = [500, 800]
     ALPHA_RANGE = [0.8, 1.05]

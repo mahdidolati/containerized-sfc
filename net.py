@@ -87,9 +87,17 @@ class MyNetwork:
 
     def evict_sfc(self, chain_req):
         for n in self.g.nodes():
-            self.g.nodes[n]["nd"].evict()
+            self.g.nodes[n]["nd"].evict(chain_req)
         for e in self.g.edges():
-            self.g[e[0]][e[1]]["li"].evict()
+            for j in self.g[e[0]][e[1]]:
+                self.g[e[0]][e[1]][j]["li"].evict(chain_req)
+
+    def reset(self):
+        for n in self.g.nodes():
+            self.g.nodes[n]["nd"].reset()
+        for e in self.g.edges():
+            for j in self.g[e[0]][e[1]]:
+                self.g[e[0]][e[1]][j]["li"].reset()
 
 
 class Link:
@@ -104,6 +112,10 @@ class Link:
         else:
             self.bw = 0
         self.delay = 10 * np.linalg.norm(self.src.loc - self.dst.loc)
+        self.embeds = dict()
+        self.dl = dict()
+
+    def reset(self):
         self.embeds = dict()
         self.dl = dict()
 
@@ -176,6 +188,12 @@ class Node:
             self.ram = np.infty
             self.disk = np.infty
         self.mm_bw = np.random.randint(*Const.MM_BW)
+        self.layers = dict()
+        self.embeds = dict()
+        self.mm_embeds = dict()
+        self.dl_embeds = dict()
+
+    def reset(self):
         self.layers = dict()
         self.embeds = dict()
         self.mm_embeds = dict()
@@ -278,22 +296,22 @@ class NetGenerator:
                 self.g.add_edge(e1, e2, li=li)
 
     def get_g(self):
-        fig, ax = plt.subplots()
-        x = []
-        y = []
-        for n in self.g.nodes():
-            x.append(self.g.nodes[n]["nd"].loc[0])
-            y.append(self.g.nodes[n]["nd"].loc[1])
-        ax.plot(x, y, '.b')
-        for n in self.g.nodes():
-            ax.annotate(n, self.g.nodes[n]["nd"].loc)
-        for e in self.g.edges(data=True):
-            for j in self.g[e[0]][e[1]]:
-                line_t = 'r-'
-                if self.g[e[0]][e[1]][j]["li"].type == "mmWave":
-                    line_t = 'b-'
-                ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
-                        [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
+        # fig, ax = plt.subplots()
+        # x = []
+        # y = []
+        # for n in self.g.nodes():
+        #     x.append(self.g.nodes[n]["nd"].loc[0])
+        #     y.append(self.g.nodes[n]["nd"].loc[1])
+        # ax.plot(x, y, '.b')
+        # for n in self.g.nodes():
+        #     ax.annotate(n, self.g.nodes[n]["nd"].loc)
+        # for e in self.g.edges(data=True):
+        #     for j in self.g[e[0]][e[1]]:
+        #         line_t = 'r-'
+        #         if self.g[e[0]][e[1]][j]["li"].type == "mmWave":
+        #             line_t = 'b-'
+        #         ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
+        #                 [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
         # plt.show()
         return MyNetwork(self.g)
 
