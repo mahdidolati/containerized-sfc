@@ -61,3 +61,22 @@ class Solver:
             else:
                 self.my_net.g.nodes[m]["nd"].add_layer_no_share(node_new_layer[m], chain_req)
         return True
+
+    def handle_sfc_eviction(self, chain_req):
+        pass
+
+
+class NoShareSolver(Solver):
+    def __init__(self, my_net):
+        super().__init__(my_net)
+        self.my_net.share_layer = False
+
+
+class InstantLayerDeleteSolver(Solver):
+    def __init__(self, my_net):
+        super().__init__(my_net)
+
+    def handle_sfc_eviction(self, chain_req):
+        for m in self.my_net.g.nodes():
+            pass
+

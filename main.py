@@ -8,9 +8,8 @@ from statistic_collector import StatCollector, Stat
 import heapq
 
 
-def test(my_net, reqs):
-    my_net.reset()
-    solver = Solver(my_net)
+def test(solver, reqs):
+    solver.my_net.reset()
     rate = 0.0
     sampling_rate = 1.0
     events = []
@@ -27,6 +26,7 @@ def test(my_net, reqs):
                 counter += 1
         elif ev == "FINISH":
             my_net.evict_sfc(s)
+            solver.handle_sfc_eviction(s)
     return rate / len(reqs)
 
 
@@ -40,6 +40,7 @@ def main():
     stat_collector = StatCollector(algs, stats)
 
     my_net = NetGenerator().get_g()
+    solver = Solver(my_net)
     #
     iterations = 5
     # layer_sizes = [[10, 590], [60, 540], [110, 490], [160, 440], [210, 390]]
