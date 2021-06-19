@@ -34,15 +34,14 @@ def main():
     ACCEPT_RATIO = "Accept Ratio"
     solvers = [
         NoShareSolver(my_net, 0),
-        ShareSolver(my_net, 0),
-        ShareSolver(my_net, 3),
-        ShareSolver(my_net, 6)
+        ShareSolver(my_net, 0)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
     iterations = 5
+    arrival_rate = 1.0 / 7.0
     layer_num = [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]
     layer_sizes = [[300, 301], [150, 151], [100, 101], [75, 76], [60, 61]]
     layer_num_avg = []
@@ -59,8 +58,10 @@ def main():
         for itr in range(iterations):
             reqs = []
             req_num = 50
-            for t in range(req_num):
+            t = 0
+            for _ in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
+                t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
             for solver in solvers:
                 np.random.seed(itr * 1234)
                 res = test(solver, reqs)

@@ -3,8 +3,8 @@ class Const:
     VNF_CPU = [1, 4]
     VNF_RAM = [1, 3]
     VNF_LAYER = [5, 12]  # [5, 12]
-    TAU1 = [1, 5]
-    TAU2 = [5, 10]
+    TAU1 = [3, 8]
+    TAU2 = [10, 20]
     LAYER_NUM = 60
     LAYER_SIZE = [15, 350]  # [2, 70]
     SFC_LEN = [1, 7]
