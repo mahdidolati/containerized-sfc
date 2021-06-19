@@ -15,6 +15,7 @@ class MyLayer:
         self.chain_users.add(chain_user)
         self.avail_from = t
         self.last_used = chain_user.tau2
+        self.finalized = False
 
     def add_user(self, u):
         self.chain_users.add(u)

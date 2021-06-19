@@ -32,7 +32,7 @@ class Solver:
         prev = chain_req.entry_point
         delay_budge = chain_req.max_delay
         active_dls = []
-        node_new_layer = dict()
+        node_new_layer = []
         for i in range(len(chain_req.vnfs)):
             cur_budge = delay_budge / (len(chain_req.vnfs) - i)
             N1 = self.my_net.get_random_edge_nodes(sr)
@@ -42,26 +42,36 @@ class Solver:
                 if self.usable_node(prev, c, chain_req, i, t, cur_budge):
                     C.append(c)
             if len(C) == 0:
+                to_be_delete = set()
+                for m in chain_req.used_servers:
+                    for l in self.my_net.g.nodes[m]["nd"].layers:
+                        if not self.my_net.g.nodes[m]["nd"].layers[l].finalized:
+                            to_be_delete.add((m, l))
+                for m, l in to_be_delete:
+                    del self.my_net.g.nodes[m]["nd"].layers[l]
+                chain_req.reset()
                 for a in active_dls:
                     a.cancel_download()
                 return False
             m = np.random.choice(C)
             self.my_net.g.nodes[m]["nd"].embed(chain_req, i)
             R, d = self.my_net.get_missing_layers(m, chain_req, i, chain_req.tau1)
-            node_new_layer[m] = R
+            node_new_layer.append((m, R))
             dl_result, dl_obj = self.my_net.do_layer_dl_test(m, R, d, t, chain_req.tau1 - 1)
             active_dls.append(dl_obj)
+            chain_req.used_servers.add(m)
+            if self.my_net.share_layer:
+                self.my_net.g.nodes[m]["nd"].add_layer(R, chain_req)
+            else:
+                self.my_net.g.nodes[m]["nd"].add_layer_no_share(R, chain_req)
             path_bw, path_delay, links = self.my_net.get_biggest_path(prev, m, t, cur_budge)
             delay_budge = delay_budge - path_delay
             for l in links:
                 l.embed(chain_req, i)
             prev = m
-        for m in node_new_layer:
-            chain_req.used_servers.add(m)
-            if self.my_net.share_layer:
-                self.my_net.g.nodes[m]["nd"].add_layer(node_new_layer[m], chain_req)
-            else:
-                self.my_net.g.nodes[m]["nd"].add_layer_no_share(node_new_layer[m], chain_req)
+        for m in chain_req.used_servers:
+            for l in self.my_net.g.nodes[m]["nd"].layers:
+                self.my_net.g.nodes[m]["nd"].layers[l].finalized = True
         return True
 
     def handle_sfc_eviction(self, chain_req):

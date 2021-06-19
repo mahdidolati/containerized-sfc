@@ -36,8 +36,8 @@ def main():
     solvers = [
         NoShareSolver(my_net, 0),
         ShareSolver(my_net, 0),
-        ShareSolver(my_net, 5),
-        ShareSolver(my_net, 10)
+        ShareSolver(my_net, 1),
+        ShareSolver(my_net, 2)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
@@ -45,7 +45,7 @@ def main():
     #
     iterations = 5
     layer_num = [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]
-    layer_sizes = [[300, 301], [150, 151], [100, 100], [75, 76], [60, 61]]
+    layer_sizes = [[300, 301], [150, 151], [100, 101], [75, 76], [60, 61]]
     layer_num_avg = []
     for l in layer_num:
         layer_num_avg.append(int((l[1] - 1 + l[0]) / 2.0))

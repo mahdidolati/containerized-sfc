@@ -54,6 +54,9 @@ class Sfc:
     def ram_req(self, i):
         return self.vnf_in_rate(i) * self.vnfs[i].ram
 
+    def reset(self):
+        self.used_servers = set()
+
     def __str__(self):
         return "max_delay: {}\nt1-t2: {}-{}".format(self.max_delay, self.tau1, self.tau2)
 
