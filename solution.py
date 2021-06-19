@@ -2,8 +2,9 @@ import numpy as np
 
 
 class Solver:
-    def __init__(self, my_net):
+    def __init__(self, my_net, layer_del_th):
         self.my_net = my_net
+        self.layer_del_th = layer_del_th
 
     def usable_node(self, s, c, chain_req, i, t, delay_budget):
         if c[0] == "b":
@@ -56,6 +57,7 @@ class Solver:
                 l.embed(chain_req, i)
             prev = m
         for m in node_new_layer:
+            chain_req.used_servers.add(m)
             if self.my_net.share_layer:
                 self.my_net.g.nodes[m]["nd"].add_layer(node_new_layer[m], chain_req)
             else:
@@ -63,20 +65,35 @@ class Solver:
         return True
 
     def handle_sfc_eviction(self, chain_req):
-        pass
+        self.my_net.evict_sfc(chain_req)
+        for m in chain_req.used_servers:
+            for l in self.my_net.g.nodes[m]["nd"].layers:
+                self.my_net.g.nodes[m]["nd"].layers[l].remove_user(chain_req)
+        chain_req.used_servers = set()
+
+    def pre_arrival_procedure(self, t):
+        to_be_delete = set()
+        for m in self.my_net.g.nodes():
+            for l in self.my_net.g.nodes[m]["nd"].layers:
+                if len(self.my_net.g.nodes[m]["nd"].layers[l].chain_users) == 0:
+                    if t - self.my_net.g.nodes[m]["nd"].layers[l].last_used > self.layer_del_th:
+                        to_be_delete.add((m, l))
+        for m, l in to_be_delete:
+            del self.my_net.g.nodes[m]["nd"].layers[l]
 
 
 class NoShareSolver(Solver):
-    def __init__(self, my_net):
-        super().__init__(my_net)
+    def __init__(self, my_net, layer_del_th):
+        super().__init__(my_net, layer_del_th)
         self.my_net.share_layer = False
 
+    def get_name(self):
+        return "No Share-{}".format(self.layer_del_th)
 
-class InstantLayerDeleteSolver(Solver):
-    def __init__(self, my_net):
-        super().__init__(my_net)
 
-    def handle_sfc_eviction(self, chain_req):
-        for m in self.my_net.g.nodes():
-            pass
+class ShareSolver(Solver):
+    def __init__(self, my_net, layer_del_th):
+        super().__init__(my_net, layer_del_th)
 
+    def get_name(self):
+        return "Share-{}".format(self.layer_del_th)

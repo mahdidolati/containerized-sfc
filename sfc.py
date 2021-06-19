@@ -41,6 +41,7 @@ class Sfc:
         self.tau2 = self.tau1 + np.random.randint(*Const.TAU2)
         self.vnfs = vnfs
         self.entry_point = None
+        self.used_servers = set()
 
     def vnf_in_rate(self, i):
         a = 1.0

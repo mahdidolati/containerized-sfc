@@ -14,12 +14,16 @@ class MyLayer:
         self.chain_users = set()
         self.chain_users.add(chain_user)
         self.avail_from = t
+        self.last_used = chain_user.tau2
 
     def add_user(self, u):
         self.chain_users.add(u)
+        if u.tau2 > self.last_used:
+            self.last_used = u.tau2
 
     def remove_user(self, u):
-        self.chain_users.remove(u)
+        if u in self.chain_users:
+            self.chain_users.remove(u)
 
 
 class MyNetwork:

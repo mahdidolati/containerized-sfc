@@ -1,6 +1,6 @@
 from sfc import SfcGenerator
 from net import NetGenerator
-from solution import NoShareSolver, InstantLayerDeleteSolver
+from solution import NoShareSolver, ShareSolver
 import numpy as np
 import scipy.stats
 from constants import Const
@@ -20,30 +20,28 @@ def test(solver, reqs):
     while len(events) > 0:
         t, cnt, ev, s = heapq.heappop(events)
         if ev == "ARRIVAL":
+            solver.pre_arrival_procedure(t)
             if solver.solve(s, t, sampling_rate):
                 rate = rate + 1
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
         elif ev == "FINISH":
-            solver.my_net.evict_sfc(s)
             solver.handle_sfc_eviction(s)
     return rate / len(reqs)
 
 
 def main():
-    ACCEPT_RATIO = "Accept Ratio"
-    NO_SHARE = "No Sharing"
-    NO_DELETE = "No Delete"
-    INSTANT_DELETE = "Instant Delete"
-    algs = [NO_DELETE]
-    stats = { ACCEPT_RATIO: Stat.MEAN_MODE }
-    stat_collector = StatCollector(algs, stats)
-
     my_net = NetGenerator().get_g()
-    solvers = {
-        NO_SHARE: NoShareSolver(my_net),
-        INSTANT_DELETE: InstantLayerDeleteSolver(my_net)
-    }
+    ACCEPT_RATIO = "Accept Ratio"
+    solvers = [
+        NoShareSolver(my_net, 0),
+        ShareSolver(my_net, 0),
+        ShareSolver(my_net, 5),
+        ShareSolver(my_net, 10)
+    ]
+    stats = {ACCEPT_RATIO: Stat.MEAN_MODE}
+    algs = [s.get_name() for s in solvers]
+    stat_collector = StatCollector(algs, stats)
     #
     iterations = 5
     # layer_sizes = [[10, 590], [60, 540], [110, 490], [160, 440], [210, 390]]
@@ -64,11 +62,12 @@ def main():
             req_num = 100
             for t in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
-            res = test(my_net, reqs)
-            stat_collector.add_stat(NO_DELETE, ACCEPT_RATIO, run_name, res)
+            for solver in solvers:
+                res = test(my_net, reqs)
+                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
 
     fig_2 = './result/layer_num'
-    stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, ACCEPT_RATIO, [NO_DELETE],
+    stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, ACCEPT_RATIO, algs,
                                  'No. of Switches', 'Success rate')
 
 
