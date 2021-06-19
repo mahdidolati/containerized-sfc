@@ -1,6 +1,6 @@
 from sfc import SfcGenerator
 from net import NetGenerator
-from solution import Solver
+from solution import NoShareSolver, InstantLayerDeleteSolver
 import numpy as np
 import scipy.stats
 from constants import Const
@@ -25,7 +25,7 @@ def test(solver, reqs):
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
         elif ev == "FINISH":
-            my_net.evict_sfc(s)
+            solver.my_net.evict_sfc(s)
             solver.handle_sfc_eviction(s)
     return rate / len(reqs)
 
@@ -40,7 +40,10 @@ def main():
     stat_collector = StatCollector(algs, stats)
 
     my_net = NetGenerator().get_g()
-    solver = Solver(my_net)
+    solvers = {
+        NO_SHARE: NoShareSolver(my_net),
+        INSTANT_DELETE: InstantLayerDeleteSolver(my_net)
+    }
     #
     iterations = 5
     # layer_sizes = [[10, 590], [60, 540], [110, 490], [160, 440], [210, 390]]
