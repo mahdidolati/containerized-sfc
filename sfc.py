@@ -1,6 +1,5 @@
 import numpy as np
 from constants import Const
-from net import MyLayer
 
 
 class LayerDownload:

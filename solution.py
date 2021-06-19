@@ -14,7 +14,7 @@ class Solver:
         if self.my_net.g.nodes[c]["nd"].ram_avail(t) < chain_req.ram_req(i):
             return False
         R, d = self.my_net.get_missing_layers(c, chain_req, i, chain_req.tau1)
-        if self.my_net.g.nodes[c]["nd"].disk_avail() < d:
+        if self.my_net.g.nodes[c]["nd"].disk_avail(t) < d:
             return False
         dl_result, dl_obj = self.my_net.do_layer_dl_test(c, R, d, t, chain_req.tau1-1)
         if not dl_result:
