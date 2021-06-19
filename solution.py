@@ -6,7 +6,7 @@ def usable_node(my_net, s, c, chain_req, i, t, delay_budget):
         return False
     if my_net.g.nodes[c]["nd"].ram_avail(t) < chain_req.ram_req(i):
         return False
-    R, d = my_net.get_missing_layers(c, chain_req, i)
+    R, d = my_net.get_missing_layers(c, chain_req, i, chain_req.tau1)
     if my_net.g.nodes[c]["nd"].disk_avail() < d:
         return False
     dl_result, dl_obj = my_net.do_layer_dl_test(c, d, t, chain_req.tau1-1)
@@ -41,7 +41,7 @@ def solve(my_net, chain_req, t, sr):
         m = np.random.choice(C)
         my_net.g.nodes[m]["nd"].embed(chain_req, i)
         if prev != m:
-            _, d = my_net.get_missing_layers(m, chain_req, i)
+            _, d = my_net.get_missing_layers(m, chain_req, i, chain_req.tau1)
             _, dl_obj = my_net.do_layer_dl_test(m, d, t, chain_req.tau1 - 1)
             active_dls.append(dl_obj)
             path_bw, path_delay, links = my_net.get_biggest_path(prev, m, t, cur_budge)

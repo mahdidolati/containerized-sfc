@@ -7,6 +7,21 @@ from constants import Const
 from sfc import LayerDownload
 
 
+class MyLayer:
+    def __init__(self, layer_no, size, chain_user, t):
+        self.layer_no = layer_no
+        self.size = size
+        self.chain_users = set()
+        self.chain_users.add(chain_user)
+        self.avail_from = t
+
+    def add_user(self, u):
+        self.chain_users.add(u)
+
+    def remove_user(self, u):
+        self.chain_users.remove(u)
+
+
 class MyNetwork:
     def __init__(self, g):
         self.g = g
@@ -64,16 +79,16 @@ class MyNetwork:
                 E.append(n)
         return np.random.choice(E, int(sr * len(E)))
 
-    def get_missing_layers(self, server, chain_req, vnf_i):
+    def get_missing_layers(self, server, chain_req, vnf_i, t):
         R = dict()
         d = 0
         for r in chain_req.vnfs[vnf_i].layers:
-            if r not in self.g.nodes[server]["nd"].layers:
+            if self.g.nodes[server]["nd"].layer_avail(r, t):
                 R[r] = chain_req.vnfs[vnf_i].layers[r]
                 d = d + R[r]
         return R, d
 
-    def do_layer_dl_test(self, server, volume, start_t, end_t):
+    def do_layer_dl_test(self, server, candid_layers, volume, start_t, end_t):
         dl_rate = volume / (end_t - start_t + 1)
         layer_download = LayerDownload()
         for tt in range(start_t, end_t + 1):
@@ -83,6 +98,7 @@ class MyNetwork:
                 return False, None
             for l in links:
                 layer_download.add_data(tt, l, dl_rate)
+
         return True, layer_download
 
     def evict_sfc(self, chain_req):
@@ -215,11 +231,18 @@ class Node:
                     u = u + r.ram_req(i)
         return self.ram - u
 
-    def disk_avail(self):
+    def disk_avail(self, t):
         u = 0
-        for r in self.layers:
-            u = u + self.layers[r]
+        for my_layer in self.layers:
+            if t >= self.layers[my_layer].avail_from:
+                u = u + self.layers[my_layer].size
         return self.disk - u
+
+    def layer_avail(self, r, t):
+        for my_layer in self.layers:
+            if my_layer == r and t >= self.layers[my_layer].avail_from:
+                return True
+        return False
 
     def embed(self, chain_req, i):
         if chain_req not in self.embeds:

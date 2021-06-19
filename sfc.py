@@ -1,16 +1,23 @@
 import numpy as np
 from constants import Const
+from net import MyLayer
 
 
 class LayerDownload:
     def __init__(self):
         self.download_data = dict()
+        self.added_layers = set()
 
     def add_data(self, t, l, r):
         if t not in self.download_data:
             self.download_data[t] = list()
         l.add_dl(t, r)
         self.download_data[t].append((r, l))
+
+    def add_layer_to_node(self, candid_layers, start_time, chain_req):
+        for layer_no in candid_layers:
+            ml = MyLayer(candid_layers, candid_layers[layer_no], chain_req, start_time)
+
 
     def cancel_download(self):
         for t in self.download_data:
