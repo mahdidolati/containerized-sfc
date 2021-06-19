@@ -133,6 +133,13 @@ class MyNetwork:
         for e in self.g.edges():
             for j in self.g[e[0]][e[1]]:
                 self.g[e[0]][e[1]][j]["li"].evict(chain_req)
+        to_be_delete = set()
+        for m in chain_req.used_servers:
+            for l in self.g.nodes[m]["nd"].layers:
+                if not self.g.nodes[m]["nd"].layers[l].finalized:
+                    to_be_delete.add((m, l))
+        for m, l in to_be_delete:
+            del self.g.nodes[m]["nd"].layers[l]
 
     def reset(self):
         for n in self.g.nodes():

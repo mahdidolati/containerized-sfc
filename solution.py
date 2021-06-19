@@ -43,13 +43,6 @@ class Solver:
                     C.append(c)
             if len(C) == 0:
                 self.my_net.evict_sfc(chain_req)
-                to_be_delete = set()
-                for m in chain_req.used_servers:
-                    for l in self.my_net.g.nodes[m]["nd"].layers:
-                        if not self.my_net.g.nodes[m]["nd"].layers[l].finalized:
-                            to_be_delete.add((m, l))
-                for m, l in to_be_delete:
-                    del self.my_net.g.nodes[m]["nd"].layers[l]
                 chain_req.reset()
                 for a in active_dls:
                     a.cancel_download()
