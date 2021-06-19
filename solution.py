@@ -36,7 +36,7 @@ class Solver:
         for i in range(len(chain_req.vnfs)):
             cur_budge = delay_budge / (len(chain_req.vnfs) - i)
             N1 = self.my_net.get_random_edge_nodes(sr)
-            N1 = np.append(N1, "c")
+            # N1 = np.append(N1, "c")
             C = list()
             for c in N1:
                 if self.usable_node(prev, c, chain_req, i, t, cur_budge):

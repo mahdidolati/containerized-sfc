@@ -58,7 +58,7 @@ def main():
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 200
+            req_num = 50
             for t in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
             for solver in solvers:

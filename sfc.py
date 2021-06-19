@@ -82,6 +82,7 @@ class SfcGenerator:
         self.vnf_num = Const.VNF_NUM
         for i in range(self.vnf_num):
             self.vnfs[i] = Vnf(list(range(Const.LAYER_NUM)), self.layers, layer_pr)
+            print("vnf layers: ", self.vnfs[i].layers.keys())
 
     def get_chain(self, t):
         vnfs = list()
