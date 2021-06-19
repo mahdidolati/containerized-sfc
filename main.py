@@ -1,11 +1,10 @@
 from sfc import SfcGenerator
 from net import NetGenerator
 from solution import NoShareSolver, ShareSolver
-import numpy as np
-import scipy.stats
 from constants import Const
 from statistic_collector import StatCollector, Stat
 import heapq
+import numpy as np
 
 
 def test(solver, reqs):
@@ -62,6 +61,7 @@ def main():
             for t in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
             for solver in solvers:
+                np.random.seed(itr)
                 res = test(solver, reqs)
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
 
