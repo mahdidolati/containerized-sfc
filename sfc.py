@@ -14,11 +14,6 @@ class LayerDownload:
         l.add_dl(t, r)
         self.download_data[t].append((r, l))
 
-    def add_layer_to_node(self, candid_layers, start_time, chain_req):
-        for layer_no in candid_layers:
-            ml = MyLayer(candid_layers, candid_layers[layer_no], chain_req, start_time)
-
-
     def cancel_download(self):
         for t in self.download_data:
             for r, l in self.download_data[t]:

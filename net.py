@@ -83,12 +83,18 @@ class MyNetwork:
         R = dict()
         d = 0
         for r in chain_req.vnfs[vnf_i].layers:
-            if self.g.nodes[server]["nd"].layer_avail(r, t):
+            if not self.g.nodes[server]["nd"].layer_avail(r, t):
                 R[r] = chain_req.vnfs[vnf_i].layers[r]
                 d = d + R[r]
         return R, d
 
     def do_layer_dl_test(self, server, candid_layers, volume, start_t, end_t):
+        # If an ongoing download exists but can not prepare the layer before end_t+1, return False
+        for c_layer in candid_layers:
+            if c_layer in self.g.nodes[server]["nd"].layers:
+                if self.g.nodes[server]["nd"].layers[c_layer].avail_from > end_t + 1:
+                    return False, None
+        # Try to download all layers
         dl_rate = volume / (end_t - start_t + 1)
         layer_download = LayerDownload()
         for tt in range(start_t, end_t + 1):
@@ -98,7 +104,6 @@ class MyNetwork:
                 return False, None
             for l in links:
                 layer_download.add_data(tt, l, dl_rate)
-
         return True, layer_download
 
     def evict_sfc(self, chain_req):
@@ -216,6 +221,10 @@ class Node:
         self.dl_embeds = dict()
 
     def cpu_avail(self, t):
+        if self.type[0] == "b":
+            return 0
+        if self.type[0] == "c":
+            return np.infty
         u = 0
         for r in self.embeds:
             if r.tau1 <= t <= r.tau2:
@@ -224,6 +233,10 @@ class Node:
         return self.cpu - u
 
     def ram_avail(self, t):
+        if self.type[0] == "b":
+            return 0
+        if self.type[0] == "c":
+            return np.infty
         u = 0
         for r in self.embeds:
             if r.tau1 <= t <= r.tau2:
@@ -232,6 +245,10 @@ class Node:
         return self.ram - u
 
     def disk_avail(self, t):
+        if self.type[0] == "b":
+            return 0
+        if self.type[0] == "c":
+            return np.infty
         u = 0
         for my_layer in self.layers:
             if t >= self.layers[my_layer].avail_from:
@@ -239,15 +256,25 @@ class Node:
         return self.disk - u
 
     def layer_avail(self, r, t):
-        for my_layer in self.layers:
-            if my_layer == r and t >= self.layers[my_layer].avail_from:
-                return True
-        return False
+        if self.type[0] == "b":
+            return False
+        if self.type[0] == "c":
+            return True
+        if r not in self.layers:
+            return False
+        return t >= self.layers[r].avail_from
 
     def embed(self, chain_req, i):
         if chain_req not in self.embeds:
             self.embeds[chain_req] = set()
         self.embeds[chain_req].add(i)
+
+    def add_layer(self, R, chain_req):
+        for r in R:
+            if r in self.layers:
+                self.layers[r].add_user(chain_req)
+            else:
+                self.layers[r] = MyLayer(r, R[r], chain_req, chain_req.tau1)
 
     def evict(self, chain_req):
         if chain_req in self.embeds:
