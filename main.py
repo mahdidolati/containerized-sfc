@@ -5,6 +5,7 @@ import numpy as np
 import scipy.stats
 from constants import Const
 from statistic_collector import StatCollector, Stat
+import heapq
 
 
 def test(my_net, reqs):
@@ -12,9 +13,20 @@ def test(my_net, reqs):
     solver = Solver(my_net)
     rate = 0.0
     sampling_rate = 1.0
+    events = []
+    counter = 1
     for s in reqs:
-        if solver.solve(s, s.arrival_time, sampling_rate):
-            rate = rate + 1
+        heapq.heappush(events, (s.arrival_time, counter, "ARRIVAL", s))
+        counter += 1
+    while len(events) > 0:
+        t, cnt, ev, s = heapq.heappop(events)
+        if ev == "ARRIVAL":
+            if solver.solve(s, t, sampling_rate):
+                rate = rate + 1
+                heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
+                counter += 1
+        elif ev == "FINISH":
+            my_net.evict_sfc(s)
     return rate / len(reqs)
 
 
