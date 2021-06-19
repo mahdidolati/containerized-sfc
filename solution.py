@@ -7,28 +7,43 @@ class Solver:
         self.layer_del_th = layer_del_th
 
     def usable_node(self, s, c, chain_req, i, t, delay_budget):
-        if c[0] == "b":
-            return False
-        if self.my_net.g.nodes[c]["nd"].cpu_avail(t) < chain_req.cpu_req(i):
-            return False
-        if self.my_net.g.nodes[c]["nd"].ram_avail(t) < chain_req.ram_req(i):
-            return False
+        if c[0] == "b" or \
+           self.my_net.g.nodes[c]["nd"].cpu_avail(t) < chain_req.cpu_req(i) or \
+           self.my_net.g.nodes[c]["nd"].ram_avail(t) < chain_req.ram_req(i):
+            return False, 0
         R, d = self.my_net.get_missing_layers(c, chain_req, i, chain_req.tau1)
         if self.my_net.g.nodes[c]["nd"].disk_avail(t) < d:
-            return False
+            return False, 0
         dl_result, dl_obj = self.my_net.do_layer_dl_test(c, R, d, t, chain_req.tau1-1)
         if not dl_result:
-            return False
+            return False, 0
         if s != c:
             path_bw, path_delay, links = self.my_net.get_biggest_path(s, c, t, delay_budget)
             dl_obj.cancel_download()
             if path_bw < chain_req.vnf_in_rate(i):
-                return False
+                return False, 0
         else:
             dl_obj.cancel_download()
+        return True, len(R)
+
+    def cloud_embed(self, chain_req):
+        prev = chain_req.entry_point
+        delay_budge = chain_req.max_delay
+        all_links = list()
+        for t in range(chain_req.tau1, chain_req.tau2+1):
+            path_bw, path_delay, links = self.my_net.get_biggest_path(prev, "c", chain_req.tau1, delay_budge)
+            if path_bw <= chain_req.vnf_in_rate(0):
+                for l in links:
+                    all_links.append(l)
+            else:
+                return False
+        for l in all_links:
+            l.embed(chain_req, 0)
         return True
 
     def solve(self, chain_req, t, sr):
+        if self.cloud_embed(chain_req):
+            return True
         prev = chain_req.entry_point
         delay_budge = chain_req.max_delay
         active_dls = []
@@ -36,11 +51,11 @@ class Solver:
         for i in range(len(chain_req.vnfs)):
             cur_budge = delay_budge / (len(chain_req.vnfs) - i)
             N1 = self.my_net.get_random_edge_nodes(sr)
-            # N1 = np.append(N1, "c")
-            C = list()
+            C = dict()
             for c in N1:
-                if self.usable_node(prev, c, chain_req, i, t, cur_budge):
-                    C.append(c)
+                n_usable, r_needed = self.usable_node(prev, c, chain_req, i, t, cur_budge)
+                if n_usable:
+                    C[c] = r_needed
             if len(C) == 0:
                 self.my_net.evict_sfc(chain_req)
                 chain_req.reset()
