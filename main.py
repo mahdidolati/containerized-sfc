@@ -1,6 +1,6 @@
 from sfc import SfcGenerator
 from net import NetGenerator
-from solution import solve
+from solution import Solver
 import numpy as np
 import scipy.stats
 from constants import Const
@@ -9,10 +9,11 @@ from statistic_collector import StatCollector, Stat
 
 def test(my_net, reqs):
     my_net.reset()
+    solver = Solver(my_net)
     rate = 0.0
     sampling_rate = 1.0
     for s in reqs:
-        if solve(my_net, s, s.arrival_time, sampling_rate):
+        if solver.solve(s, s.arrival_time, sampling_rate):
             rate = rate + 1
     return rate / len(reqs)
 

@@ -23,8 +23,9 @@ class MyLayer:
 
 
 class MyNetwork:
-    def __init__(self, g):
+    def __init__(self, g, share_layer=True):
         self.g = g
+        self.share_layer = share_layer
 
     def get_biggest_path(self, c, d, t, delay_cap=np.infty):
         h = []
@@ -80,10 +81,25 @@ class MyNetwork:
         return np.random.choice(E, int(sr * len(E)))
 
     def get_missing_layers(self, server, chain_req, vnf_i, t):
+        if self.share_layer:
+            return self.get_missing_layers_w_share(server, chain_req, vnf_i, t)
+        else:
+            return self.get_missing_layers_no_share(server, chain_req, vnf_i, t)
+
+    def get_missing_layers_w_share(self, server, chain_req, vnf_i, t):
         R = dict()
         d = 0
         for r in chain_req.vnfs[vnf_i].layers:
             if not self.g.nodes[server]["nd"].layer_avail(r, t):
+                R[r] = chain_req.vnfs[vnf_i].layers[r]
+                d = d + R[r]
+        return R, d
+
+    def get_missing_layers_no_share(self, server, chain_req, vnf_i, t):
+        R = dict()
+        d = 0
+        for r in chain_req.vnfs[vnf_i].layers:
+            if not self.g.nodes[server]["nd"].layer_avail_no_share(r, chain_req, t):
                 R[r] = chain_req.vnfs[vnf_i].layers[r]
                 d = d + R[r]
         return R, d
@@ -264,6 +280,15 @@ class Node:
             return False
         return t >= self.layers[r].avail_from
 
+    def layer_avail_no_share(self, r, chain_req, t):
+        if self.type[0] == "b":
+            return False
+        if self.type[0] == "c":
+            return True
+        if (r, chain_req) not in self.layers:
+            return False
+        return t >= self.layers[(r, chain_req)].avail_from
+
     def embed(self, chain_req, i):
         if chain_req not in self.embeds:
             self.embeds[chain_req] = set()
@@ -275,6 +300,10 @@ class Node:
                 self.layers[r].add_user(chain_req)
             else:
                 self.layers[r] = MyLayer(r, R[r], chain_req, chain_req.tau1)
+
+    def add_layer_no_share(self, R, chain_req):
+        for r in R:
+            self.layers[(r, chain_req)] = MyLayer(r, R[r], chain_req, chain_req.tau1)
 
     def evict(self, chain_req):
         if chain_req in self.embeds:
