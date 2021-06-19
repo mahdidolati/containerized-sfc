@@ -42,6 +42,7 @@ class Solver:
                 if self.usable_node(prev, c, chain_req, i, t, cur_budge):
                     C.append(c)
             if len(C) == 0:
+                self.my_net.evict_sfc(chain_req)
                 to_be_delete = set()
                 for m in chain_req.used_servers:
                     for l in self.my_net.g.nodes[m]["nd"].layers:
