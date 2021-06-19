@@ -7,23 +7,24 @@ class Solver:
         self.layer_del_th = layer_del_th
 
     def usable_node(self, s, c, chain_req, i, t, delay_budget):
-        if c[0] == "b" or \
-           self.my_net.g.nodes[c]["nd"].cpu_avail(t) < chain_req.cpu_req(i) or \
-           self.my_net.g.nodes[c]["nd"].ram_avail(t) < chain_req.ram_req(i):
+        if c[0] == "b":
             return False, 0
         R, d = self.my_net.get_missing_layers(c, chain_req, i, chain_req.tau1)
-        if self.my_net.g.nodes[c]["nd"].disk_avail(t) < d:
-            return False, 0
+        for tt in range(t, chain_req.tau2 + 1):
+            if self.my_net.g.nodes[c]["nd"].disk_avail(tt) < d:
+                return False, 0
         dl_result, dl_obj = self.my_net.do_layer_dl_test(c, R, d, t, chain_req.tau1-1)
         if not dl_result:
             return False, 0
+        dl_obj.cancel_download()
         if s != c:
-            path_bw, path_delay, links = self.my_net.get_biggest_path(s, c, t, delay_budget)
-            dl_obj.cancel_download()
-            if path_bw < chain_req.vnf_in_rate(i):
-                return False, 0
-        else:
-            dl_obj.cancel_download()
+            for tt in range(chain_req.tau1, chain_req.tau2 + 1):
+                if self.my_net.g.nodes[c]["nd"].cpu_avail(tt) < chain_req.cpu_req(tt) or \
+                   self.my_net.g.nodes[c]["nd"].ram_avail(tt) < chain_req.ram_req(tt):
+                    return False, 0
+                path_bw, path_delay, links = self.my_net.get_biggest_path(s, c, tt, delay_budget)
+                if path_bw < chain_req.vnf_in_rate(i):
+                    return False
         return True, len(R)
 
     def cloud_embed(self, chain_req):
@@ -31,8 +32,8 @@ class Solver:
         delay_budge = chain_req.max_delay
         all_links = list()
         for t in range(chain_req.tau1, chain_req.tau2+1):
-            path_bw, path_delay, links = self.my_net.get_biggest_path(prev, "c", chain_req.tau1, delay_budge)
-            if path_bw <= chain_req.vnf_in_rate(0):
+            path_bw, path_delay, links = self.my_net.get_biggest_path(prev, "c", t, delay_budge)
+            if path_bw >= chain_req.vnf_in_rate(0):
                 for l in links:
                     all_links.append(l)
             else:

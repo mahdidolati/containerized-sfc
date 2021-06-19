@@ -8,7 +8,7 @@ from sfc import LayerDownload
 
 
 class MyLayer:
-    def __init__(self, layer_no, size, chain_user, t):
+    def __init__(self, layer_no, size, chain_user, t, dl_start):
         self.layer_no = layer_no
         self.size = size
         self.chain_users = set()
@@ -16,6 +16,7 @@ class MyLayer:
         self.avail_from = t
         self.last_used = chain_user.tau2
         self.finalized = False
+        self.dl_start = dl_start
 
     def add_user(self, u):
         self.chain_users.add(u)
@@ -279,7 +280,7 @@ class Node:
             return np.infty
         u = 0
         for my_layer in self.layers:
-            if t >= self.layers[my_layer].avail_from:
+            if t >= self.layers[my_layer].dl_start:
                 u = u + self.layers[my_layer].size
         return self.disk - u
 
@@ -311,11 +312,11 @@ class Node:
             if r in self.layers:
                 self.layers[r].add_user(chain_req)
             else:
-                self.layers[r] = MyLayer(r, R[r], chain_req, chain_req.tau1)
+                self.layers[r] = MyLayer(r, R[r], chain_req, chain_req.tau1, chain_req.arrival_time)
 
     def add_layer_no_share(self, R, chain_req):
         for r in R:
-            self.layers[(r, chain_req)] = MyLayer(r, R[r], chain_req, chain_req.tau1)
+            self.layers[(r, chain_req)] = MyLayer(r, R[r], chain_req, chain_req.tau1, chain_req.arrival_time)
 
     def evict(self, chain_req):
         if chain_req in self.embeds:
