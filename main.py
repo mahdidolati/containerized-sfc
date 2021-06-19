@@ -49,6 +49,7 @@ def main():
     for l in layer_num:
         layer_num_avg.append(int((l[1] - 1 + l[0]) / 2.0))
     for i in range(len(layer_num)):
+        np.random.seed(i * 100)
         Const.VNF_LAYER = layer_num[i]
         Const.LAYER_SIZE = layer_sizes[i]
         x = int((layer_num[i][1] - 1 + layer_num[i][0]) / 2.0)
@@ -61,7 +62,7 @@ def main():
             for t in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
             for solver in solvers:
-                np.random.seed(itr)
+                np.random.seed(itr * 1234)
                 res = test(solver, reqs)
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
 

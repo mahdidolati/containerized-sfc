@@ -72,7 +72,7 @@ class SfcGenerator:
             self.layers[i] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
         layer_pr = []
         for layer_no in self.layers:
-            layer_pr.append(1.0 / layer_no)
+            layer_pr.append(1.0 / (layer_no+1))
         s = 0
         for x in layer_pr:
             s += x
