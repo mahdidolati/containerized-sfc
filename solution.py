@@ -63,7 +63,11 @@ class Solver:
                 for a in active_dls:
                     a.cancel_download()
                 return False
-            m = np.random.choice(C)
+            m = None
+            br_needed = np.infty
+            for mm in C:
+                if C[mm] < br_needed:
+                    m = mm
             self.my_net.g.nodes[m]["nd"].embed(chain_req, i)
             R, d = self.my_net.get_missing_layers(m, chain_req, i, chain_req.tau1)
             node_new_layer.append((m, R))
@@ -74,10 +78,18 @@ class Solver:
                 self.my_net.g.nodes[m]["nd"].add_layer(R, chain_req)
             else:
                 self.my_net.g.nodes[m]["nd"].add_layer_no_share(R, chain_req)
-            path_bw, path_delay, links = self.my_net.get_biggest_path(prev, m, t, cur_budge)
-            delay_budge = delay_budge - path_delay
-            for l in links:
-                l.embed(chain_req, i)
+            if prev != m:
+                worst_delay = 0
+                all_links = list()
+                for tt in range(chain_req.tau1, chain_req.tau2 + 1):
+                    path_bw, path_delay, links = self.my_net.get_biggest_path(prev, m, t, cur_budge)
+                    if path_delay > worst_delay:
+                        worst_delay = path_delay
+                    for ll in links:
+                        all_links.append(ll)
+                delay_budge = delay_budge - worst_delay
+                for l in all_links:
+                    l.embed(chain_req, i)
             prev = m
         for m in chain_req.used_servers:
             for l in self.my_net.g.nodes[m]["nd"].layers:
