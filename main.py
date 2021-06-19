@@ -44,22 +44,21 @@ def main():
     stat_collector = StatCollector(algs, stats)
     #
     iterations = 5
-    # layer_sizes = [[10, 590], [60, 540], [110, 490], [160, 440], [210, 390]]
-    # layer_sizes = [[50, 150], [150, 250], [250, 350], [350, 450], [450, 550]]
-    # 1, 5, 10, 15, 20
-    layer_num = [[1, 2], [3, 8], [7, 14], [11, 20], [15, 26]]
+    layer_num = [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]
+    layer_sizes = [[300, 301], [150, 151], [100, 100], [75, 76], [60, 61]]
     layer_num_avg = []
     for l in layer_num:
         layer_num_avg.append(int((l[1] - 1 + l[0]) / 2.0))
     for i in range(len(layer_num)):
         Const.VNF_LAYER = layer_num[i]
+        Const.LAYER_SIZE = layer_sizes[i]
         x = int((layer_num[i][1] - 1 + layer_num[i][0]) / 2.0)
-        # Const.LAYER_SIZE = [(300/x)-(120/x), (300/x)+(120/x)+1]
         sfc_gen = SfcGenerator(my_net)
         run_name = "{}".format(x)
+        print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 100
+            req_num = 200
             for t in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
             for solver in solvers:
@@ -67,8 +66,7 @@ def main():
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
 
     fig_2 = './result/layer_num'
-    stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, ACCEPT_RATIO, algs,
-                                 'No. of Switches', 'Success rate')
+    stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
 
 
 if __name__ == "__main__":
