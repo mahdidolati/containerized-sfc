@@ -128,6 +128,14 @@ class MyNetwork:
                 layer_download.add_data(tt, l, dl_rate)
         return True, layer_download
 
+    def get_min_bw(self, links, t1, t2):
+        min_bw = np.infty
+        for t in range(t1, t2+1):
+            for l in links:
+                if l.bw_avail(t) < min_bw:
+                    min_bw = l.bw_avail(t)
+        return min_bw
+
     def evict_sfc(self, chain_req):
         for n in self.g.nodes():
             self.g.nodes[n]["nd"].evict(chain_req)

@@ -7,6 +7,10 @@ class Solver:
         self.layer_del_th = layer_del_th
 
     def usable_node(self, s, c, chain_req, i, t, delay_budget):
+        for tt in range(chain_req.tau1, chain_req.tau2 + 1):
+            if self.my_net.g.nodes[c]["nd"].cpu_avail(tt) < chain_req.cpu_req(tt) or \
+                    self.my_net.g.nodes[c]["nd"].ram_avail(tt) < chain_req.ram_req(tt):
+                return False, 0
         if c[0] == "b":
             return False, 0
         R, d = self.my_net.get_missing_layers(c, chain_req, i, chain_req.tau1)
@@ -18,28 +22,22 @@ class Solver:
             return False, 0
         dl_obj.cancel_download()
         if s != c:
-            for tt in range(chain_req.tau1, chain_req.tau2 + 1):
-                if self.my_net.g.nodes[c]["nd"].cpu_avail(tt) < chain_req.cpu_req(tt) or \
-                   self.my_net.g.nodes[c]["nd"].ram_avail(tt) < chain_req.ram_req(tt):
-                    return False, 0
-                path_bw, path_delay, links = self.my_net.get_biggest_path(s, c, tt, delay_budget)
-                if path_bw < chain_req.vnf_in_rate(i):
-                    return False
+            path_bw, path_delay, links = self.my_net.get_biggest_path(s, c, chain_req.tau1, delay_budget)
+            min_bw = self.my_net.get_min_bw(links, chain_req.tau1, chain_req.tau2)
+            if min_bw < chain_req.vnf_in_rate(i):
+                return False
         return True, len(R)
 
     def cloud_embed(self, chain_req):
         prev = chain_req.entry_point
         delay_budge = chain_req.max_delay
-        all_links = list()
-        for t in range(chain_req.tau1, chain_req.tau2+1):
-            path_bw, path_delay, links = self.my_net.get_biggest_path(prev, "c", t, delay_budge)
-            if path_bw >= chain_req.vnf_in_rate(0):
-                for l in links:
-                    all_links.append(l)
-            else:
-                return False
-        for l in all_links:
-            l.embed(chain_req, 0)
+        path_bw, path_delay, links = self.my_net.get_biggest_path(prev, "c", chain_req.tau1, delay_budge)
+        min_bw = self.my_net.get_min_bw(links, chain_req.tau1, chain_req.tau2)
+        if min_bw < chain_req.vnf_in_rate(0):
+            return False
+        else:
+            for l in links:
+                l.embed(chain_req, 0)
         return True
 
     def solve(self, chain_req, t, sr):
@@ -79,16 +77,9 @@ class Solver:
             else:
                 self.my_net.g.nodes[m]["nd"].add_layer_no_share(R, chain_req)
             if prev != m:
-                worst_delay = 0
-                all_links = list()
-                for tt in range(chain_req.tau1, chain_req.tau2 + 1):
-                    path_bw, path_delay, links = self.my_net.get_biggest_path(prev, m, t, cur_budge)
-                    if path_delay > worst_delay:
-                        worst_delay = path_delay
-                    for ll in links:
-                        all_links.append(ll)
-                delay_budge = delay_budge - worst_delay
-                for l in all_links:
+                path_bw, path_delay, links = self.my_net.get_biggest_path(prev, m, chain_req.tau1, cur_budge)
+                delay_budge = delay_budge - path_delay
+                for l in links:
                     l.embed(chain_req, i)
             prev = m
         for m in chain_req.used_servers:
