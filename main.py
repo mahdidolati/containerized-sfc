@@ -57,7 +57,7 @@ def main():
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 50
+            req_num = 150
             t = 0
             for _ in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))

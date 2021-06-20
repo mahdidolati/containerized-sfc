@@ -8,8 +8,8 @@ class Solver:
 
     def usable_node(self, s, c, chain_req, i, t, delay_budget):
         for tt in range(chain_req.tau1, chain_req.tau2 + 1):
-            if self.my_net.g.nodes[c]["nd"].cpu_avail(tt) < chain_req.cpu_req(tt) or \
-                    self.my_net.g.nodes[c]["nd"].ram_avail(tt) < chain_req.ram_req(tt):
+            if self.my_net.g.nodes[c]["nd"].cpu_avail(tt) < chain_req.cpu_req(i) or \
+                    self.my_net.g.nodes[c]["nd"].ram_avail(tt) < chain_req.ram_req(i):
                 return False, 0
         if c[0] == "b":
             return False, 0
@@ -23,15 +23,19 @@ class Solver:
         dl_obj.cancel_download()
         if s != c:
             path_bw, path_delay, links = self.my_net.get_biggest_path(s, c, chain_req.tau1, delay_budget)
+            if path_bw == 0 or path_delay > delay_budget:
+                return False, 0
             min_bw = self.my_net.get_min_bw(links, chain_req.tau1, chain_req.tau2)
             if min_bw < chain_req.vnf_in_rate(i):
-                return False
+                return False, 0
         return True, len(R)
 
     def cloud_embed(self, chain_req):
         prev = chain_req.entry_point
         delay_budge = chain_req.max_delay
         path_bw, path_delay, links = self.my_net.get_biggest_path(prev, "c", chain_req.tau1, delay_budge)
+        if path_bw == 0 or path_delay > delay_budge:
+            return False
         min_bw = self.my_net.get_min_bw(links, chain_req.tau1, chain_req.tau2)
         if min_bw < chain_req.vnf_in_rate(0):
             return False

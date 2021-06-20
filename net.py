@@ -165,11 +165,14 @@ class Link:
         self.dst = d
         if self.src.id[0] == "c" or self.dst.id[0] == "c":
             self.bw = np.infty
+            self.delay = 100 * np.linalg.norm(self.src.loc - self.dst.loc)
         elif self.type == "wired":
+            self.delay = 10 * np.linalg.norm(self.src.loc - self.dst.loc)
             self.bw = np.random.randint(*Const.LINK_BW)
         else:
+            self.delay = 10 * np.linalg.norm(self.src.loc - self.dst.loc)
             self.bw = 0
-        self.delay = 10 * np.linalg.norm(self.src.loc - self.dst.loc)
+        # print(self.delay)
         self.embeds = dict()
         self.dl = dict()
 
