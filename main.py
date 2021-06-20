@@ -10,6 +10,7 @@ import numpy as np
 def test(solver, reqs):
     solver.my_net.reset()
     rate = 0.0
+    layer_dl_vol = 0.0
     sampling_rate = 1.0
     events = []
     counter = 1
@@ -20,23 +21,26 @@ def test(solver, reqs):
         t, cnt, ev, s = heapq.heappop(events)
         if ev == "ARRIVAL":
             solver.pre_arrival_procedure(t)
-            if solver.solve(s, t, sampling_rate):
+            status, dl_vol = solver.solve(s, t, sampling_rate)
+            if status:
+                layer_dl_vol = layer_dl_vol + dl_vol
                 rate = rate + 1
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
         elif ev == "FINISH":
             solver.handle_sfc_eviction(s)
-    return rate / len(reqs)
+    return rate / len(reqs), layer_dl_vol / rate
 
 
 def main():
     my_net = NetGenerator().get_g()
     ACCEPT_RATIO = "Accept Ratio"
+    DOWNLOAD_LAYER = "Download Layer"
     solvers = [
         NoShareSolver(my_net, 0),
         ShareSolver(my_net, 0)
     ]
-    stats = {ACCEPT_RATIO: Stat.MEAN_MODE}
+    stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
@@ -64,11 +68,15 @@ def main():
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
             for solver in solvers:
                 np.random.seed(itr * 1234)
-                res = test(solver, reqs)
+                res, dl_vol = test(solver, reqs)
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
+                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
 
     fig_2 = './result/layer_num'
     stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
+
+    fig_2 = './result/dl_vol'
+    stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, DOWNLOAD_LAYER, algs, 'No. of Layers', DOWNLOAD_LAYER)
 
 
 if __name__ == "__main__":

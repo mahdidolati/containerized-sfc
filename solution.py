@@ -46,11 +46,11 @@ class Solver:
 
     def solve(self, chain_req, t, sr):
         if self.cloud_embed(chain_req):
-            return True
+            return True, 0
+        layer_download_vol = 0
         prev = chain_req.entry_point
         delay_budge = chain_req.max_delay
         active_dls = []
-        node_new_layer = []
         for i in range(len(chain_req.vnfs)):
             cur_budge = delay_budge / (len(chain_req.vnfs) - i)
             N1 = self.my_net.get_random_edge_nodes(sr)
@@ -64,22 +64,24 @@ class Solver:
                 chain_req.reset()
                 for a in active_dls:
                     a.cancel_download()
-                return False
+                return False, 0
             m = None
             br_needed = np.infty
             for mm in C:
                 if C[mm] < br_needed:
                     m = mm
+                    br_needed = C[mm]
             self.my_net.g.nodes[m]["nd"].embed(chain_req, i)
-            R, d = self.my_net.get_missing_layers(m, chain_req, i, chain_req.tau1)
-            node_new_layer.append((m, R))
-            dl_result, dl_obj = self.my_net.do_layer_dl_test(m, R, d, t, chain_req.tau1 - 1)
-            active_dls.append(dl_obj)
             chain_req.used_servers.add(m)
-            if self.my_net.share_layer:
-                self.my_net.g.nodes[m]["nd"].add_layer(R, chain_req)
-            else:
-                self.my_net.g.nodes[m]["nd"].add_layer_no_share(R, chain_req)
+            R, d = self.my_net.get_missing_layers(m, chain_req, i, chain_req.tau1)
+            layer_download_vol = layer_download_vol + d
+            if len(R) > 0:
+                dl_result, dl_obj = self.my_net.do_layer_dl_test(m, R, d, t, chain_req.tau1 - 1)
+                active_dls.append(dl_obj)
+                if self.my_net.share_layer:
+                    self.my_net.g.nodes[m]["nd"].add_layer(R, chain_req)
+                else:
+                    self.my_net.g.nodes[m]["nd"].add_layer_no_share(R, chain_req)
             if prev != m:
                 path_bw, path_delay, links = self.my_net.get_biggest_path(prev, m, chain_req.tau1, cur_budge)
                 delay_budge = delay_budge - path_delay
@@ -89,7 +91,7 @@ class Solver:
         for m in chain_req.used_servers:
             for l in self.my_net.g.nodes[m]["nd"].layers:
                 self.my_net.g.nodes[m]["nd"].layers[l].finalized = True
-        return True
+        return True, layer_download_vol
 
     def handle_sfc_eviction(self, chain_req):
         self.my_net.evict_sfc(chain_req)
