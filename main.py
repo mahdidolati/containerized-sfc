@@ -8,7 +8,7 @@ import numpy as np
 
 
 def test(solver, reqs):
-    solver.my_net.reset()
+    solver.reset()
     rate = 0.0
     layer_dl_vol = 0.0
     sampling_rate = 1.0

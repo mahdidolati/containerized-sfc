@@ -119,10 +119,19 @@ class NoShareSolver(Solver):
     def get_name(self):
         return "No Share-{}".format(self.layer_del_th)
 
+    def reset(self):
+        self.my_net.reset()
+        self.my_net.share_layer = False
+
 
 class ShareSolver(Solver):
     def __init__(self, my_net, layer_del_th):
         super().__init__(my_net, layer_del_th)
+        self.my_net.share_layer = True
 
     def get_name(self):
         return "Share-{}".format(self.layer_del_th)
+
+    def reset(self):
+        self.my_net.reset()
+        self.my_net.share_layer = True
