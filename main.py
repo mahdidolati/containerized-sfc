@@ -86,8 +86,8 @@ def main(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     inter_arrival = 2
-    opts, args = getopt.getopt(my_argv, "", ["inter_arrival="])
+    opts, args = getopt.getopt(my_argv, "", ["inter-arrival="])
     for opt, arg in opts:
-        if opt in ("--inter_arrival"):
-            inter_arrival = arg
+        if opt in ("--inter-arrival",):
+            inter_arrival = int(arg)
     main(inter_arrival)
