@@ -46,7 +46,7 @@ def main():
     stat_collector = StatCollector(algs, stats)
     #
     iterations = 5
-    arrival_rate = 1.0 / 2.0
+    arrival_rate = 1.0 / 3.0
     layer_num = [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]
     layer_sizes = [[300, 301], [150, 151], [100, 101], [75, 76], [60, 61]]
     layer_num_avg = []
