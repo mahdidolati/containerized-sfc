@@ -5,6 +5,7 @@ from constants import Const
 from statistic_collector import StatCollector, Stat
 import heapq
 import numpy as np
+import sys, getopt
 
 
 def test(solver, reqs):
@@ -32,7 +33,7 @@ def test(solver, reqs):
     return rate / len(reqs), layer_dl_vol / rate
 
 
-def main():
+def main(inter_arrival):
     my_net = NetGenerator().get_g()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download Layer"
@@ -48,7 +49,7 @@ def main():
     stat_collector = StatCollector(algs, stats)
     #
     iterations = 5
-    arrival_rate = 1.0 / 3.0
+    arrival_rate = 1.0 / inter_arrival
     layer_num = [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]
     layer_sizes = [[300, 301], [150, 151], [100, 101], [75, 76], [60, 61]]
     layer_num_avg = []
@@ -75,12 +76,18 @@ def main():
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
 
-    fig_2 = './result/layer_num'
+    fig_2 = './result/layer_num_ia{}'.format(inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
 
-    fig_2 = './result/dl_vol'
+    fig_2 = './result/dl_vol_ia{}'.format(inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, DOWNLOAD_LAYER, algs, 'No. of Layers', DOWNLOAD_LAYER)
 
 
 if __name__ == "__main__":
-    main()
+    my_argv = sys.argv[1:]
+    inter_arrival = 2
+    opts, args = getopt.getopt(my_argv, "", ["inter_arrival="])
+    for opt, arg in opts:
+        if opt in ("--inter_arrival"):
+            inter_arrival = arg
+    main(inter_arrival)
