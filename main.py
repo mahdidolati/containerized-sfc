@@ -39,7 +39,9 @@ def main():
     solvers = [
         NoShareSolver(my_net, 0),
         ShareSolver(my_net, 0),
-        ShareSolver(my_net, 3)
+        ShareSolver(my_net, 2),
+        ShareSolver(my_net, 4),
+        ShareSolver(my_net, 6)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
