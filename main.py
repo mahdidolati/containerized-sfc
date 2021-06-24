@@ -75,7 +75,8 @@ def slack_time_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
 
-    fig_test_id = "ut_slack"
+    machine_id = "ut"
+    fig_test_id = "{}_slack".format(machine_id)
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', tau1_avg, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
 
@@ -127,7 +128,8 @@ def layer_num_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
 
-    fig_test_id = "ut_layer_num"
+    machine_id = "ut"
+    fig_test_id = "{}_layer_num".format(machine_id)
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
 
