@@ -17,9 +17,11 @@ class MyLayer:
         self.last_used = chain_user.tau2
         self.finalized = False
         self.dl_start = dl_start
+        self.unique_used = 1
 
     def add_user(self, u):
         self.chain_users.add(u)
+        self.unique_used = self.unique_used + 1
         if u.tau2 > self.last_used:
             self.last_used = u.tau2
 

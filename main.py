@@ -36,14 +36,13 @@ def test(solver, reqs):
 
 
 def slack_time_test(inter_arrival):
+    np.random.seed(1)
     my_net = NetGenerator().get_g()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download Layer"
     solvers = [
         NoShareSolver(my_net, 0),
         ShareSolver(my_net, 0),
-        ShareSolver(my_net, 2),
-        ShareSolver(my_net, 4),
         ShareSolver(my_net, 6)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
@@ -87,14 +86,13 @@ def slack_time_test(inter_arrival):
 
 
 def layer_num_test(inter_arrival):
+    np.random.seed(1)
     my_net = NetGenerator().get_g()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download Layer"
     solvers = [
         NoShareSolver(my_net, 0),
         ShareSolver(my_net, 0),
-        ShareSolver(my_net, 2),
-        ShareSolver(my_net, 4),
         ShareSolver(my_net, 6)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
@@ -140,7 +138,7 @@ def layer_num_test(inter_arrival):
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    test_type = "not-selected"
+    test_type = "slack"
     ia = 2
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
