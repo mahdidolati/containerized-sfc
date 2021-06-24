@@ -197,6 +197,7 @@ if __name__ == "__main__":
         if opt in ("--inter-arrival",):
             ia = int(arg)
         elif opt in ("--test-type",):
+            print("test type is: {}".format(arg))
             test_type = arg
     if test_type == "slack":
         slack_time_test(ia)
