@@ -54,12 +54,12 @@ def slack_time_test(inter_arrival):
     arrival_rate = 1.0 / inter_arrival
     tau1s = [[1, 4], [2, 5], [3, 6], [4, 7], [5, 8], [6, 9], [7, 10]]
     tau1_avg = []
+    sfc_gen = SfcGenerator(my_net)
     for i in range(len(tau1s)):
         np.random.seed(i * 100)
         Const.TAU1 = tau1s[i]
         x = int((tau1s[i][1] - 1 + tau1s[i][0]) / 2.0)
         tau1_avg.append(x)
-        sfc_gen = SfcGenerator(my_net)
         run_name = "{}".format(x)
         print("run-name:", run_name)
         for itr in range(iterations):
