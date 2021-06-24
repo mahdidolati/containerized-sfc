@@ -140,9 +140,17 @@ def layer_num_test(inter_arrival):
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
+    test_type = "not-selected"
     ia = 2
-    opts, args = getopt.getopt(my_argv, "", ["inter-arrival="])
+    opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):
             ia = int(arg)
-    slack_time_test(ia)
+        elif opt in ("--test-type",):
+            test_type = arg
+    if test_type == "slack":
+        slack_time_test(ia)
+    elif test_type == "layer":
+        layer_num_test(ia)
+    else:
+        print("test: {} is not supported".format(test_type))
