@@ -33,7 +33,56 @@ def test(solver, reqs):
     return rate / len(reqs), layer_dl_vol / rate
 
 
-def main(inter_arrival):
+def slack_time_test(inter_arrival):
+    my_net = NetGenerator().get_g()
+    ACCEPT_RATIO = "Accept Ratio"
+    DOWNLOAD_LAYER = "Download Layer"
+    solvers = [
+        NoShareSolver(my_net, 0),
+        ShareSolver(my_net, 0),
+        ShareSolver(my_net, 2),
+        ShareSolver(my_net, 4),
+        ShareSolver(my_net, 6)
+    ]
+    stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
+    algs = [s.get_name() for s in solvers]
+    stat_collector = StatCollector(algs, stats)
+    #
+    iterations = 5
+    arrival_rate = 1.0 / inter_arrival
+    tau1s = [[1, 4], [2, 5], [3, 6], [4, 7], [5, 8], [6, 9], [7, 10]]
+    tau1_avg = []
+    for i in range(len(tau1s)):
+        np.random.seed(i * 100)
+        Const.TAU1 = tau1s[i]
+        x = int((tau1s[i][1] - 1 + tau1s[i][0]) / 2.0)
+        tau1_avg.append(x)
+        sfc_gen = SfcGenerator(my_net)
+        run_name = "{}".format(x)
+        print("run-name:", run_name)
+        for itr in range(iterations):
+            reqs = []
+            req_num = 150
+            t = 0
+            for _ in range(req_num):
+                reqs.append(sfc_gen.get_chain(t))
+                t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
+            for solver in solvers:
+                np.random.seed(itr * 1234)
+                res, dl_vol = test(solver, reqs)
+                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
+                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
+
+    fig_test_id = "ut_slack"
+    fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_2 + '.txt', tau1_avg, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
+
+    fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_2 + '.txt', tau1_avg, 0, DOWNLOAD_LAYER, algs, 'No. of Layers',
+                                 DOWNLOAD_LAYER)
+
+
+def layer_num_test(inter_arrival):
     my_net = NetGenerator().get_g()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download Layer"
@@ -76,18 +125,19 @@ def main(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
 
-    fig_2 = './result/layer_num_ia{}'.format(inter_arrival)
+    fig_test_id = "ut_layer_num"
+    fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
 
-    fig_2 = './result/dl_vol_ia{}'.format(inter_arrival)
+    fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, DOWNLOAD_LAYER, algs, 'No. of Layers', DOWNLOAD_LAYER)
 
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    inter_arrival = 2
+    ia = 2
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):
-            inter_arrival = int(arg)
-    main(inter_arrival)
+            ia = int(arg)
+    slack_time_test(ia)
