@@ -54,6 +54,8 @@ def slack_time_test(inter_arrival):
     arrival_rate = 1.0 / inter_arrival
     tau1s = [[1, 4], [2, 5], [3, 6], [4, 7], [5, 8], [6, 9], [7, 10]]
     tau1_avg = []
+    Const.VNF_LAYER = [3, 6]
+    Const.LAYER_SIZE = [60, 101]
     sfc_gen = SfcGenerator(my_net)
     for i in range(len(tau1s)):
         np.random.seed(i * 100)
