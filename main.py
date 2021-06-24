@@ -78,11 +78,10 @@ def slack_time_test(inter_arrival):
     machine_id = "ut"
     fig_test_id = "{}_slack".format(machine_id)
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', tau1_avg, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
+    stat_collector.write_to_file(fig_2 + '.txt', tau1_avg, 0, ACCEPT_RATIO, algs, 'Avg. Slack', ACCEPT_RATIO)
 
     fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', tau1_avg, 0, DOWNLOAD_LAYER, algs, 'No. of Layers',
-                                 DOWNLOAD_LAYER)
+    stat_collector.write_to_file(fig_2 + '.txt', tau1_avg, 0, DOWNLOAD_LAYER, algs, 'Avg. Slack', DOWNLOAD_LAYER)
 
 
 def layer_num_test(inter_arrival):
