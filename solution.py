@@ -2,9 +2,8 @@ import numpy as np
 
 
 class Solver:
-    def __init__(self, my_net, layer_del_th):
+    def __init__(self, my_net):
         self.my_net = my_net
-        self.layer_del_th = layer_del_th
 
     def usable_node(self, s, c, chain_req, i, t, delay_budget):
         for tt in range(chain_req.tau1, chain_req.tau2 + 1):
@@ -104,16 +103,19 @@ class Solver:
         to_be_delete = set()
         for m in self.my_net.g.nodes():
             for l in self.my_net.g.nodes[m]["nd"].layers:
-                if len(self.my_net.g.nodes[m]["nd"].layers[l].chain_users) == 0:
-                    if t - self.my_net.g.nodes[m]["nd"].layers[l].last_used > self.layer_del_th:
-                        to_be_delete.add((m, l))
+                if self.delete_layer(self.my_net.g.nodes[m]["nd"].layers[l], t):
+                    to_be_delete.add((m, l))
         for m, l in to_be_delete:
             del self.my_net.g.nodes[m]["nd"].layers[l]
+
+    def delete_layer(self, target_layer, t):
+        return True
 
 
 class NoShareSolver(Solver):
     def __init__(self, my_net, layer_del_th):
-        super().__init__(my_net, layer_del_th)
+        super().__init__(my_net)
+        self.layer_del_th = layer_del_th
         self.my_net.share_layer = False
 
     def get_name(self):
@@ -123,10 +125,17 @@ class NoShareSolver(Solver):
         self.my_net.reset()
         self.my_net.share_layer = False
 
+    def delete_layer(self, target_layer, t):
+        if len(target_layer.chain_users) == 0:
+            if t - target_layer.last_used > self.layer_del_th:
+                return True
+        return False
+
 
 class ShareSolver(Solver):
     def __init__(self, my_net, layer_del_th):
-        super().__init__(my_net, layer_del_th)
+        super().__init__(my_net)
+        self.layer_del_th = layer_del_th
         self.my_net.share_layer = True
 
     def get_name(self):
@@ -135,3 +144,31 @@ class ShareSolver(Solver):
     def reset(self):
         self.my_net.reset()
         self.my_net.share_layer = True
+
+    def delete_layer(self, target_layer, t):
+        if len(target_layer.chain_users) == 0:
+            if t - target_layer.last_used > self.layer_del_th:
+                return True
+        return False
+
+
+class PopularitySolver(Solver):
+    def __init__(self, my_net, popularity_th):
+        super().__init__(my_net)
+        self.popularity_th = popularity_th
+        self.my_net.share_layer = True
+
+    def get_name(self):
+        return "P-{}".format(self.popularity_th)
+
+    def reset(self):
+        self.my_net.reset()
+        self.my_net.share_layer = True
+
+    def delete_layer(self, target_layer, t):
+        if len(target_layer.chain_users) == 0:
+            if target_layer.unique_used < self.popularity_th:
+                return True
+            else:
+                target_layer.unique_used = target_layer.unique_used - 1
+        return False
