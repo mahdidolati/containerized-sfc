@@ -80,7 +80,7 @@ def share_percentage_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
 
     machine_id = "ut"
-    fig_test_id = "{}_slack".format(machine_id)
+    fig_test_id = "{}_share".format(machine_id)
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, ACCEPT_RATIO, algs, 'Avg. Slack', ACCEPT_RATIO)
 
