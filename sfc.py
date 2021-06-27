@@ -21,14 +21,16 @@ class LayerDownload:
 
 
 class Vnf:
-    def __init__(self, layer_ids, all_layers, layer_pr=None):
+    def __init__(self, layer_ids, all_layers, layer_pr, s_layer_num, n_layers):
         self.cpu = np.random.randint(*Const.VNF_CPU)
         self.ram = np.random.randint(*Const.VNF_RAM)
         self.alpha = np.random.uniform(*Const.ALPHA_RANGE)
-        layer_ids = np.random.choice(a=layer_ids, size=np.random.randint(*Const.VNF_LAYER), p=layer_pr)
+        layer_ids = np.random.choice(a=layer_ids, size=s_layer_num, p=layer_pr)
         self.layers = dict()
         for i in layer_ids:
             self.layers[i] = all_layers[i]
+        for i in n_layers:
+            self.layers[i] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
 
 
 class Sfc:
@@ -66,11 +68,12 @@ class Sfc:
 
 
 class SfcGenerator:
-    def __init__(self, my_net):
+    def __init__(self, my_net, n_share_p=1.0):
         self.my_net = my_net
         self.layers = dict()
         for i in range(Const.LAYER_NUM):
             self.layers[i] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
+        self.no_share_id = Const.LAYER_NUM
         layer_pr = []
         for layer_no in self.layers:
             layer_pr.append(1.0 / (layer_no+1))
@@ -82,7 +85,12 @@ class SfcGenerator:
         self.vnfs = dict()
         self.vnf_num = Const.VNF_NUM
         for i in range(self.vnf_num):
-            self.vnfs[i] = Vnf(list(range(Const.LAYER_NUM)), self.layers, layer_pr)
+            v_layers = np.random.randint(*Const.VNF_LAYER)
+            s_layer_num = int(np.ceil(v_layers * n_share_p))
+            n_layer_num = int(np.floor(v_layers * (1.0 - n_share_p)))
+            n_layers = list(range(self.no_share_id, self.no_share_id + n_layer_num))
+            self.no_share_id = self.no_share_id + n_layer_num
+            self.vnfs[i] = Vnf(list(range(Const.LAYER_NUM)), self.layers, layer_pr, s_layer_num, n_layers)
             # print("vnf layers: ", self.vnfs[i].layers.keys())
 
     def get_chain(self, t):
