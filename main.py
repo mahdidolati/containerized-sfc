@@ -35,6 +35,59 @@ def test(solver, reqs):
     return avg_rate, avg_dl
 
 
+def share_percentage_test(inter_arrival):
+    np.random.seed(1)
+    my_net = NetGenerator().get_g()
+    ACCEPT_RATIO = "Accept Ratio"
+    DOWNLOAD_LAYER = "Download (MB)"
+    solvers = [
+        NoShareSolver(my_net, 0),
+        ShareSolver(my_net, 0),
+        ShareSolver(my_net, 1),
+        ShareSolver(my_net, 2),
+        PopularitySolver(my_net, 1),
+        PopularitySolver(my_net, 2)
+    ]
+    stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
+    algs = [s.get_name() for s in solvers]
+    stat_collector = StatCollector(algs, stats)
+    #
+    iterations = 5
+    arrival_rate = 1.0 / inter_arrival
+    n_share_ps = np.arange(0.05, 1.05, 0.05)
+    share_percentages = []
+    Const.VNF_LAYER = [3, 6]
+    Const.LAYER_SIZE = [60, 101]
+    for i in range(len(n_share_ps)):
+        np.random.seed(i * 100)
+        n_share_p = n_share_ps[i]
+        x = n_share_p
+        share_percentages.append(x)
+        sfc_gen = SfcGenerator(my_net, n_share_p)
+        run_name = "{:.2f}".format(x)
+        print("run-name:", run_name)
+        for itr in range(iterations):
+            reqs = []
+            req_num = 150
+            t = 0
+            for _ in range(req_num):
+                reqs.append(sfc_gen.get_chain(t))
+                t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
+            for solver in solvers:
+                np.random.seed(itr * 1234)
+                res, dl_vol = test(solver, reqs)
+                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
+                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
+
+    machine_id = "ut"
+    fig_test_id = "{}_slack".format(machine_id)
+    fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, ACCEPT_RATIO, algs, 'Avg. Slack', ACCEPT_RATIO)
+
+    fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, DOWNLOAD_LAYER, algs, 'Avg. Slack', DOWNLOAD_LAYER)
+
+
 def popularity_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
@@ -206,5 +259,7 @@ if __name__ == "__main__":
         layer_num_test(ia)
     elif test_type == "popularity":
         popularity_test(ia)
+    elif test_type == "share":
+        share_percentage_test(ia)
     else:
         print("test: {} is not supported".format(test_type))
