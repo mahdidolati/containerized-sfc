@@ -49,7 +49,7 @@ def share_percentage_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 5
+    iterations = 20
     arrival_rate = 1.0 / inter_arrival
     n_share_ps = [0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8]
     share_percentages = []
@@ -67,6 +67,7 @@ def share_percentage_test(inter_arrival):
             reqs = []
             req_num = 150
             t = 0
+            np.random.seed(itr * 4321)
             for _ in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
