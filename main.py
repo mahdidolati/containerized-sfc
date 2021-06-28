@@ -42,11 +42,8 @@ def share_percentage_test(inter_arrival):
     DOWNLOAD_LAYER = "Download (MB)"
     solvers = [
         NoShareSolver(my_net, 0),
-        ShareSolver(my_net, 0),
-        ShareSolver(my_net, 1),
         ShareSolver(my_net, 2),
-        PopularitySolver(my_net, 1),
-        PopularitySolver(my_net, 2)
+        PopularitySolver(my_net, 1)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
@@ -54,8 +51,7 @@ def share_percentage_test(inter_arrival):
     #
     iterations = 5
     arrival_rate = 1.0 / inter_arrival
-    n_share_ps = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
-                  0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0]
+    n_share_ps = [0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8]
     share_percentages = []
     Const.VNF_LAYER = [3, 6]
     Const.LAYER_SIZE = [60, 101]
