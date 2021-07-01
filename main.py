@@ -1,5 +1,5 @@
 from sfc import SfcGenerator
-from net import NetGenerator
+from my_sys.net import NetGenerator
 from solution import NoShareSolver, ShareSolver, PopularitySolver
 from constants import Const
 from statistic_collector import StatCollector, Stat

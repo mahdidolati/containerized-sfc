@@ -4,7 +4,7 @@ import numpy as np
 class Solver:
     def __init__(self, my_net):
         self.my_net = my_net
-
+        
     def usable_node(self, s, c, chain_req, i, t, delay_budget):
         for tt in range(chain_req.tau1, chain_req.tau2 + 1):
             if self.my_net.g.nodes[c]["nd"].cpu_avail(tt) < chain_req.cpu_req(i) or \
