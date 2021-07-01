@@ -122,6 +122,7 @@ def popularity_test(inter_arrival):
             reqs = []
             req_num = 150
             t = 0
+            np.random.seed(itr * 4321)
             for _ in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
@@ -172,6 +173,7 @@ def slack_time_test(inter_arrival):
             reqs = []
             req_num = 150
             t = 0
+            np.random.seed(itr * 4321)
             for _ in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
@@ -223,6 +225,7 @@ def layer_num_test(inter_arrival):
             reqs = []
             req_num = 150
             t = 0
+            np.random.seed(itr * 4321)
             for _ in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
