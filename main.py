@@ -252,13 +252,13 @@ if __name__ == "__main__":
         elif opt in ("--test-type",):
             print("test type is: {}".format(arg))
             test_type = arg
-    if test_type == "slack":
+    if test_type == "slack" or test_type == "all":
         slack_time_test(ia)
-    elif test_type == "layer":
+    elif test_type == "layer" or test_type == "all":
         layer_num_test(ia)
-    elif test_type == "popularity":
+    elif test_type == "popularity" or test_type == "all":
         popularity_test(ia)
-    elif test_type == "share":
+    elif test_type == "share" or test_type == "all":
         share_percentage_test(ia)
     else:
         print("test: {} is not supported".format(test_type))
