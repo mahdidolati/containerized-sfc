@@ -47,9 +47,15 @@ class Sfc:
 
     def vnf_in_rate(self, i):
         a = 1.0
-        for j in range(i-1):
+        for j in range(i):
             a = a * self.vnfs[j].alpha
         return a * self.traffic_rate
+
+    def vnf_out_rate(self, i):
+        a = 1.0
+        for j in range(i):
+            a = a * self.vnfs[j].alpha
+        return a * self.traffic_rate * self.vnfs[i].alpha
 
     def cpu_req(self, i):
         return self.vnf_in_rate(i) * self.vnfs[i].cpu

@@ -182,7 +182,7 @@ class Link:
         self.embeds = dict()
         self.dl = dict()
 
-    def bw_avail(self, t, s_id):
+    def bw_avail(self, t):
         if self.type == "wired":
             u = 0
             for r in self.embeds:
@@ -193,12 +193,7 @@ class Link:
                 u = u + self.dl[t]
             return self.bw - u
         else:
-            if self.e1.id == s_id:
-                return self.e1.mm_avail(t)
-            elif self.e2.id == s_id:
-                return self.e2.mm_avail(t)
-            else:
-                return 0.0
+            return min(self.e1.mm_tx_avail(t), self.e2.mm_rx_avail(t))
 
     def embed(self, chain_req, i):
         if self.type == "wired":
@@ -206,7 +201,8 @@ class Link:
                 self.embeds[chain_req] = set()
             self.embeds[chain_req].add(i)
         else:
-            self.e1.mm_embed(chain_req, i)
+            self.e1.mm_embed_tx(chain_req, i)
+            self.e2.mm_embed_rx(chain_req, i)
 
     def evict(self, chain_req):
         if self.type == "wired":
@@ -214,6 +210,7 @@ class Link:
                 del self.embeds[chain_req]
         else:
             self.e1.mm_evict(chain_req)
+            self.e2.mm_evict(chain_req)
 
     def add_dl(self, t, r):
         if self.type == "wired":
@@ -255,16 +252,19 @@ class Node:
             self.cpu = np.infty
             self.ram = np.infty
             self.disk = np.infty
-        self.mm_bw = np.random.randint(*Const.MM_BW)
+        self.mm_bw_tx = np.random.randint(*Const.MM_BW)
+        self.mm_bw_rx = np.random.randint(*Const.MM_BW)
         self.layers = dict()
         self.embeds = dict()
-        self.mm_embeds = dict()
+        self.mm_embeds_tx = dict()
+        self.mm_embeds_rx = dict()
         self.dl_embeds = dict()
 
     def reset(self):
         self.layers = dict()
         self.embeds = dict()
-        self.mm_embeds = dict()
+        self.mm_embeds_tx = dict()
+        self.mm_embeds_rx = dict()
         self.dl_embeds = dict()
 
     def cpu_avail(self, t):
@@ -340,24 +340,43 @@ class Node:
         if chain_req in self.embeds:
             del self.embeds[chain_req]
 
-    def mm_avail(self, t):
+    def mm_tx_avail(self, t):
         u = 0
-        for r in self.mm_embeds:
+        for r in self.mm_embeds_tx:
             if r.tau1 <= t <= r.tau2:
-                for i in self.mm_embeds[r]:
+                for i in self.mm_embeds_tx[r]:
+                    # Transmitted traffic in the current node towards the location of i-th VNF of chain r
                     u = u + r.vnf_in_rate(i)
         if t in self.dl_embeds:
             u = u + self.dl_embeds[t]
-        return self.mm_bw - u
+        return self.mm_bw_tx - u
 
-    def mm_embed(self, chain_req, i):
-        if chain_req not in self.mm_embeds:
-            self.mm_embeds[chain_req] = set()
-        self.mm_embeds[chain_req].add(i)
+    def mm_rx_avail(self, t):
+        u = 0
+        for r in self.mm_embeds_rx:
+            if r.tau1 <= t <= r.tau2:
+                for i in self.mm_embeds_rx[r]:
+                    # Transmitted traffic in the current node towards the location of i-th VNF of chain r
+                    u = u + r.vnf_in_rate(i)
+        if t in self.dl_embeds:
+            u = u + self.dl_embeds[t]
+        return self.mm_bw_rx - u
+
+    def mm_embed_tx(self, chain_req, i):
+        if chain_req not in self.mm_embeds_tx:
+            self.mm_embeds_tx[chain_req] = set()
+        self.mm_embeds_tx[chain_req].add(i)
+
+    def mm_embed_rx(self, chain_req, i):
+        if chain_req not in self.mm_embeds_rx:
+            self.mm_embeds_rx[chain_req] = set()
+        self.mm_embeds_rx[chain_req].add(i)
 
     def mm_evict(self, chain_req):
-        if chain_req in self.mm_embeds:
-            del self.mm_embeds[chain_req]
+        if chain_req in self.mm_embeds_tx:
+            del self.mm_embeds_tx[chain_req]
+        if chain_req in self.mm_embeds_rx:
+            del self.mm_embeds_rx[chain_req]
 
     def add_mm_dl(self, t, r):
         if t not in self.dl_embeds:
@@ -407,30 +426,34 @@ class NetGenerator:
             e1 = "e{}".format(l[0])
             e2 = "e{}".format(l[1])
             if np.random.uniform(0, 1.0) < Const.WIRE_LINK_PR:
-                li = Link("wired", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
-                self.g.add_edge(e1, e2, li=li)
-            if np.linalg.norm(self.g.nodes[e1]["nd"].loc - self.g.nodes[e2]["nd"].loc) < 2.0:
-                li = Link("mmWave", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
-                self.g.add_edge(e1, e2, li=li)
+                li1 = Link("wired", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
+                li2 = Link("wired", self.g.nodes[e2]["nd"], self.g.nodes[e1]["nd"])
+                self.g.add_edge(e1, e2, li=li1)
+                self.g.add_edge(e2, e1, li=li2)
+            if np.linalg.norm(self.g.nodes[e1]["nd"].loc - self.g.nodes[e2]["nd"].loc) < Const.MM_MAX_DIST:
+                li1 = Link("mmWave", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
+                li2 = Link("mmWave", self.g.nodes[e2]["nd"], self.g.nodes[e1]["nd"])
+                self.g.add_edge(e1, e2, li=li1)
+                self.g.add_edge(e2, e1, li=li2)
 
     def get_g(self):
-        # fig, ax = plt.subplots()
-        # x = []
-        # y = []
-        # for n in self.g.nodes():
-        #     x.append(self.g.nodes[n]["nd"].loc[0])
-        #     y.append(self.g.nodes[n]["nd"].loc[1])
-        # ax.plot(x, y, '.b')
-        # for n in self.g.nodes():
-        #     ax.annotate(n, self.g.nodes[n]["nd"].loc)
-        # for e in self.g.edges(data=True):
-        #     for j in self.g[e[0]][e[1]]:
-        #         line_t = 'r-'
-        #         if self.g[e[0]][e[1]][j]["li"].type == "mmWave":
-        #             line_t = 'b-'
-        #         ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
-        #                 [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
-        # plt.show()
+        fig, ax = plt.subplots()
+        x = []
+        y = []
+        for n in self.g.nodes():
+            x.append(self.g.nodes[n]["nd"].loc[0])
+            y.append(self.g.nodes[n]["nd"].loc[1])
+        ax.plot(x, y, '.b')
+        for n in self.g.nodes():
+            ax.annotate(n, self.g.nodes[n]["nd"].loc)
+        for e in self.g.edges(data=True):
+            for j in self.g[e[0]][e[1]]:
+                line_t = 'r-'
+                if self.g[e[0]][e[1]][j]["li"].type == "mmWave":
+                    line_t = 'b-'
+                ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
+                        [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
+        plt.show()
         return MyNetwork(self.g)
 
     def get_closest(self, b):
