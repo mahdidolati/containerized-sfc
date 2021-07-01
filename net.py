@@ -43,7 +43,7 @@ class MyNetwork:
         while len(h) > 0:
             bw, cnt, n, cur_path, path_delay, cur_links = heapq.heappop(h)
             if n == d:
-                return -bw, path_delay, cur_links
+                return -bw, path_delay, cur_path, cur_links
             if n in visited:
                 continue
             visited.add(n)
@@ -62,7 +62,7 @@ class MyNetwork:
                                                counter, m, new_path,
                                                path_delay + link_delay,
                                                new_links))
-        return 0, np.infty, []
+        return 0, np.infty, [], []
 
     def get_closest(self, n):
         bestDelay = np.infty
@@ -122,7 +122,7 @@ class MyNetwork:
         dl_rate = volume / (end_t - start_t + 1)
         layer_download = LayerDownload()
         for tt in range(start_t, end_t + 1):
-            path_bw, path_delay, links = self.get_biggest_path(server, "c", tt)
+            path_bw, path_delay, path_nodes, links = self.get_biggest_path(server, "c", tt)
             if path_bw < dl_rate:
                 layer_download.cancel_download()
                 return False, None
@@ -163,16 +163,16 @@ class MyNetwork:
 class Link:
     def __init__(self, tp, s, d):
         self.type = tp
-        self.src = s
-        self.dst = d
-        if self.src.id[0] == "c" or self.dst.id[0] == "c":
+        self.e1 = s
+        self.e2 = d
+        if self.e1.id[0] == "c" or self.e2.id[0] == "c":
             self.bw = np.infty
-            self.delay = 100 * np.linalg.norm(self.src.loc - self.dst.loc)
+            self.delay = 100 * np.linalg.norm(self.e1.loc - self.e2.loc)
         elif self.type == "wired":
-            self.delay = 10 * np.linalg.norm(self.src.loc - self.dst.loc)
+            self.delay = 10 * np.linalg.norm(self.e1.loc - self.e2.loc)
             self.bw = np.random.randint(*Const.LINK_BW)
         else:
-            self.delay = 10 * np.linalg.norm(self.src.loc - self.dst.loc)
+            self.delay = 10 * np.linalg.norm(self.e1.loc - self.e2.loc)
             self.bw = 0
         # print(self.delay)
         self.embeds = dict()
@@ -182,7 +182,7 @@ class Link:
         self.embeds = dict()
         self.dl = dict()
 
-    def bw_avail(self, t):
+    def bw_avail(self, t, s_id):
         if self.type == "wired":
             u = 0
             for r in self.embeds:
@@ -193,7 +193,12 @@ class Link:
                 u = u + self.dl[t]
             return self.bw - u
         else:
-            return self.src.mm_avail(t)
+            if self.e1.id == s_id:
+                return self.e1.mm_avail(t)
+            elif self.e2.id == s_id:
+                return self.e2.mm_avail(t)
+            else:
+                return 0.0
 
     def embed(self, chain_req, i):
         if self.type == "wired":
@@ -201,14 +206,14 @@ class Link:
                 self.embeds[chain_req] = set()
             self.embeds[chain_req].add(i)
         else:
-            self.src.mm_embed(chain_req, i)
+            self.e1.mm_embed(chain_req, i)
 
     def evict(self, chain_req):
         if self.type == "wired":
             if chain_req in self.embeds:
                 del self.embeds[chain_req]
         else:
-            self.src.mm_evict(chain_req)
+            self.e1.mm_evict(chain_req)
 
     def add_dl(self, t, r):
         if self.type == "wired":
@@ -216,7 +221,7 @@ class Link:
                 self.dl[t] = 0
             self.dl[t] = self.dl[t] + r
         else:
-            self.src.add_mm_dl(t, r)
+            self.e1.add_mm_dl(t, r)
 
     def rm_dl(self, t, r):
         if self.type == "wired":
@@ -224,10 +229,10 @@ class Link:
                 return
             self.dl[t] = self.dl[t] - r
         else:
-            self.src.rm_mm_dl(t, r)
+            self.e1.rm_mm_dl(t, r)
 
     def __str__(self):
-        return "{}: {}".format(self.type, self.src.id)
+        return "{}: {}".format(self.type, self.e1.id)
 
     def __repr__(self):
         return self.__str__()
@@ -369,13 +374,13 @@ class NetGenerator:
     def __init__(self):
         base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0), (3, 0), (6, 0)]
         cloud_loc = (10, 3)
-        self.g = nx.MultiGraph()
+        self.g = nx.MultiDiGraph()
         for n in range(len(base_station_loc)):
             n_id = "b{}".format(n)
             nd = Node("base-station", base_station_loc[n], n_id)
             self.g.add_node(n_id, nd=nd)
-        self.edge_num = 15
-        for n in range(self.edge_num):
+        self.e_node_num = 15
+        for n in range(self.e_node_num):
             n_id = "e{}".format(n)
             nd = Node("edge", np.random.uniform(0.5, 5.5, 2), n_id)
             self.g.add_node(n_id, nd=nd)
@@ -384,16 +389,24 @@ class NetGenerator:
         self.g.add_node(n_id, nd=nd)
         #
         for n in range(len(base_station_loc)):
-            c = self.get_closest("b{}".format(n))
-            li = Link("wired", self.g.nodes["b{}".format(n)]["nd"], self.g.nodes["e{}".format(c)]["nd"])
-            self.g.add_edge("b{}".format(n), "e{}".format(c), li=li)
-        c = self.get_closest("c")
-        li = Link("wired", self.g.nodes["c"]["nd"], self.g.nodes["e{}".format(c)]["nd"])
-        self.g.add_edge("c", "e{}".format(c), li=li)
-        for l in combinations(range(self.edge_num), 2):
+            e1 = "b{}".format(n)
+            e2 = "e{}".format(self.get_closest("b{}".format(n)))
+            li1 = Link("wired", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
+            li2 = Link("wired", self.g.nodes[e2]["nd"], self.g.nodes[e1]["nd"])
+            self.g.add_edge(e1, e2, li=li1)
+            self.g.add_edge(e2, e1, li=li2)
+
+        e1 = "c"
+        e2 = "e{}".format(self.get_closest(e1))
+        li1 = Link("wired", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
+        li2 = Link("wired", self.g.nodes[e2]["nd"], self.g.nodes[e1]["nd"])
+        self.g.add_edge(e1, e2, li=li1)
+        self.g.add_edge(e2, e1, li=li2)
+        #
+        for l in combinations(range(self.e_node_num), 2):
             e1 = "e{}".format(l[0])
             e2 = "e{}".format(l[1])
-            if np.random.uniform(0, 1.0) < 0.1:
+            if np.random.uniform(0, 1.0) < Const.WIRE_LINK_PR:
                 li = Link("wired", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
                 self.g.add_edge(e1, e2, li=li)
             if np.linalg.norm(self.g.nodes[e1]["nd"].loc - self.g.nodes[e2]["nd"].loc) < 2.0:
@@ -424,7 +437,7 @@ class NetGenerator:
         ds = np.infty
         closest = None
         l1 = self.g.nodes[b]["nd"].loc
-        for n in range(self.edge_num):
+        for n in range(self.e_node_num):
             l2 = self.g.nodes["e{}".format(n)]["nd"].loc
             d = np.linalg.norm(l1 - l2)
             if closest is None or d < ds:

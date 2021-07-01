@@ -12,6 +12,7 @@ class Const:
     ALPHA_RANGE = [0.8, 1.05]
     LAMBDA_RANGE = [1, 5]
     #
+    WIRE_LINK_PR = 0.1
     LINK_BW = [100, 500]
     MM_BW = [100, 500]
     SERVER_CPU = [16, 32]
