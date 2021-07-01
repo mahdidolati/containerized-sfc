@@ -49,13 +49,13 @@ def share_percentage_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 10
+    iterations = 5
     arrival_rate = 1.0 / inter_arrival
     n_share_ps = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
     share_percentages = []
-    Const.VNF_LAYER = [3, 16]
+    Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [15, 101]
-    Const.VNF_NUM = 30
+    Const.VNF_NUM = 20
     for i in range(len(n_share_ps)):
         np.random.seed(i * 100)
         n_share_p = n_share_ps[i]

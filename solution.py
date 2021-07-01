@@ -1,9 +1,19 @@
 import numpy as np
+import heapq
 
 
 class Solver:
     def __init__(self, my_net):
         self.my_net = my_net
+
+    def sort_nodes_disk(self, all_nodes, chain_req, i):
+        h = []
+        counter = 0
+        for n in all_nodes:
+            R, d = self.my_net.get_missing_layers(n, chain_req, i, chain_req.tau1)
+            heapq.heappush(h, (d, counter, n))
+            counter = counter + 1
+        return h
 
     def usable_node(self, s, c, chain_req, i, t, delay_budget):
         for tt in range(chain_req.tau1, chain_req.tau2 + 1):
@@ -53,23 +63,20 @@ class Solver:
         for i in range(len(chain_req.vnfs)):
             cur_budge = delay_budge / (len(chain_req.vnfs) - i)
             N1 = self.my_net.get_random_edge_nodes(sr)
-            C = dict()
-            for c in N1:
-                n_usable, r_needed = self.usable_node(prev, c, chain_req, i, t, cur_budge)
+            sorted_nodes = self.sort_nodes_disk(N1, chain_req, i)
+            m = None
+            while len(sorted_nodes) > 0:
+                dl_need, cnt, c_node = heapq.heappop(sorted_nodes)
+                n_usable, r_needed = self.usable_node(prev, c_node, chain_req, i, t, cur_budge)
                 if n_usable:
-                    C[c] = r_needed
-            if len(C) == 0:
+                    m = c_node
+                    break
+            if m is None:
                 self.my_net.evict_sfc(chain_req)
                 chain_req.reset()
                 for a in active_dls:
                     a.cancel_download()
                 return False, 0
-            m = None
-            br_needed = np.infty
-            for mm in C:
-                if C[mm] < br_needed:
-                    m = mm
-                    br_needed = C[mm]
             self.my_net.g.nodes[m]["nd"].embed(chain_req, i)
             chain_req.used_servers.add(m)
             R, d = self.my_net.get_missing_layers(m, chain_req, i, chain_req.tau1)
