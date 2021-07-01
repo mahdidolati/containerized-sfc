@@ -253,15 +253,16 @@ if __name__ == "__main__":
         if opt in ("--inter-arrival",):
             ia = int(arg)
         elif opt in ("--test-type",):
-            print("test type is: {}".format(arg))
             test_type = arg
     if test_type == "slack" or test_type == "all":
+        print("running slack because of {}".format(test_type))
         slack_time_test(ia)
-    elif test_type == "layer" or test_type == "all":
+    if test_type == "layer" or test_type == "all":
+        print("running layer because of {}".format(test_type))
         layer_num_test(ia)
-    elif test_type == "popularity" or test_type == "all":
+    if test_type == "popularity" or test_type == "all":
+        print("running popularity because of {}".format(test_type))
         popularity_test(ia)
-    elif test_type == "share" or test_type == "all":
+    if test_type == "share" or test_type == "all":
+        print("running share because of {}".format(test_type))
         share_percentage_test(ia)
-    else:
-        print("test: {} is not supported".format(test_type))
