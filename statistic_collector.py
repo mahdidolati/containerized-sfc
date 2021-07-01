@@ -56,9 +56,12 @@ class Stat:
             t_95n = t_95[-1]
         else:
             t_95n = t_95[len(self.stat) - 2]
-        std1 = np.sqrt(np.sum(np.square(self.stat - np.mean(self.stat)))) / (len(self.stat) - 1)
+        min_stat = min(self.stat)
+        max_stat = max(self.stat)
+        mean_stat = np.mean(self.stat)
+        std1 = np.sqrt(np.sum(np.square(self.stat - mean_stat))) / (len(self.stat) - 1)
         y1_err = t_95n * std1 / np.sqrt(len(self.stat))
-        return y1_err
+        return min(y1_err, abs(mean_stat-min_stat)), min(y1_err, abs(mean_stat+max_stat))
 
 class StatCollector:
     def __init__(self, algs, stats, dilim='-'):
@@ -127,8 +130,9 @@ class StatCollector:
             x_tick = float(run_name.split(self.delim)[x_index])
             for alg in algs:
                 ys[alg_idx[alg]][x_idx[x_tick]] = self.stat_set[run_name][alg][stat_name].get_stat()
-                # ys_err[alg_idx[alg]][0][x_idx[x_tick]] = self.stat_set[run_name][alg][stat_name].get_stat() - np.min(self.stat_set[run_name][alg][stat_name].stat) #self.stat_set[run_name][alg][stat_name].get_stat() - self.stat_set[run_name][alg][stat_name].calc_t95()
-                # ys_err[alg_idx[alg]][1][x_idx[x_tick]] = np.max(self.stat_set[run_name][alg][stat_name].stat) - self.stat_set[run_name][alg][stat_name].get_stat() #self.stat_set[run_name][alg][stat_name].get_stat() + self.stat_set[run_name][alg][stat_name].calc_t95()
+                ys_err_low, ys_err_high = self.stat_set[run_name][alg][stat_name].calc_t95()
+                ys_err[alg_idx[alg]][0][x_idx[x_tick]] = ys_err_low
+                ys_err[alg_idx[alg]][1][x_idx[x_tick]] = ys_err_high
         w.write('ys_err;%s\n' % str(ys_err))
         w.write('x;%s\n' % str(x))
         w.write('ys;%s\n' % str(ys))
@@ -162,8 +166,9 @@ class StatCollector:
                 c_i = float(run_name.split(self.delim)[c_index])
                 ls_i = '%s %s' %(alg, c_i)
                 ys[alg_idx[ls_i]][x_idx[x_tick]] = self.stat_set[run_name][alg][stat_name].get_stat()
-                ys_err[alg_idx[ls_i]][0][x_idx[x_tick]] = self.stat_set[run_name][alg][stat_name].calc_t95()
-                ys_err[alg_idx[ls_i]][1][x_idx[x_tick]] = self.stat_set[run_name][alg][stat_name].calc_t95()
+                ys_err_low, ys_err_high = self.stat_set[run_name][alg][stat_name].calc_t95()
+                ys_err[alg_idx[ls_i]][0][x_idx[x_tick]] = ys_err_low
+                ys_err[alg_idx[ls_i]][1][x_idx[x_tick]] = ys_err_high
         w.write('ys_err;%s\n' % str(ys_err))
         w.write('x;%s\n' % str(x))
         w.write('ys;%s\n' % str(ys))
@@ -192,8 +197,9 @@ class StatCollector:
             c_tick_idx = c_idx[c_tick]
             for alg in algs:
                 ys[c_tick_idx][alg_idx[alg]] = self.stat_set[run_name][alg][stat_name].get_stat()
-                ys_err[c_tick_idx][0][alg_idx[alg]] = self.stat_set[run_name][alg][stat_name].calc_t95()
-                ys_err[c_tick_idx][1][alg_idx[alg]] = self.stat_set[run_name][alg][stat_name].calc_t95()
+                ys_err_low, ys_err_high = self.stat_set[run_name][alg][stat_name].calc_t95()
+                ys_err[c_tick_idx][0][alg_idx[alg]] = ys_err_low
+                ys_err[c_tick_idx][1][alg_idx[alg]] = ys_err_high
         w.write('ys_err;%s\n' % str(ys_err))
         w.write('x;%s\n' % str(algs))
         w.write('ys;%s\n' % str(ys))
