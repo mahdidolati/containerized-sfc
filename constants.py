@@ -1,7 +1,7 @@
 class Const:
     VNF_NUM = 10
-    VNF_CPU = [1, 4]
-    VNF_RAM = [1, 3]
+    VNF_CPU = [0.1, 0.4]
+    VNF_RAM = [0.1, 0.3]
     VNF_LAYER = [5, 12]  # [5, 12]
     TAU1 = [3, 8]
     TAU2 = [10, 20]
@@ -18,4 +18,4 @@ class Const:
     MM_BW = [100, 500]
     SERVER_CPU = [16, 32]
     SERVER_RAM = [4, 32]
-    SERVER_DISK = [100000, 1000000]
+    SERVER_DISK = [80000, 300000]
