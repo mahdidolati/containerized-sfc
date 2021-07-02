@@ -22,8 +22,8 @@ class LayerDownload:
 
 class Vnf:
     def __init__(self, layer_ids, all_layers, layer_pr, s_layer_num, n_layers):
-        self.cpu = np.random.randint(*Const.VNF_CPU)
-        self.ram = np.random.randint(*Const.VNF_RAM)
+        self.cpu = np.random.uniform(*Const.VNF_CPU)
+        self.ram = np.random.uniform(*Const.VNF_RAM)
         self.alpha = np.random.uniform(*Const.ALPHA_RANGE)
         layer_ids = np.random.choice(a=layer_ids, size=s_layer_num, p=layer_pr)
         self.layers = dict()
