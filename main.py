@@ -10,7 +10,7 @@ import sys, getopt
 
 def test(solver, reqs):
     solver.reset()
-    rate = 0.0
+    accepted = 0.0
     layer_dl_vol = 0.0
     sampling_rate = 1.0
     events = []
@@ -25,14 +25,15 @@ def test(solver, reqs):
             status, dl_vol = solver.solve(s, t, sampling_rate)
             if status:
                 layer_dl_vol = layer_dl_vol + dl_vol
-                rate = rate + 1
+                accepted = accepted + 1
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
         elif ev == "FINISH":
             solver.handle_sfc_eviction(s)
-            solver.pre_fetch_layers(t)
-    avg_rate = rate / len(reqs)
-    avg_dl = layer_dl_vol / rate if rate > 0 else 0
+            pro_dl_vol = solver.pre_fetch_layers(t)
+            layer_dl_vol = layer_dl_vol + pro_dl_vol
+    avg_rate = accepted / len(reqs)
+    avg_dl = layer_dl_vol / accepted if accepted > 0 else 0
     return avg_rate, avg_dl
 
 

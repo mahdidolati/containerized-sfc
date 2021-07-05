@@ -221,6 +221,7 @@ class ProactiveSolver(Solver):
 
     def pre_fetch_layers(self, t):
         N1 = self.my_net.get_random_edge_nodes(1.0)
+        dl_vol = 0
         for n in N1:
             for r in range(len(self.popularity_rec)):
                 if self.disk_thresh <= self.my_net.nodes[n]["nd"].disk_avail_ratio(t):
@@ -230,11 +231,13 @@ class ProactiveSolver(Solver):
                         dl_result, dl_obj = self.my_net.do_layer_dl_test(n, R, d, t, t+self.unavail_ahead)
                         if not dl_result:
                             continue
+                        dl_vol = dl_vol + d
                         self.my_net.g.nodes[n]["nd"].add_proactive_layer(
                                                         self.popularity_rec[r].layer_id,
                                                         self.popularity_rec[r].layer_size,
                                                         t, t+self.unavail_ahead+1
                                                     )
+        return dl_vol
 
     def update_layer_popularity(self, chain_req):
         for i in range(len(chain_req.vnfs)):
