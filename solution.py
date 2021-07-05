@@ -246,5 +246,5 @@ class ProactiveSolver(Solver):
                     self.popularity_obj[r] = PopularityEntity(r, chain_req.vnfs[i].layers[r])
                     self.popularity_rec.append(self.popularity_obj[r])
                 else:
-                    self.popularity_obj[r].update_val(chain_req.vnfs[i].layers)
+                    self.popularity_obj[r].update_val(chain_req.vnfs[i].layers[r])
         self.popularity_rec.sort(key=lambda x: x.layer_val, reverse=True)
