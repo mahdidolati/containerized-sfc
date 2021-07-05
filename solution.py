@@ -224,7 +224,7 @@ class ProactiveSolver(Solver):
         dl_vol = 0
         for n in N1:
             for r in range(len(self.popularity_rec)):
-                if self.disk_thresh <= self.my_net.nodes[n]["nd"].disk_avail_ratio(t):
+                if self.disk_thresh <= self.my_net.g.nodes[n]["nd"].disk_avail_ratio(t):
                     if self.my_net.g.nodes[n]["nd"].layer_avail(self.popularity_rec[r].layer_id, t+self.unavail_ahead):
                         R = [self.popularity_rec[r].layer_id]
                         d = self.popularity_rec[r].layer_size
