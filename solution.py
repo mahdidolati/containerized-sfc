@@ -129,7 +129,7 @@ class Solver:
         return True
 
     def pre_fetch_layers(self, t):
-        pass
+        return 0.0
 
     def update_layer_popularity(self, chain_req):
         pass
