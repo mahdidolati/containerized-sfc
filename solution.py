@@ -198,17 +198,16 @@ class PopularitySolver(Solver):
 
 
 class ProactiveSolver(Solver):
-    def __init__(self, my_net, popularity_th, disk_thresh):
+    def __init__(self, my_net, disk_thresh, unavail_ahead):
         super().__init__(my_net)
-        self.popularity_th = popularity_th
         self.my_net.share_layer = True
         self.popularity_rec = list()
         self.popularity_obj = dict()
         self.disk_thresh = disk_thresh
-        self.unavail_ahead = 3
+        self.unavail_ahead = unavail_ahead
 
     def get_name(self):
-        return "A-{}".format(self.popularity_th)
+        return "A-{},{}".format(self.disk_thresh, self.unavail_ahead)
 
     def reset(self):
         self.my_net.reset()
