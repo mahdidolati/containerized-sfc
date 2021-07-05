@@ -18,4 +18,4 @@ class Const:
     MM_BW = [100, 500]
     SERVER_CPU = [16, 32]
     SERVER_RAM = [4, 32]
-    SERVER_DISK = [80000, 300000]
+    SERVER_DISK = [8000, 30000]
