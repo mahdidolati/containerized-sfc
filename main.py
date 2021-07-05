@@ -30,6 +30,7 @@ def test(solver, reqs):
                 counter += 1
         elif ev == "FINISH":
             solver.handle_sfc_eviction(s)
+            solver.pre_fetch_layers(t)
     avg_rate = rate / len(reqs)
     avg_dl = layer_dl_vol / rate if rate > 0 else 0
     return avg_rate, avg_dl

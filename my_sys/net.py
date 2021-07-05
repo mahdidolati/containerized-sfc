@@ -8,16 +8,15 @@ from sfc import LayerDownload
 
 
 class MyLayer:
-    def __init__(self, layer_no, size, chain_user, t, dl_start):
+    def __init__(self, layer_no, size, dl_start, avail_from):
         self.layer_no = layer_no
         self.size = size
-        self.chain_users = set()
-        self.chain_users.add(chain_user)
-        self.avail_from = t
-        self.last_used = chain_user.tau2
-        self.finalized = False
         self.dl_start = dl_start
-        self.unique_used = 1
+        self.avail_from = avail_from
+        self.last_used = avail_from
+        self.unique_used = 0
+        self.chain_users = set()
+        self.finalized = False
 
     def add_user(self, u):
         self.chain_users.add(u)
@@ -302,6 +301,10 @@ class Node:
                 u = u + self.layers[my_layer].size
         return self.disk - u
 
+    def disk_avail_ratio(self, t):
+        a = self.disk_avail(t)
+        return a / self.disk
+
     def layer_avail(self, r, t):
         if self.type[0] == "b":
             return False
@@ -325,16 +328,24 @@ class Node:
             self.embeds[chain_req] = set()
         self.embeds[chain_req].add(i)
 
+    def add_proactive_layer(self, layer_id, layer_size, dl_start, avail_from):
+        if layer_id not in self.layers:
+            ml = MyLayer(layer_id, layer_size, dl_start, avail_from)
+            ml.finalized = True
+            self.layers[layer_id] = ml
+
     def add_layer(self, R, chain_req):
         for r in R:
             if r in self.layers:
                 self.layers[r].add_user(chain_req)
             else:
-                self.layers[r] = MyLayer(r, R[r], chain_req, chain_req.tau1, chain_req.arrival_time)
+                self.layers[r] = MyLayer(r, R[r], chain_req.arrival_time, chain_req.tau1)
+                self.layers[r].add_user(chain_req)
 
     def add_layer_no_share(self, R, chain_req):
         for r in R:
-            self.layers[(r, chain_req)] = MyLayer(r, R[r], chain_req, chain_req.tau1, chain_req.arrival_time)
+            self.layers[(r, chain_req)] = MyLayer(r, R[r], chain_req.arrival_time, chain_req.tau1)
+            self.layers[(r, chain_req)].add_user(chain_req)
 
     def evict(self, chain_req):
         if chain_req in self.embeds:
