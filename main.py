@@ -6,6 +6,7 @@ from statistic_collector import StatCollector, Stat
 import heapq
 import numpy as np
 import sys, getopt
+from optimal import solve_optimal
 
 
 def test(solver, reqs):
@@ -35,6 +36,61 @@ def test(solver, reqs):
     avg_rate = accepted / len(reqs)
     avg_dl = layer_dl_vol / accepted if accepted > 0 else 0
     return avg_rate, avg_dl
+
+
+def optimal_test(inter_arrival):
+    np.random.seed(1)
+    my_net = NetGenerator().get_g()
+    ACCEPT_RATIO = "Accept Ratio"
+    DOWNLOAD_LAYER = "Download (MB)"
+    solvers = [
+        NoShareSolver(my_net, 0),
+        ShareSolver(my_net, 2),
+        PopularitySolver(my_net, 1),
+        ProactiveSolver(my_net, 0.4, 3)
+    ]
+    stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
+    algs = [s.get_name() for s in solvers]
+    stat_collector = StatCollector(algs, stats)
+    #
+    iterations = 5
+    arrival_rate = 1.0 / inter_arrival
+    n_share_ps = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+    share_percentages = []
+    Const.VNF_LAYER = [5, 16]
+    Const.LAYER_SIZE = [15, 101]
+    Const.VNF_NUM = 20
+    for i in range(len(n_share_ps)):
+        np.random.seed(i * 100)
+        n_share_p = n_share_ps[i]
+        x = n_share_p
+        share_percentages.append(x)
+        sfc_gen = SfcGenerator(my_net, n_share_p)
+        run_name = "{:.2f}".format(x)
+        print("run-name:", run_name)
+        for itr in range(iterations):
+            reqs = []
+            req_num = 15
+            t = 0
+            np.random.seed(itr * 4321)
+            for _ in range(req_num):
+                reqs.append(sfc_gen.get_chain(t))
+                t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
+            #
+            np.random.seed(itr * 1234)
+            res, dl_vol = solve_optimal(my_net, sfc_gen.layers, reqs)
+            stat_collector.add_stat("O", ACCEPT_RATIO, run_name, res)
+            stat_collector.add_stat("O", DOWNLOAD_LAYER, run_name, dl_vol)
+
+    machine_id = "ut"
+    fig_test_id = "{}_optimal".format(machine_id)
+    fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, ACCEPT_RATIO, algs, 'Share Percentage',
+                                 ACCEPT_RATIO)
+
+    fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, DOWNLOAD_LAYER, algs, 'Share Percentage',
+                                 DOWNLOAD_LAYER)
 
 
 def share_percentage_test(inter_arrival):
@@ -249,7 +305,7 @@ def layer_num_test(inter_arrival):
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    test_type = "popularity"
+    test_type = "optimal"
     ia = 2
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
@@ -269,3 +325,6 @@ if __name__ == "__main__":
     if test_type == "share" or test_type == "all":
         print("running share because of {}".format(test_type))
         share_percentage_test(ia)
+    if test_type == "optimal" or test_type == "all":
+        print("running optimal because of {}".format(test_type))
+        optimal_test(ia)

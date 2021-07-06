@@ -151,6 +151,27 @@ class MyNetwork:
         for m, l in to_be_delete:
             del self.g.nodes[m]["nd"].layers[l]
 
+    def get_link_sets(self):
+        Lw = set()
+        Lm = set()
+        for e in self.g.edges():
+            for j in self.g[e[0]][e[1]]:
+                if self.g[e[0]][e[1]][j]["li"].type == "wired":
+                    Lw.add((e[0], e[1], j))
+                else:
+                    Lm.add((e[0], e[1], j))
+        return Lw, Lm
+
+    def get_all_edge_nodes(self):
+        return self.get_random_edge_nodes(1.0)
+
+    def get_all_base_stations(self):
+        B = list()
+        for n in self.g.nodes():
+            if n[0] == "b":
+                B.append(n)
+        return B
+
     def reset(self):
         for n in self.g.nodes():
             self.g.nodes[n]["nd"].reset()

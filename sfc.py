@@ -21,17 +21,20 @@ class LayerDownload:
 
 
 class Vnf:
-    def __init__(self, layer_ids, all_layers, layer_pr, s_layer_num, n_layers):
+    def __init__(self, layer_ids, all_layers, n_share_p, layer_pr):
         self.cpu = np.random.uniform(*Const.VNF_CPU)
         self.ram = np.random.uniform(*Const.VNF_RAM)
         self.alpha = np.random.uniform(*Const.ALPHA_RANGE)
-        layer_ids = np.random.choice(a=layer_ids, size=s_layer_num, p=layer_pr)
+        v_layer = np.random.randint(*Const.VNF_LAYER)
+        s_layer = int(np.ceil(v_layer * (1-n_share_p)))
+        layer_ids = np.random.choice(a=layer_ids, size=s_layer, p=layer_pr)
         self.layers = dict()
         for i in layer_ids:
             self.layers[i] = all_layers[i]
-        for i in n_layers:
-            self.layers[i] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
-
+        n_layer = int(np.ceil(v_layer * n_share_p))
+        new_layer_id = max(all_layers.keys()) + 1
+        for i in range(n_layer):
+            self.layers[i+new_layer_id] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
 
 class Sfc:
     def __init__(self, t, vnfs):
@@ -77,12 +80,13 @@ class SfcGenerator:
     def __init__(self, my_net, n_share_p=1.0):
         self.my_net = my_net
         self.layers = dict()
-        for i in range(Const.LAYER_NUM):
+        sharable_ids = list(range(Const.LAYER_NUM))
+        for i in sharable_ids:
             self.layers[i] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
         self.no_share_id = Const.LAYER_NUM
         layer_pr = []
-        for layer_no in self.layers:
-            layer_pr.append(1.0 / (layer_no+1))
+        for layer_id in sharable_ids:
+            layer_pr.append(1.0 / (layer_id+1))
         s = 0
         for x in layer_pr:
             s += x
@@ -91,12 +95,10 @@ class SfcGenerator:
         self.vnfs = dict()
         self.vnf_num = Const.VNF_NUM
         for i in range(self.vnf_num):
-            v_layers = np.random.randint(*Const.VNF_LAYER)
-            s_layer_num = int(np.ceil(v_layers * n_share_p))
-            n_layer_num = int(np.floor(v_layers * (1.0 - n_share_p)))
-            n_layers = list(range(self.no_share_id, self.no_share_id + n_layer_num))
-            self.no_share_id = self.no_share_id + n_layer_num
-            self.vnfs[i] = Vnf(list(range(Const.LAYER_NUM)), self.layers, layer_pr, s_layer_num, n_layers)
+            self.vnfs[i] = Vnf(sharable_ids, self.layers, n_share_p, layer_pr)
+            for r in self.vnfs[i].layers:
+                if r not in self.layers:
+                    self.layers[r] = self.vnfs[i].layers[r]
             # print("vnf layers: ", self.vnfs[i].layers.keys())
 
     def get_chain(self, t):
