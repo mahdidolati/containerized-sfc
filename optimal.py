@@ -34,4 +34,15 @@ def solve_optimal(my_net, R, reqs):
         for r in range(layer_no):
             for t in range(T):
                 constraints += [z_var[(e,r,t)] + y_var[(e,r,t)] <= 1]
+
+    obj = 0
+    for u in a_var:
+        obj += a_var[u]
+    objective = cp.Maximize(obj)
+
+    prob = cp.Problem(objective, constraints)
+    prob.solve()
+    for u in a_var:
+        print(a_var[u].value)
+
     return 0, 0
