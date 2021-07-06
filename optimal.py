@@ -13,8 +13,15 @@ def solve_optimal(my_net, R, reqs):
     U = len(reqs)
     Rn = len(R)
     T = get_last_t(reqs)
-    Lw, Lm = my_net.get_link_sets()
-    B = my_net.get_all_base_stations()
-    E = my_net.get_all_edge_nodes()
-    a = cp.Variable(U, integer=True)
-    z = cp.Variable((E, Rn, T), integer=True)
+    wired_link, mm_links = my_net.get_link_sets()
+    all_bases = my_net.get_all_base_stations()
+    all_enodes = my_net.get_all_edge_nodes()
+    a_var = dict()
+    for u in range(U):
+        a_var[u] = cp.Variable(integer=True)
+    z_var = dict()
+    for e in range(len(all_enodes)):
+        for r in range(Rn):
+            for t in range(T):
+                z_var[(e,r,t)] = cp.Variable(integer=True)
+    return 0, 0

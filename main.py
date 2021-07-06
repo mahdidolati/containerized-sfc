@@ -50,12 +50,12 @@ def optimal_test(inter_arrival):
         ProactiveSolver(my_net, 0.4, 3)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
-    algs = [s.get_name() for s in solvers]
+    algs = ["O"]
     stat_collector = StatCollector(algs, stats)
     #
     iterations = 5
     arrival_rate = 1.0 / inter_arrival
-    n_share_ps = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+    n_share_ps = [0.2, 0.3, 0.4]
     share_percentages = []
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [15, 101]
