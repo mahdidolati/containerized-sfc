@@ -11,7 +11,7 @@ def get_last_t(reqs):
 
 def solve_optimal(my_net, R, reqs):
     U = len(reqs)
-    Rn = len(R)
+    layer_no = len(R)
     T = get_last_t(reqs)
     wired_link, mm_links = my_net.get_link_sets()
     all_bases = my_net.get_all_base_stations()
@@ -21,7 +21,17 @@ def solve_optimal(my_net, R, reqs):
         a_var[u] = cp.Variable(integer=True)
     z_var = dict()
     for e in range(len(all_enodes)):
-        for r in range(Rn):
+        for r in range(layer_no):
             for t in range(T):
                 z_var[(e,r,t)] = cp.Variable(integer=True)
+    y_var = dict()
+    for e in range(len(all_enodes)):
+        for r in range(layer_no):
+            for t in range(T):
+                y_var[(e, r, t)] = cp.Variable(integer=True)
+    constraints = []
+    for e in range(len(all_enodes)):
+        for r in range(layer_no):
+            for t in range(T):
+                constraints += [z_var[(e,r,t)] + y_var[(e,r,t)] <= 1]
     return 0, 0

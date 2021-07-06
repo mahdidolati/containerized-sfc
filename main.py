@@ -53,9 +53,9 @@ def optimal_test(inter_arrival):
     algs = ["O"]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 5
+    iterations = 2
     arrival_rate = 1.0 / inter_arrival
-    n_share_ps = [0.2, 0.3, 0.4]
+    n_share_ps = [0.2, 0.3]
     share_percentages = []
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [15, 101]
