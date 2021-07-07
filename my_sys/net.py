@@ -152,14 +152,14 @@ class MyNetwork:
             del self.g.nodes[m]["nd"].layers[l]
 
     def get_link_sets(self):
-        Lw = set()
-        Lm = set()
+        Lw = list()
+        Lm = list()
         for e in self.g.edges():
             for j in self.g[e[0]][e[1]]:
                 if self.g[e[0]][e[1]][j]["li"].type == "wired":
-                    Lw.add((e[0], e[1], j))
+                    Lw.append((e[0], e[1], j))
                 else:
-                    Lm.add((e[0], e[1], j))
+                    Lm.append((e[0], e[1], j))
         return Lw, Lm
 
     def get_all_edge_nodes(self):
