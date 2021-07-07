@@ -218,7 +218,7 @@ def slack_time_test(inter_arrival):
     #
     iterations = 5
     arrival_rate = 1.0 / inter_arrival
-    tau1s = [[1, 4], [2, 5], [3, 6], [4, 7], [5, 8], [6, 9], [7, 10]]
+    tau1s = [[1, 4], [2, 5], [3, 6]]  #, [4, 7], [5, 8], [6, 9], [7, 10]]
     tau1_avg = []
     Const.VNF_LAYER = [3, 6]
     Const.LAYER_SIZE = [60, 101]
