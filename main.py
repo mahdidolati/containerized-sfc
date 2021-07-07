@@ -325,6 +325,6 @@ if __name__ == "__main__":
     if test_type == "share" or test_type == "all":
         print("running share because of {}".format(test_type))
         share_percentage_test(ia)
-    if test_type == "optimal" or test_type == "all":
-        print("running optimal because of {}".format(test_type))
-        optimal_test(ia)
+    # if test_type == "optimal" or test_type == "all":
+    #     print("running optimal because of {}".format(test_type))
+    #     optimal_test(ia)
