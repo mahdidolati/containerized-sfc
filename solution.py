@@ -32,7 +32,7 @@ class Solver:
         if c[0] == "b":
             return False, 0
         R, d = self.my_net.get_missing_layers(c, chain_req, i, chain_req.tau1)
-        for tt in range(t, chain_req.tau2 + 1):
+        for tt in range(chain_req.tau1, chain_req.tau2 + 1):
             if self.my_net.g.nodes[c]["nd"].disk_avail(tt) < d:
                 return False, 0
         dl_result, dl_obj = self.my_net.do_layer_dl_test(c, R, d, t, chain_req.tau1-1)
@@ -70,6 +70,7 @@ class Solver:
         delay_budge = chain_req.max_delay
         active_dls = []
         self.update_layer_popularity(chain_req)
+        mark_del_layer = dict()
         for i in range(len(chain_req.vnfs)):
             cur_budge = delay_budge / (len(chain_req.vnfs) - i)
             N1 = self.my_net.get_random_edge_nodes(sr)
@@ -90,6 +91,13 @@ class Solver:
             self.my_net.g.nodes[m]["nd"].embed(chain_req, i)
             chain_req.used_servers.add(m)
             R, d = self.my_net.get_missing_layers(m, chain_req, i, chain_req.tau1)
+            max_del = 0
+            for tt in range(chain_req.tau1, chain_req.tau2 + 1):
+                max_del = max(max_del, abs(self.my_net.g.nodes[m]["nd"].disk_avail(tt) - d))
+            if max_del > 0:
+                if m not in mark_del_layer:
+                    mark_del_layer[m] = set()
+                mark_del_layer[m].update(self.my_net.g.nodes[m]["nd"].get_unused(max_del))
             layer_download_vol = layer_download_vol + d
             if len(R) > 0:
                 dl_result, dl_obj = self.my_net.do_layer_dl_test(m, R, d, t, chain_req.tau1 - 1)
@@ -107,6 +115,9 @@ class Solver:
         for m in chain_req.used_servers:
             for l in self.my_net.g.nodes[m]["nd"].layers:
                 self.my_net.g.nodes[m]["nd"].layers[l].finalized = True
+        for m in mark_del_layer:
+            for l in mark_del_layer[m]:
+                del self.my_net.g.nodes[m]["nd"].layers[l]
         return True, layer_download_vol
 
     def handle_sfc_eviction(self, chain_req):
@@ -248,3 +259,43 @@ class ProactiveSolver(Solver):
                 else:
                     self.popularity_obj[r].update_val(chain_req.vnfs[i].layers[r])
         self.popularity_rec.sort(key=lambda x: x.layer_val, reverse=True)
+
+
+class StorageAwareSolver(Solver):
+    def __init__(self, my_net):
+        super().__init__(my_net)
+        self.my_net.share_layer = True
+
+    def get_name(self):
+        return "SA"
+
+    def usable_node(self, s, c, chain_req, i, t, delay_budget):
+        for tt in range(chain_req.tau1, chain_req.tau2 + 1):
+            if self.my_net.g.nodes[c]["nd"].cpu_avail(tt) < chain_req.cpu_req(i) or \
+                    self.my_net.g.nodes[c]["nd"].ram_avail(tt) < chain_req.ram_req(i):
+                return False, 0
+        if c[0] == "b":
+            return False, 0
+        R, d = self.my_net.get_missing_layers(c, chain_req, i, chain_req.tau1)
+        for tt in range(chain_req.tau1, chain_req.tau2 + 1):
+            if self.my_net.g.nodes[c]["nd"].disk_avail_no_cache(tt) < d:
+                return False, 0
+        dl_result, dl_obj = self.my_net.do_layer_dl_test(c, R, d, t, chain_req.tau1-1)
+        if not dl_result:
+            return False, 0
+        dl_obj.cancel_download()
+        if s != c:
+            path_bw, path_delay, path_nodes, links = self.my_net.get_biggest_path(s, c, chain_req.tau1, delay_budget)
+            if path_bw == 0 or path_delay > delay_budget:
+                return False, 0
+            min_bw = self.my_net.get_min_bw(links, chain_req.tau1, chain_req.tau2)
+            if min_bw < chain_req.vnf_in_rate(i):
+                return False, 0
+        return True, len(R)
+
+    def reset(self):
+        self.my_net.reset()
+        self.my_net.share_layer = True
+
+    def delete_layer(self, target_layer, t):
+        return False

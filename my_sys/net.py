@@ -322,6 +322,28 @@ class Node:
                 u = u + self.layers[my_layer].size
         return self.disk - u
 
+    def disk_avail_no_cache(self, t):
+        if self.type[0] == "b":
+            return 0
+        if self.type[0] == "c":
+            return np.infty
+        u = 0
+        for my_layer in self.layers:
+            if len(self.layers[my_layer].chain_users) > 0:
+                if t >= self.layers[my_layer].dl_start:
+                    u = u + self.layers[my_layer].size
+        return self.disk - u
+
+    def get_unused(self, max_del):
+        unused = set()
+        for my_layer in self.layers:
+            if len(self.layers[my_layer].chain_users) == 0:
+                unused.add(my_layer)
+                max_del = max_del - self.layers[my_layer].size
+            if max_del <= 0:
+                break
+        return unused
+
     def disk_avail_ratio(self, t):
         a = self.disk_avail(t)
         return a / self.disk
