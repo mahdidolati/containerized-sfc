@@ -309,8 +309,8 @@ def layer_num_test(inter_arrival):
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    test_type = "optimal"
-    ia = 2
+    test_type = "all"
+    ia = 5
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):
