@@ -13,7 +13,7 @@ class Const:
     LAMBDA_RANGE = [1, 5]
     #
     WIRE_LINK_PR = 0.1
-    MM_MAX_DIST = 2.0
+    MM_MAX_DIST = 1.0
     LINK_BW = [100, 500]
     MM_BW = [100, 500]
     SERVER_CPU = [16, 32]

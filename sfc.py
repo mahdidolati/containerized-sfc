@@ -26,12 +26,12 @@ class Vnf:
         self.ram = np.random.uniform(*Const.VNF_RAM)
         self.alpha = np.random.uniform(*Const.ALPHA_RANGE)
         v_layer = np.random.randint(*Const.VNF_LAYER)
-        s_layer = int(np.ceil(v_layer * (1-n_share_p)))
+        s_layer = int(np.ceil(v_layer * n_share_p))
         layer_ids = np.random.choice(a=layer_ids, size=s_layer, p=layer_pr)
         self.layers = dict()
         for i in layer_ids:
             self.layers[i] = all_layers[i]
-        n_layer = int(np.ceil(v_layer * n_share_p))
+        n_layer = int(np.ceil(v_layer * (1-n_share_p)))
         new_layer_id = max(all_layers.keys()) + 1
         for i in range(n_layer):
             self.layers[i+new_layer_id] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes

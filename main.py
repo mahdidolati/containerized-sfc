@@ -55,7 +55,7 @@ def optimal_test(inter_arrival):
     #
     iterations = 2
     arrival_rate = 1.0 / inter_arrival
-    n_share_ps = [0.2, 0.3]
+    n_share_ps = [1.0]
     share_percentages = []
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [15, 101]
@@ -70,7 +70,7 @@ def optimal_test(inter_arrival):
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 15
+            req_num = 7
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):

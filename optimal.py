@@ -8,8 +8,6 @@ def get_last_t(reqs):
         t_max = max(r.tau2, t_max)
     return int(t_max)
 
-def get_gamma_1(Gamma_var):
-    pass
 
 def solve_optimal(my_net, R, reqs):
     T = get_last_t(reqs)
@@ -64,10 +62,11 @@ def solve_optimal(my_net, R, reqs):
             Gamma_var[e * (len(R)*T):(e + 1) * (len(R)*T)]
         ]
 
+    print("model constructed...")
     objective = cp.Maximize(cp.sum(a_var))
 
     prob = cp.Problem(objective, constraints)
-    prob.solve(solver=cp.CBC)
+    prob.solve(solver=cp.CBC, verbose=True)
 
     print("Problem status {} with value {}".format(prob.status, prob.value))
 
