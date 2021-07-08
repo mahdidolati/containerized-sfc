@@ -392,7 +392,7 @@ class Node:
                 to_del.add(rr)
             if del_vol >= self.layers[r].size:
                 break
-        if to_del < self.layers[r].size:
+        if del_vol < self.layers[r].size:
             return False
         self.layers[r].marked_delete = False
         for rr in to_del:
