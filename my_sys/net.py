@@ -412,7 +412,8 @@ class Node:
 
     def mark_needed(self, chain_req, i):
         for r in chain_req.vnfs[i].layers:
-            self.layers[r].marked_needed = True
+            if r in self.layers:
+                self.layers[r].marked_needed = True
 
     def mark_no_need(self, chain_req):
         for i in range(len(chain_req.vnfs)):
