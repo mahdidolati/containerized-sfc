@@ -89,15 +89,17 @@ class Solver:
                     a.cancel_download()
                 return False, 0
             self.my_net.g.nodes[m]["nd"].embed(chain_req, i)
+            self.my_net.g.nodes[m]["nd"].mark_needed(chain_req, i)
             chain_req.used_servers.add(m)
             R, d = self.my_net.get_missing_layers(m, chain_req, i, chain_req.tau1)
             max_del = 0
             for tt in range(chain_req.tau1, chain_req.tau2 + 1):
                 max_del = max(max_del, abs(self.my_net.g.nodes[m]["nd"].disk_avail(tt) - d))
+            # this if can be true only in storage aware alg
             if max_del > 0:
                 if m not in mark_del_layer:
                     mark_del_layer[m] = set()
-                mark_del_layer[m].update(self.my_net.g.nodes[m]["nd"].get_unused(max_del))
+                mark_del_layer[m].update(self.my_net.g.nodes[m]["nd"].get_unused_for_del(max_del))
             layer_download_vol = layer_download_vol + d
             if len(R) > 0:
                 dl_result, dl_obj = self.my_net.do_layer_dl_test(m, R, d, t, chain_req.tau1 - 1)

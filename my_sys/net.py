@@ -17,6 +17,9 @@ class MyLayer:
         self.unique_used = 0
         self.chain_users = set()
         self.finalized = False
+        # for storage aware-ness
+        self.marked_needed = False
+        self.marked_delete = False
 
     def add_user(self, u):
         self.chain_users.add(u)
@@ -27,6 +30,7 @@ class MyLayer:
     def remove_user(self, u):
         if u in self.chain_users:
             self.chain_users.remove(u)
+        self.marked_needed = len(self.chain_users) > 0
 
 
 class MyNetwork:
@@ -138,6 +142,7 @@ class MyNetwork:
         return min_bw
 
     def evict_sfc(self, chain_req):
+        self.mark_no_need_all(chain_req)
         for n in self.g.nodes():
             self.g.nodes[n]["nd"].evict(chain_req)
         for e in self.g.edges():
@@ -171,6 +176,10 @@ class MyNetwork:
             if n[0] == "b":
                 B.append(n)
         return B
+
+    def mark_no_need_all(self, chain_req):
+        for m in chain_req.used_servers:
+            self.g.nodes[m]["nd"].mark_no_need(chain_req)
 
     def reset(self):
         for n in self.g.nodes():
@@ -329,17 +338,20 @@ class Node:
             return np.infty
         u = 0
         for my_layer in self.layers:
-            if len(self.layers[my_layer].chain_users) > 0:
+            if len(self.layers[my_layer].chain_users) > 0 or self.layers[my_layer].marked_needed:
                 if t >= self.layers[my_layer].dl_start:
                     u = u + self.layers[my_layer].size
         return self.disk - u
 
-    def get_unused(self, max_del):
+    def get_unused_for_del(self, max_del):
         unused = set()
         for my_layer in self.layers:
-            if len(self.layers[my_layer].chain_users) == 0:
+            if len(self.layers[my_layer].chain_users) == 0 and \
+                    not self.layers[my_layer].marked_needed and \
+                    not self.layers[my_layer].marked_delete:
                 unused.add(my_layer)
                 max_del = max_del - self.layers[my_layer].size
+                self.layers[my_layer].marked_delete = True
             if max_del <= 0:
                 break
         return unused
@@ -355,6 +367,9 @@ class Node:
             return True
         if r not in self.layers:
             return False
+        if self.layers[r].marked_delete:
+            if not self.swap_layer(r):
+                return False
         return t >= self.layers[r].avail_from
 
     def layer_avail_no_share(self, r, chain_req, t):
@@ -366,6 +381,24 @@ class Node:
             return False
         return t >= self.layers[(r, chain_req)].avail_from
 
+    def swap_layer(self, r):
+        del_vol = 0
+        to_del = set()
+        for rr in self.layers:
+            if len(self.layers[rr].chain_users) == 0 and\
+                    not self.layers[rr].marked_needed and\
+                    not self.layers[rr].marked_delete:
+                del_vol = del_vol + self.layers[rr].size
+                to_del.add(rr)
+            if del_vol >= self.layers[r].size:
+                break
+        if to_del < self.layers[r].size:
+            return False
+        self.layers[r].marked_delete = False
+        for rr in to_del:
+            self.layers[rr].marked_delete = True
+        return True
+
     def embed(self, chain_req, i):
         if chain_req not in self.embeds:
             self.embeds[chain_req] = set()
@@ -376,6 +409,16 @@ class Node:
             ml = MyLayer(layer_id, layer_size, dl_start, avail_from)
             ml.finalized = True
             self.layers[layer_id] = ml
+
+    def mark_needed(self, chain_req, i):
+        for r in chain_req.vnfs[i].layers:
+            self.layers[r].marked_needed = True
+
+    def mark_no_need(self, chain_req):
+        for i in range(len(chain_req.vnfs)):
+            for r in chain_req.vnfs[i].layers:
+                if r in self.layers:
+                    self.layers[r].marked_needed = False
 
     def add_layer(self, R, chain_req):
         for r in R:
