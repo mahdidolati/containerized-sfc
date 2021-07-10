@@ -1,7 +1,7 @@
 class Const:
     VNF_NUM = 15
-    VNF_CPU = [0.1, 0.15]
-    VNF_RAM = [0.1, 0.15]
+    VNF_CPU = [0.01, 0.015]
+    VNF_RAM = [0.01, 0.015]
     VNF_LAYER = [5, 12]  # [5, 12]
     TAU1 = [3, 8]
     TAU2 = [10, 20]
@@ -12,8 +12,8 @@ class Const:
     ALPHA_RANGE = [0.8, 1.05]
     LAMBDA_RANGE = [10, 50]
     #
-    WIRE_LINK_PR = 0.2
-    MM_MAX_DIST = 2.0
+    WIRE_LINK_PR = 0.3
+    MM_MAX_DIST = 1.7
     LINK_BW = [100, 500]
     MM_BW = [100, 500]
     SERVER_CPU = [16, 32]
