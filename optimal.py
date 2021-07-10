@@ -39,6 +39,7 @@ def solve_optimal(my_net, R, reqs):
                     t_0_end_1.append(e*(len(R)*(T-1))+r*(T-1)+t)
                 if t != 0:
                     t_1_end.append(e*(len(R)*(T-1))+r*(T-1)+t)
+
     constraints += [
         Gamma_var[t_1_end] - Gamma_var[t_0_end_1] == z_var[t_1_end] - y_var[t_1_end]
     ]
@@ -61,6 +62,7 @@ def solve_optimal(my_net, R, reqs):
             adj_in[cloud_node][l * (len(R) * T):(l + 1) * (len(R) * T)] = np.ones((len(R) * T,))
         if L[l][0] == cloud_node:
             adj_out[cloud_node][l * (len(R) * T):(l + 1) * (len(R) * T)] = np.ones((len(R) * T,))
+
     for e in range(len(E)):
         adj_in[e] = np.zeros((L_len*len(R) * T,))
         adj_out[e] = np.zeros((L_len*len(R) * T,))
@@ -79,6 +81,7 @@ def solve_optimal(my_net, R, reqs):
             ==
             Gamma_var[e * (len(R) * T):(e + 1) * (len(R) * T)]
         ]
+
     for e in range(len(E)):
         for ee in range(len(E)):
             if e != ee:
