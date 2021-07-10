@@ -126,7 +126,7 @@ def share_percentage_test(inter_arrival):
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 150
+            req_num = 350
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -179,7 +179,7 @@ def popularity_test(inter_arrival):
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 150
+            req_num = 350
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -232,7 +232,7 @@ def slack_time_test(inter_arrival):
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 150
+            req_num = 350
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -286,7 +286,7 @@ def layer_num_test(inter_arrival):
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 150
+            req_num = 350
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
