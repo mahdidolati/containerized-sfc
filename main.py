@@ -314,7 +314,7 @@ if __name__ == "__main__":
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):
-            ia = int(arg)
+            ia = float(arg)
         elif opt in ("--test-type",):
             test_type = arg
     if test_type == "slack" or test_type == "all":
