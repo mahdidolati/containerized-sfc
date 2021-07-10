@@ -51,16 +51,42 @@ def solve_optimal(my_net, R, reqs):
         Psi_var - K_var <= np.zeros((len(E) * len(R) * T,))
     ]
 
+    adj_in = dict()
+    adj_out = dict()
+    cloud_node = "c"
+    adj_in[cloud_node] = np.zeros((L_len * len(R) * T,))
+    adj_out[cloud_node] = np.zeros((L_len * len(R) * T,))
+    for l in range(L_len):
+        if L[l][1] == cloud_node:
+            adj_in[cloud_node][l * (len(R) * T):(l + 1) * (len(R) * T)] = np.ones((len(R) * T,))
+        if L[l][0] == cloud_node:
+            adj_out[cloud_node][l * (len(R) * T):(l + 1) * (len(R) * T)] = np.ones((len(R) * T,))
     for e in range(len(E)):
-        adj_vtc = np.zeros((L_len*len(R)*T,))
+        adj_in[e] = np.zeros((L_len*len(R) * T,))
+        adj_out[e] = np.zeros((L_len*len(R) * T,))
         for l in range(L_len):
             if L[l][1] == E[e]:
-                adj_vtc[l*(len(R)*T):(l+1)*(len(R)*T)] = np.ones((len(R)*T,))
+                adj_in[e][l * (len(R) * T):(l + 1) * (len(R) * T)] = np.ones((len(R) * T,))
+            if L[l][0] == E[e]:
+                adj_out[e][l * (len(R) * T):(l + 1) * (len(R) * T)] = np.ones((len(R) * T,))
         constraints += [
-            w_var[e * (L_len*len(R)*T):(e + 1) * (L_len*len(R)*T)] @ adj_vtc
+            w_var[e * (L_len*len(R) * T):(e + 1) * (L_len*len(R) * T)] @ adj_in[e]
             ==
-            Gamma_var[e * (len(R)*T):(e + 1) * (len(R)*T)]
+            Gamma_var[e * (len(R) * T):(e + 1) * (len(R) * T)]
         ]
+        constraints += [
+            w_var[e * (L_len * len(R) * T):(e + 1) * (L_len * len(R) * T)] @ adj_out[cloud_node]
+            ==
+            Gamma_var[e * (len(R) * T):(e + 1) * (len(R) * T)]
+        ]
+    for e in range(len(E)):
+        for ee in range(len(E)):
+            if e != ee:
+                constraints += [
+                    w_var[e * (L_len * len(R) * T):(e + 1) * (L_len * len(R) * T)] @ adj_in[ee]
+                    ==
+                    w_var[e * (L_len * len(R) * T):(e + 1) * (L_len * len(R) * T)] @ adj_out[ee]
+                ]
 
     print("model constructed...")
     objective = cp.Maximize(cp.sum(a_var))
