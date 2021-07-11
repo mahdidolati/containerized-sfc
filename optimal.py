@@ -10,7 +10,7 @@ def get_last_t(reqs):
     return int(t_max)
 
 
-def solve_optimal(my_net, R, reqs):
+def solve_optimal(my_net, R, Rvol, reqs):
     T = get_last_t(reqs)
     Lw, Lm = my_net.get_link_sets()
     L = Lw + Lm
@@ -127,6 +127,26 @@ def solve_optimal(my_net, R, reqs):
     # G var: Amount of download
     constraints += [
         G_var == Gamma_G1_var + Gamma_g_var
+    ]
+    ###
+
+    # Disk capacity constraint
+    agg = np.zeros((len(R)*T, T))
+    for t in range(T):
+        agg[t:len(R)*T:T, t] = np.ones((len(R),)) * Rvol
+    for e in range(len(E)):
+        constraints += [
+            Gamma_var[e*len(R)*T:(e+1)*len(R)*T] @ agg <= np.ones((T,)) * my_net.g.nodes[E[e]]["nd"].disk
+        ]
+    ###
+
+    # Psi var
+    disk_req = np.ones((len(E)*len(R)*T,))
+    for e in range(len(E)):
+        for r in range(len(R)):
+            disk_req[e * (len(R) * T) + r * T:e * (len(R) * T) + (r +1) * T] *= Rvol[r]
+    constraints += [
+        Psi_var * disk_req <= G_var
     ]
     ###
 
