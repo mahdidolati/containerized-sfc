@@ -1,5 +1,6 @@
 import cvxpy as cp
 import numpy as np
+from constants import Const
 
 
 def get_last_t(reqs):
@@ -21,17 +22,24 @@ def solve_optimal(my_net, R, reqs):
     y_var = cp.Variable((len(E)*len(R)*T,), boolean=True)
     Psi_var = cp.Variable((len(E)*len(R)*T,), boolean=True)
     Gamma_var = cp.Variable((len(E)*len(R)*T,))
-    K_var = cp.Variable((len(E)*len(R)*T,))
     w_var = cp.Variable((len(E)*L_len*len(R)*T,), boolean=True)
+    G_var = cp.Variable((len(E) * len(R) * T,))
+    g_var = cp.Variable((len(E) * len(R) * T,))
+    Gamma_G1_var = cp.Variable((len(E) * len(R) * T,))
+    Gamma_g_var = cp.Variable((len(E) * len(R) * T,))
 
     constraints = []
 
+    # Only download or delete
     constraints += [
         z_var + y_var <= np.ones((len(E)*len(R)*T,))
     ]
+    ###
 
+    # Gamma var: Download status of layers
     t_0_end_1 = []
     t_1_end = []
+    t_0_only = []
     for e in range(len(E)):
         for r in range(len(R)):
             for t in range(T):
@@ -39,19 +47,19 @@ def solve_optimal(my_net, R, reqs):
                     t_0_end_1.append(e*(len(R)*(T-1))+r*(T-1)+t)
                 if t != 0:
                     t_1_end.append(e*(len(R)*(T-1))+r*(T-1)+t)
+                if t == 0:
+                    t_0_only.append(e*(len(R)*(T-1))+r*(T-1)+t)
 
     constraints += [
         Gamma_var[t_1_end] - Gamma_var[t_0_end_1] == z_var[t_1_end] - y_var[t_1_end]
     ]
 
     constraints += [
-        Psi_var - Gamma_var <= np.zeros((len(E) * len(R) * T,))
+        Gamma_var[t_0_only] == np.zeros((len(E) * len(R),))
     ]
+    ###
 
-    constraints += [
-        Psi_var - K_var <= np.zeros((len(E) * len(R) * T,))
-    ]
-
+    # w var: Download path of layers
     adj_in = dict()
     adj_out = dict()
     cloud_node = "c"
@@ -64,15 +72,15 @@ def solve_optimal(my_net, R, reqs):
             adj_out[cloud_node][l * (len(R) * T):(l + 1) * (len(R) * T)] = np.ones((len(R) * T,))
 
     for e in range(len(E)):
-        adj_in[e] = np.zeros((L_len*len(R) * T,))
-        adj_out[e] = np.zeros((L_len*len(R) * T,))
+        adj_in[e] = np.zeros((L_len * len(R) * T,))
+        adj_out[e] = np.zeros((L_len * len(R) * T,))
         for l in range(L_len):
             if L[l][1] == E[e]:
                 adj_in[e][l * (len(R) * T):(l + 1) * (len(R) * T)] = np.ones((len(R) * T,))
             if L[l][0] == E[e]:
                 adj_out[e][l * (len(R) * T):(l + 1) * (len(R) * T)] = np.ones((len(R) * T,))
         constraints += [
-            w_var[e * (L_len*len(R) * T):(e + 1) * (L_len*len(R) * T)] @ adj_in[e]
+            w_var[e * (L_len * len(R) * T):(e + 1) * (L_len * len(R) * T)] @ adj_in[e]
             ==
             Gamma_var[e * (len(R) * T):(e + 1) * (len(R) * T)]
         ]
@@ -90,6 +98,37 @@ def solve_optimal(my_net, R, reqs):
                     ==
                     w_var[e * (L_len * len(R) * T):(e + 1) * (L_len * len(R) * T)] @ adj_out[ee]
                 ]
+    ###
+
+    # Linearize Gamma * g
+    constraints += [
+        Gamma_g_var <= Gamma_var * max(Const.LINK_BW[0], Const.MM_BW[1])
+    ]
+
+    constraints += [
+        Gamma_g_var <= g_var
+    ]
+    ###
+
+    # Linearize Gamma * G^t-1
+    constraints += [
+        Gamma_G1_var <= Gamma_var * Const.LAYER_SIZE[1]
+    ]
+
+    constraints += [
+        Gamma_G1_var[t_1_end] <= G_var[t_0_end_1]
+    ]
+
+    constraints += [
+        G_var[t_0_only] == np.zeros((len(E) * len(R),))
+    ]
+    ###
+
+    # G var: Amount of download
+    constraints += [
+        G_var == Gamma_G1_var + Gamma_g_var
+    ]
+    ###
 
     print("model constructed...")
     objective = cp.Maximize(cp.sum(a_var))
