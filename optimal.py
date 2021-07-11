@@ -10,13 +10,14 @@ def get_last_t(reqs):
     return int(t_max)
 
 
-def solve_optimal(my_net, R, Rvol, reqs):
+def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     T = get_last_t(reqs)
     Lw, Lm = my_net.get_link_sets()
     L = Lw + Lm
     L_len = len(L)
     B = my_net.get_all_base_stations()
     E = my_net.get_all_edge_nodes()
+    N = len(E) + 1
     a_var = cp.Variable((len(reqs),), boolean=True)
     z_var = cp.Variable((len(E)*len(R)*T,), boolean=True)
     y_var = cp.Variable((len(E)*len(R)*T,), boolean=True)
@@ -27,6 +28,7 @@ def solve_optimal(my_net, R, Rvol, reqs):
     g_var = cp.Variable((len(E) * len(R) * T,))
     Gamma_G1_var = cp.Variable((len(E) * len(R) * T,))
     Gamma_g_var = cp.Variable((len(E) * len(R) * T,))
+    v_var = cp.Variable((len(reqs) * len(vnfs) * N * T,))
 
     constraints = []
 
@@ -148,6 +150,15 @@ def solve_optimal(my_net, R, Rvol, reqs):
     constraints += [
         Psi_var * disk_req <= G_var
     ]
+    ###
+
+    # VNF layer relation
+    layer_req = np.zeros((len(vnfs)*len(R)*len(E)*T,))
+    for v in range(vnfs):
+        for r in range(len(R)):
+            if R[r] in vnfs[v].layers:
+                layer_req[v*len(R)] = np.ones((len(E)*T,))
+
     ###
 
     print("model constructed...")

@@ -80,7 +80,7 @@ def optimal_test(inter_arrival):
             np.random.seed(itr * 1234)
             R_ids = [i for i in sfc_gen.layers]
             R_vols = [sfc_gen.layers[i] for i in R_ids]
-            res, dl_vol = solve_optimal(my_net, R_ids, R_vols, reqs)
+            res, dl_vol = solve_optimal(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
             stat_collector.add_stat("O", ACCEPT_RATIO, run_name, res)
             stat_collector.add_stat("O", DOWNLOAD_LAYER, run_name, dl_vol)
 
