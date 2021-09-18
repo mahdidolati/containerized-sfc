@@ -289,7 +289,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
                 q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
                 for u in range(len(reqs))
                 for i in range(len(reqs[u].vnfs))
-            ) == my_net.g[Lw[l][0]][Lw[l][1]][Lw[l][2]]["li"].bw
+            ) <= my_net.g[Lw[l][0]][Lw[l][1]][Lw[l][2]]["li"].bw
             for l in range(len(Lw))
             for t in range(T)
         ), name="bw_wired"
@@ -306,7 +306,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
                 for l in adj_out[e]
                 for u in range(len(reqs))
                 for i in range(len(reqs[u].vnfs))
-            ) == my_net.g.nodes[E[e]]["nd"].mm_bw_tx
+            ) <= my_net.g.nodes[E[e]]["nd"].mm_bw_tx
             for e in range(len(E))
             for t in range(T)
         ), name="bw_mm"
