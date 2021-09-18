@@ -28,6 +28,12 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     L_len = len(L)
     cloud_node = "c"
 
+    R_id = dict()
+    r_idx = 0
+    for r in R:
+        R_id[r] = r_idx
+        r_idx = r_idx + 1
+
     N_id = dict()
     n_idx = 0
     for e in E:
@@ -161,7 +167,42 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
             for u in range(reqs)
             for t in range(reqs[u].tau1, reqs[u].tau2+1)
             for i in range(len(reqs[u].vnfs))
-        ), name="disk_limit"
+        ), name="admit_placement"
+    )
+
+    m.addConstrs(
+        (
+            v_var[e, t, u, i] <= Psi_var[R_id[r], t, e]
+            for u in range(reqs)
+            for t in range(reqs[u].tau1, reqs[u].tau2 + 1)
+            for e in range(E)
+            for i in range(len(reqs[u].vnfs))
+            for r in reqs[u].vnfs[i].layers
+        ), name="vnf_layer"
+    )
+
+    m.addConstrs(
+        (
+            quicksum(
+                v_var[e, t, u, i] * reqs[u].vnfs[i].cpu * reqs[u].vnf_in_rate(i)
+                for u in range(reqs)
+                for i in range(len(reqs[u].vnfs))
+            ) <= my_net.g.nodes[E[e]]["nd"].cpu
+            for e in range(E)
+            for t in range(T)
+        ), name="cpu_limit"
+    )
+
+    m.addConstrs(
+        (
+            quicksum(
+                v_var[e, t, u, i] * reqs[u].vnfs[i].ram * reqs[u].vnf_in_rate(i)
+                for u in range(reqs)
+                for i in range(len(reqs[u].vnfs))
+            ) <= my_net.g.nodes[E[e]]["nd"].ram
+            for e in range(E)
+            for t in range(T)
+        ), name="ram_limit"
     )
 
 
