@@ -65,6 +65,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     v_var = m.addVars(N, T, len(reqs), I_len, vtype=GRB.BINARY, name="v")
     a_var = m.addVars(len(reqs), vtype=GRB.BINARY, name="a")
     q_var = m.addVars(L_len, T, len(reqs), I_len, vtype=GRB.BINARY, name="q")
+    wg_var = m.addVars(L_len, len(R), T, len(E), vtype=GRB.BINARY, name="wg")
 
     m.addConstrs(
         (
@@ -246,6 +247,36 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
             for i in range(len(reqs[u].vnfs) - 1)
             for t in range(reqs[u].tau1, reqs[u].tau2 + 1)
         ), name="chaining"
+    )
+
+    m.addConstrs(
+        (
+            wg_var[l, r, t, e] <= w_var[l, t, r, e]
+            for l in range(L)
+            for r in range(R)
+            for t in range(T)
+            for e in range(E)
+        ), name="lin_0"
+    )
+
+    m.addConstrs(
+        (
+            wg_var[l, r, t, e] <= g_var[r, t, e]
+            for l in range(L)
+            for r in range(R)
+            for t in range(T)
+            for e in range(E)
+        ), name="lin_1"
+    )
+
+    m.addConstrs(
+        (
+            wg_var[l, r, t, e] >= w_var[l, t, r, e] + g_var[r, t, e] - 1
+            for l in range(L)
+            for r in range(R)
+            for t in range(T)
+            for e in range(E)
+        ), name="lin_2"
     )
 
 
