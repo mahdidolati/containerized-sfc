@@ -59,7 +59,11 @@ def optimal_test(inter_arrival):
     share_percentages = []
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [15, 101]
-    Const.VNF_NUM = 20
+    Const.VNF_NUM = 5
+    Const.LAYER_NUM = 10
+    Const.SFC_LEN = [1, 5]
+    Const.TAU1 = [5, 7]
+    Const.TAU2 = [5, 7]
     for i in range(len(n_share_ps)):
         np.random.seed(i * 100)
         n_share_p = n_share_ps[i]
@@ -70,7 +74,7 @@ def optimal_test(inter_arrival):
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 7
+            req_num = 3
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -311,7 +315,7 @@ def layer_num_test(inter_arrival):
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    test_type = "all"
+    test_type = "optimal"
     ia = 5
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
@@ -331,6 +335,6 @@ if __name__ == "__main__":
     if test_type == "share" or test_type == "all":
         print("running share because of {}".format(test_type))
         share_percentage_test(ia)
-    # if test_type == "optimal" or test_type == "all":
-    #     print("running optimal because of {}".format(test_type))
-    #     optimal_test(ia)
+    if test_type == "optimal" or test_type == "all":
+        print("running optimal because of {}".format(test_type))
+        optimal_test(ia)
