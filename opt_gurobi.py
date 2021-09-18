@@ -315,7 +315,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     m.addConstrs(
         (
             gp.quicksum(
-                q_var[l, t, u, i] * my_net.g[Lw[l][0]][Lw[l][1]][Lw[l][2]]["li"].delay
+                q_var[l, t, u, i] * my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"].delay
                 for l in range(len(L))
                 for i in range(len(reqs[u].vnfs))
             ) <= reqs[u].max_delay
@@ -334,3 +334,5 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.setParam("Threads", 6)
     m.optimize()
+
+    return 0, 0
