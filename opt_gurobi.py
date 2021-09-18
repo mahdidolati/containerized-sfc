@@ -86,7 +86,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 w_var[l, t, r, e]
                 for l in adj_out[N_id[cloud_node]]
             ) == Gamma_var[r, t, e]
@@ -98,7 +98,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 w_var[l, t, r, e]
                 for l in adj_in[e]
             ) == Gamma_var[r, t, e]
@@ -110,10 +110,10 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 w_var[l, t, r, e]
                 for l in adj_out[ee]
-            ) - quicksum(
+            ) - gp.quicksum(
                 w_var[l, t, r, e]
                 for l in adj_in[ee]
             ) == 0
@@ -145,7 +145,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 Gamma_var[r, t, e] * Rvol[r]
                 for r in range(R)
             ) <= my_net.g.nodes[E[e]]["nd"].disk
@@ -165,7 +165,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 v_var[n, t, u, i]
                 for n in range(N)
             ) == a_var[u]
@@ -188,7 +188,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 v_var[e, t, u, i] * reqs[u].vnfs[i].cpu * reqs[u].vnf_in_rate(i)
                 for u in range(reqs)
                 for i in range(len(reqs[u].vnfs))
@@ -200,7 +200,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 v_var[e, t, u, i] * reqs[u].vnfs[i].ram * reqs[u].vnf_in_rate(i)
                 for u in range(reqs)
                 for i in range(len(reqs[u].vnfs))
@@ -212,7 +212,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 q_var[l, t, u, 0]
                 for l in adj_out[N_id[reqs[u].entry_point]]
             ) == a_var[u]
@@ -223,7 +223,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 q_var[l, t, u, 0]
                 for l in adj_in[n]
             ) == v_var[n, t, u, 0]
@@ -235,10 +235,10 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 q_var[l, t, u, i+1]
                 for l in adj_out[n]
-            ) - quicksum(
+            ) - gp.quicksum(
                 q_var[l, t, u, i+1]
                 for l in adj_in[n]
             ) == v_var[n, t, u, i] - v_var[n, t, u, i+1]
@@ -281,11 +281,11 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 wg_var[l, r, t, e]
                 for r in range(R)
                 for e in range(E)
-            ) - quicksum(
+            ) - gp.quicksum(
                 q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
                 for u in range(len(reqs))
                 for i in range(len(reqs[u].vnfs))
@@ -297,11 +297,11 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            quicksum(
+            gp.quicksum(
                 wg_var[l, r, t, e]
                 for l in adj_out[e]
                 for r in range(R)
-            ) - quicksum(
+            ) - gp.quicksum(
                 q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
                 for l in adj_out[e]
                 for u in range(len(reqs))
@@ -312,4 +312,24 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         ), name="bw_mm"
     )
 
+    m.addConstrs(
+        (
+            gp.quicksum(
+                q_var[l, t, u, i] * my_net.g[Lw[l][0]][Lw[l][1]][Lw[l][3]]["li"].delay
+                for l in range(L)
+                for i in range(len(reqs[u].vnfs))
+            ) <= reqs[u].max_delay
+            for u in range(len(reqs))
+            for t in range(T)
+        ), name="delay"
+    )
 
+    m.setObjective(
+        gp.quicksum(
+            a_var[u]
+            for u in range(len(reqs))
+        ),
+        GRB.MAXIMIZE
+    )
+
+    m.optimize()
