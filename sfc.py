@@ -21,7 +21,8 @@ class LayerDownload:
 
 
 class Vnf:
-    def __init__(self, layer_ids, all_layers, n_share_p, layer_pr):
+    def __init__(self, v_id, layer_ids, all_layers, n_share_p, layer_pr):
+        self.vnf_id = v_id
         self.cpu = np.random.uniform(*Const.VNF_CPU)
         self.ram = np.random.uniform(*Const.VNF_RAM)
         self.alpha = np.random.uniform(*Const.ALPHA_RANGE)
@@ -93,13 +94,14 @@ class SfcGenerator:
             s += x
         for i in range(len(layer_pr)):
             layer_pr[i] = layer_pr[i] / s
-        self.vnfs = dict()
+        self.vnfs_list = list()
         self.vnf_num = Const.VNF_NUM
         for i in range(self.vnf_num):
-            self.vnfs[i] = Vnf(sharable_ids, self.layers, n_share_p, layer_pr)
-            for r in self.vnfs[i].layers:
+            a_vnf = Vnf(i, sharable_ids, self.layers, n_share_p, layer_pr)
+            for r in a_vnf.layers:
                 if r not in self.layers:
-                    self.layers[r] = self.vnfs[i].layers[r]
+                    self.layers[r] = a_vnf.layers[r]
+            self.vnfs_list.append(a_vnf)
             # print("vnf layers: ", self.vnfs[i].layers.keys())
 
     def get_chain(self, t):
@@ -107,7 +109,7 @@ class SfcGenerator:
         n = np.random.randint(*Const.SFC_LEN)
         for _ in range(n):
             i = np.random.randint(0, self.vnf_num)
-            vnfs.append(self.vnfs[i])
+            vnfs.append(self.vnfs_list[i])
         new_sfc = Sfc(t, vnfs)
         new_sfc.entry_point = self.my_net.get_random_base_state()
         return new_sfc
