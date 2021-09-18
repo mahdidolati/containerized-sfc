@@ -11,8 +11,16 @@ def get_last_t(reqs):
     return int(t_max)
 
 
+def get_max_sfc(reqs):
+    l_max = 0
+    for r in reqs:
+        l_max = max(l_max, len(r.vnfs))
+    return l_max
+
+
 def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     T = get_last_t(reqs)
+    I_len = get_max_sfc(reqs)
     E = my_net.get_all_edge_nodes()
     N = len(E) + 1
     Lw, Lm = my_net.get_link_sets()
@@ -39,11 +47,14 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m = gp.Model("Model")
     Gamma_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="Gamma")
-    G_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="G")
-    g_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="g")
+    Psi_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="Psi")
+    G_var = m.addVars(len(R), T, len(E), vtype=GRB.CONTINUOUS, lb=0, name="G")
+    g_var = m.addVars(len(R), T, len(E), vtype=GRB.CONTINUOUS, lb=0, name="g")
     z_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="z")
     y_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="y")
     w_var = m.addVars(L_len, T, len(R), len(E), vtype=GRB.BINARY, name="w")
+    v_var = m.addVars(N, T, len(reqs), I_len, vtype=GRB.BINARY, name="v")
+    a_var = m.addVars(len(reqs), vtype=GRB.BINARY, name="a")
 
     m.addConstrs(
         (
@@ -118,7 +129,39 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
             for r in range(R)
             for e in range(E)
             for t in range(1, T)
-        ), name="dl_vol_0"
+        ), name="dl_vol_1"
+    )
+
+    m.addConstrs(
+        (
+            quicksum(
+                Gamma_var[r, t, e] * Rvol[r]
+                for r in range(R)
+            ) <= my_net.g.nodes[E[e]]["nd"].disk
+            for e in range(E)
+            for t in range(T)
+        ), name="disk_limit"
+    )
+
+    m.addConstrs(
+        (
+            Psi_var[r, t, e] * Rvol[r] <= G_var[r, t, e]
+            for e in range(E)
+            for r in range(R)
+            for t in range(T)
+        ), name="layer_avail"
+    )
+
+    m.addConstrs(
+        (
+            quicksum(
+                v_var[n, t, u, i]
+                for n in range(N)
+            ) == a_var[u]
+            for u in range(reqs)
+            for t in range(reqs[u].tau1, reqs[u].tau2+1)
+            for i in range(len(reqs[u].vnfs))
+        ), name="disk_limit"
     )
 
 
