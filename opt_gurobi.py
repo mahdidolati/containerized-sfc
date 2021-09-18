@@ -332,4 +332,5 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         GRB.MAXIMIZE
     )
 
+    m.setParam("Threads", 6)
     m.optimize()
