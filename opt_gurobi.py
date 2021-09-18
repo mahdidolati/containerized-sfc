@@ -17,7 +17,7 @@ def get_max_sfc(reqs):
 
 
 def solve_optimal(my_net, vnfs, R, Rvol, reqs):
-    T = get_last_t(reqs)
+    T = get_last_t(reqs) + 1
     I_len = get_max_sfc(reqs)
     B = my_net.get_all_base_stations()
     E = my_net.get_all_edge_nodes()
