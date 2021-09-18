@@ -36,6 +36,7 @@ class Vnf:
         for i in range(n_layer):
             self.layers[i+new_layer_id] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
 
+
 class Sfc:
     def __init__(self, t, vnfs):
         self.max_delay = np.random.uniform(*Const.SFC_DELAY)
