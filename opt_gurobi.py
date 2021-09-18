@@ -279,8 +279,37 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         ), name="lin_2"
     )
 
+    m.addConstrs(
+        (
+            quicksum(
+                wg_var[l, r, t, e]
+                for r in range(R)
+                for e in range(E)
+            ) - quicksum(
+                q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
+                for u in range(len(reqs))
+                for i in range(len(reqs[u].vnfs))
+            ) == my_net.g[Lw[l][0]][Lw[l][1]][Lw[l][3]]["li"].bw
+            for l in range(len(Lw))
+            for t in range(T)
+        ), name="bw_wired"
+    )
 
-
-
+    m.addConstrs(
+        (
+            quicksum(
+                wg_var[l, r, t, e]
+                for l in adj_out[e]
+                for r in range(R)
+            ) - quicksum(
+                q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
+                for l in adj_out[e]
+                for u in range(len(reqs))
+                for i in range(len(reqs[u].vnfs))
+            ) == my_net.g.nodes[E[e]]["nd"].mm_bw_tx
+            for e in range(E)
+            for t in range(T)
+        ), name="bw_mm"
+    )
 
 
