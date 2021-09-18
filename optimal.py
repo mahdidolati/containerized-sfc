@@ -9,7 +9,6 @@ def get_last_t(reqs):
         t_max = max(r.tau2, t_max)
     return int(t_max)
 
-
 def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     T = get_last_t(reqs)
     Lw, Lm = my_net.get_link_sets()
