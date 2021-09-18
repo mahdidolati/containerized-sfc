@@ -6,7 +6,7 @@ from statistic_collector import StatCollector, Stat
 import heapq
 import numpy as np
 import sys, getopt
-from optimal import solve_optimal
+from opt_gurobi import solve_optimal
 
 
 def test(solver, reqs):
