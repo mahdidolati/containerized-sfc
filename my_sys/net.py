@@ -89,7 +89,14 @@ class MyNetwork:
         for n in self.g.nodes():
             if n[0] == "e":
                 E.append(n)
-        return np.random.choice(E, int(sr * len(E)))
+        return np.random.choice(E, int(sr * len(E)), replace=False)
+
+    def get_all_edge_nodes(self):
+        E = list()
+        for n in self.g.nodes():
+            if n[0] == "e":
+                E.append(n)
+        return E
 
     def get_missing_layers(self, server, chain_req, vnf_i, t):
         if self.share_layer:
@@ -166,9 +173,6 @@ class MyNetwork:
                 else:
                     Lm.append((e[0], e[1], j))
         return Lw, Lm
-
-    def get_all_edge_nodes(self):
-        return self.get_random_edge_nodes(1.0)
 
     def get_all_base_stations(self):
         B = list()
