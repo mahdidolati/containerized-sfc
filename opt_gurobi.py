@@ -1,7 +1,5 @@
 import gurobipy as gp
 from gurobipy import GRB
-import numpy as np
-from constants import Const
 
 
 def get_last_t(reqs):
@@ -21,6 +19,7 @@ def get_max_sfc(reqs):
 def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     T = get_last_t(reqs)
     I_len = get_max_sfc(reqs)
+    B = my_net.get_all_base_stations()
     E = my_net.get_all_edge_nodes()
     N = len(E) + 1
     Lw, Lm = my_net.get_link_sets()
@@ -40,6 +39,10 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         N_id[e] = n_idx
         n_idx = n_idx + 1
     N_id[cloud_node] = n_idx
+    n_idx = n_idx + 1
+    for b in B:
+        N_id[b] = n_idx
+        n_idx = n_idx + 1
 
     adj_in = dict()
     adj_out = dict()
@@ -61,6 +64,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     w_var = m.addVars(L_len, T, len(R), len(E), vtype=GRB.BINARY, name="w")
     v_var = m.addVars(N, T, len(reqs), I_len, vtype=GRB.BINARY, name="v")
     a_var = m.addVars(len(reqs), vtype=GRB.BINARY, name="a")
+    q_var = m.addVars(L_len, T, len(reqs), I_len, vtype=GRB.BINARY, name="q")
 
     m.addConstrs(
         (
@@ -204,6 +208,46 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
             for t in range(T)
         ), name="ram_limit"
     )
+
+    m.addConstrs(
+        (
+            quicksum(
+                q_var[l, t, u, 0]
+                for l in adj_out[N_id[reqs[u].entry_point]]
+            ) == a_var[u]
+            for u in range(reqs)
+            for t in range(T)
+        ), name="entry_out"
+    )
+
+    m.addConstrs(
+        (
+            quicksum(
+                q_var[l, t, u, 0]
+                for l in adj_in[n]
+            ) == v_var[n, t, u, 0]
+            for n in range(N)
+            for u in range(reqs)
+            for t in range(reqs[u].tau1, reqs[u].tau2 + 1)
+        ), name="first_vnf_in"
+    )
+
+    m.addConstrs(
+        (
+            quicksum(
+                q_var[l, t, u, i+1]
+                for l in adj_out[n]
+            ) - quicksum(
+                q_var[l, t, u, i+1]
+                for l in adj_in[n]
+            ) == v_var[n, t, u, i] - v_var[n, t, u, i+1]
+            for n in range(N)
+            for u in range(reqs)
+            for i in range(len(reqs[u].vnfs) - 1)
+            for t in range(reqs[u].tau1, reqs[u].tau2 + 1)
+        ), name="chaining"
+    )
+
 
 
 
