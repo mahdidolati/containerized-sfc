@@ -251,7 +251,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            wg_var[l, r, t, e] <= w_var[l, t, r, e]
+            wg_var[l, r, t, e] <= w_var[l, t, r, e] * 500
             for l in range(len(L))
             for r in range(len(R))
             for t in range(T)
@@ -271,7 +271,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            wg_var[l, r, t, e] >= w_var[l, t, r, e] + g_var[r, t, e] - 1
+            wg_var[l, r, t, e] >= g_var[r, t, e] - (1 - w_var[l, t, r, e]) * 500
             for l in range(len(L))
             for r in range(len(R))
             for t in range(T)
@@ -334,5 +334,9 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.setParam("Threads", 6)
     m.optimize()
+
+    if m.status == GRB.INFEASIBLE:
+        m.computeIIS()
+        m.write("model.ilp")
 
     return 0, 0
