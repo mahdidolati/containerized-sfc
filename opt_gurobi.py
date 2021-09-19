@@ -70,15 +70,6 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     g_var = m.addVars(len(R), T, len(E), vtype=GRB.CONTINUOUS, lb=0, name="g")
     wg_var = m.addVars(L_len, len(R), T, len(E), vtype=GRB.CONTINUOUS, name="wg")
 
-    # m.addConstrs(
-    #     (
-    #         z_var[r, t, e] + y_var[r, t, e] <= 1
-    #         for r in range(len(R))
-    #         for e in range(len(E))
-    #         for t in range(T)
-    #     ), name="dl_or_ul"
-    # )
-
     m.addConstrs(
         (
             Gamma_var[r, 0, e] == z_var[r, 0, e]
@@ -245,67 +236,67 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         ), name="first_vnf_in"
     )
 
-    # m.addConstrs(
-    #     (
-    #         gp.quicksum(
-    #             q_var[l, t, u, i+1]
-    #             for l in adj_out[n]
-    #         ) - gp.quicksum(
-    #             q_var[l, t, u, i+1]
-    #             for l in adj_in[n]
-    #         ) == v_var[n, t, u, i] - v_var[n, t, u, i+1]
-    #         for n in range(N)
-    #         for u in range(len(reqs))
-    #         for i in range(len(reqs[u].vnfs) - 1)
-    #         for t in range(reqs[u].tau1, reqs[u].tau2 + 1)
-    #     ), name="chaining"
-    # )
+    m.addConstrs(
+        (
+            gp.quicksum(
+                q_var[l, t, u, i+1]
+                for l in adj_out[n]
+            ) - gp.quicksum(
+                q_var[l, t, u, i+1]
+                for l in adj_in[n]
+            ) == v_var[n, t, u, i] - v_var[n, t, u, i+1]
+            for n in range(N)
+            for u in range(len(reqs))
+            for i in range(len(reqs[u].vnfs) - 1)
+            for t in range(reqs[u].tau1, reqs[u].tau2 + 1)
+        ), name="chaining"
+    )
 
-    # m.addConstrs(
-    #     (
-    #         wg_var[l, r, t, e] <= w_var[l, t, r, e] * 500
-    #         for l in range(len(L))
-    #         for r in range(len(R))
-    #         for t in range(T)
-    #         for e in range(len(E))
-    #     ), name="lin_0"
-    # )
+    m.addConstrs(
+        (
+            wg_var[l, r, t, e] <= w_var[l, t, r, e] * 500
+            for l in range(len(L))
+            for r in range(len(R))
+            for t in range(T)
+            for e in range(len(E))
+        ), name="lin_0"
+    )
 
-    # m.addConstrs(
-    #     (
-    #         wg_var[l, r, t, e] <= g_var[r, t, e]
-    #         for l in range(len(L))
-    #         for r in range(len(R))
-    #         for t in range(T)
-    #         for e in range(len(E))
-    #     ), name="lin_1"
-    # )
+    m.addConstrs(
+        (
+            wg_var[l, r, t, e] <= g_var[r, t, e]
+            for l in range(len(L))
+            for r in range(len(R))
+            for t in range(T)
+            for e in range(len(E))
+        ), name="lin_1"
+    )
 
-    # m.addConstrs(
-    #     (
-    #         wg_var[l, r, t, e] >= g_var[r, t, e] - (1 - w_var[l, t, r, e]) * 500
-    #         for l in range(len(L))
-    #         for r in range(len(R))
-    #         for t in range(T)
-    #         for e in range(len(E))
-    #     ), name="lin_2"
-    # )
+    m.addConstrs(
+        (
+            wg_var[l, r, t, e] >= g_var[r, t, e] - (1 - w_var[l, t, r, e]) * 500
+            for l in range(len(L))
+            for r in range(len(R))
+            for t in range(T)
+            for e in range(len(E))
+        ), name="lin_2"
+    )
 
-    # m.addConstrs(
-    #     (
-    #         gp.quicksum(
-    #             wg_var[l, r, t, e]
-    #             for r in range(len(R))
-    #             for e in range(len(E))
-    #         ) - gp.quicksum(
-    #             q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
-    #             for u in range(len(reqs))
-    #             for i in range(len(reqs[u].vnfs))
-    #         ) <= my_net.g[Lw[l][0]][Lw[l][1]][Lw[l][2]]["li"].bw
-    #         for l in range(len(Lw))
-    #         for t in range(T)
-    #     ), name="bw_wired"
-    # )
+    m.addConstrs(
+        (
+            gp.quicksum(
+                wg_var[l, r, t, e]
+                for r in range(len(R))
+                for e in range(len(E))
+            ) - gp.quicksum(
+                q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
+                for u in range(len(reqs))
+                for i in range(len(reqs[u].vnfs))
+            ) <= my_net.g[Lw[l][0]][Lw[l][1]][Lw[l][2]]["li"].bw
+            for l in range(len(Lw))
+            for t in range(T)
+        ), name="bw_wired"
+    )
 
     # m.addConstrs(
     #     (
