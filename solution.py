@@ -1,4 +1,5 @@
 import heapq
+from opt_gurobi import solve_optimal
 
 
 class PopularityEntity:
@@ -14,6 +15,7 @@ class PopularityEntity:
 class Solver:
     def __init__(self, my_net):
         self.my_net = my_net
+        self.batch = False
 
     def sort_nodes_disk(self, all_nodes, chain_req, i):
         h = []
@@ -23,6 +25,9 @@ class Solver:
             heapq.heappush(h, (d, counter, n))
             counter = counter + 1
         return h
+
+    def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
+        pass
 
     def usable_node(self, s, c, chain_req, i, t, delay_budget):
         for tt in range(chain_req.tau1, chain_req.tau2 + 1):
@@ -301,3 +306,15 @@ class StorageAwareSolver(Solver):
 
     def delete_layer(self, target_layer, t):
         return False
+
+
+class GurobiSolver(Solver):
+    def __init__(self, my_net):
+        super().__init__(my_net)
+        self.batch = True
+
+    def get_name(self):
+        return "Gurobi"
+
+    def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
+        return solve_optimal(my_net, vnfs_list, R_ids, R_vols, reqs)

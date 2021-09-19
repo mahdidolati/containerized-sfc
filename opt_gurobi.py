@@ -1,5 +1,6 @@
 import gurobipy as gp
 from gurobipy import GRB
+from constants import Const
 
 
 def get_last_t(reqs):
@@ -55,21 +56,32 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         adj_in[N_id[L[l][1]]].append(l)
 
     m = gp.Model("Model")
+    # BINARY
     Gamma_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="Gamma")
     Psi_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="Psi")
-    G_var = m.addVars(len(R), T, len(E), vtype=GRB.CONTINUOUS, lb=0, name="G")
-    g_var = m.addVars(len(R), T, len(E), vtype=GRB.CONTINUOUS, lb=0, name="g")
     z_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="z")
     y_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="y")
     w_var = m.addVars(L_len, T, len(R), len(E), vtype=GRB.BINARY, name="w")
     v_var = m.addVars(N, T, len(reqs), I_len, vtype=GRB.BINARY, name="v")
     a_var = m.addVars(len(reqs), vtype=GRB.BINARY, name="a")
     q_var = m.addVars(L_len, T, len(reqs), I_len, vtype=GRB.BINARY, name="q")
-    wg_var = m.addVars(L_len, len(R), T, len(E), vtype=GRB.BINARY, name="wg")
+    # CONTINUOUS
+    G_var = m.addVars(len(R), T, len(E), vtype=GRB.CONTINUOUS, lb=0, name="G")
+    g_var = m.addVars(len(R), T, len(E), vtype=GRB.CONTINUOUS, lb=0, name="g")
+    wg_var = m.addVars(L_len, len(R), T, len(E), vtype=GRB.CONTINUOUS, name="wg")
+
+    # m.addConstrs(
+    #     (
+    #         z_var[r, t, e] + y_var[r, t, e] <= 1
+    #         for r in range(len(R))
+    #         for e in range(len(E))
+    #         for t in range(T)
+    #     ), name="dl_or_ul"
+    # )
 
     m.addConstrs(
         (
-            Gamma_var[r, 0, e] == z_var[r, 0, e] - y_var[r, 0, e]
+            Gamma_var[r, 0, e] == z_var[r, 0, e]
             for r in range(len(R))
             for e in range(len(E))
         ), name="dl_indicator_0"
@@ -77,7 +89,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            Gamma_var[r, t, e] - Gamma_var[r, t-1, e] == z_var[r, t, e] - y_var[r, t, e]
+            Gamma_var[r, t, e] == Gamma_var[r, t-1, e] + z_var[r, t, e] - y_var[r, t, e]
             for r in range(len(R))
             for e in range(len(E))
             for t in range(1, T)
@@ -92,7 +104,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
             ) == Gamma_var[r, t, e]
             for r in range(len(R))
             for e in range(len(E))
-            for t in range(1, T)
+            for t in range(T)
         ), name="dl_path_cloud"
     )
 
@@ -127,7 +139,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            G_var[r, t, e] <= Gamma_var[r, t, e]
+            G_var[r, t, e] <= Gamma_var[r, t, e] * Const.LAYER_SIZE[1]
             for r in range(len(R))
             for e in range(len(E))
             for t in range(T)
@@ -136,7 +148,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            G_var[r, t, e] <= Gamma_var[r, t-1, e] + g_var[r, t-1, e]
+            G_var[r, t, e] <= G_var[r, t-1, e] + g_var[r, t, e]
             for r in range(len(R))
             for e in range(len(E))
             for t in range(1, T)
@@ -217,7 +229,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
                 for l in adj_out[N_id[reqs[u].entry_point]]
             ) == a_var[u]
             for u in range(len(reqs))
-            for t in range(T)
+            for t in range(reqs[u].tau1, reqs[u].tau2 + 1)
         ), name="entry_out"
     )
 
@@ -233,96 +245,98 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         ), name="first_vnf_in"
     )
 
-    m.addConstrs(
-        (
-            gp.quicksum(
-                q_var[l, t, u, i+1]
-                for l in adj_out[n]
-            ) - gp.quicksum(
-                q_var[l, t, u, i+1]
-                for l in adj_in[n]
-            ) == v_var[n, t, u, i] - v_var[n, t, u, i+1]
-            for n in range(N)
-            for u in range(len(reqs))
-            for i in range(len(reqs[u].vnfs) - 1)
-            for t in range(reqs[u].tau1, reqs[u].tau2 + 1)
-        ), name="chaining"
-    )
+    # m.addConstrs(
+    #     (
+    #         gp.quicksum(
+    #             q_var[l, t, u, i+1]
+    #             for l in adj_out[n]
+    #         ) - gp.quicksum(
+    #             q_var[l, t, u, i+1]
+    #             for l in adj_in[n]
+    #         ) == v_var[n, t, u, i] - v_var[n, t, u, i+1]
+    #         for n in range(N)
+    #         for u in range(len(reqs))
+    #         for i in range(len(reqs[u].vnfs) - 1)
+    #         for t in range(reqs[u].tau1, reqs[u].tau2 + 1)
+    #     ), name="chaining"
+    # )
 
-    m.addConstrs(
-        (
-            wg_var[l, r, t, e] <= w_var[l, t, r, e] * 500
-            for l in range(len(L))
-            for r in range(len(R))
-            for t in range(T)
-            for e in range(len(E))
-        ), name="lin_0"
-    )
+    # m.addConstrs(
+    #     (
+    #         wg_var[l, r, t, e] <= w_var[l, t, r, e] * 500
+    #         for l in range(len(L))
+    #         for r in range(len(R))
+    #         for t in range(T)
+    #         for e in range(len(E))
+    #     ), name="lin_0"
+    # )
 
-    m.addConstrs(
-        (
-            wg_var[l, r, t, e] <= g_var[r, t, e]
-            for l in range(len(L))
-            for r in range(len(R))
-            for t in range(T)
-            for e in range(len(E))
-        ), name="lin_1"
-    )
+    # m.addConstrs(
+    #     (
+    #         wg_var[l, r, t, e] <= g_var[r, t, e]
+    #         for l in range(len(L))
+    #         for r in range(len(R))
+    #         for t in range(T)
+    #         for e in range(len(E))
+    #     ), name="lin_1"
+    # )
 
-    m.addConstrs(
-        (
-            wg_var[l, r, t, e] >= g_var[r, t, e] - (1 - w_var[l, t, r, e]) * 500
-            for l in range(len(L))
-            for r in range(len(R))
-            for t in range(T)
-            for e in range(len(E))
-        ), name="lin_2"
-    )
+    # m.addConstrs(
+    #     (
+    #         wg_var[l, r, t, e] >= g_var[r, t, e] - (1 - w_var[l, t, r, e]) * 500
+    #         for l in range(len(L))
+    #         for r in range(len(R))
+    #         for t in range(T)
+    #         for e in range(len(E))
+    #     ), name="lin_2"
+    # )
 
-    m.addConstrs(
-        (
-            gp.quicksum(
-                wg_var[l, r, t, e]
-                for r in range(len(R))
-                for e in range(len(E))
-            ) - gp.quicksum(
-                q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
-                for u in range(len(reqs))
-                for i in range(len(reqs[u].vnfs))
-            ) <= my_net.g[Lw[l][0]][Lw[l][1]][Lw[l][2]]["li"].bw
-            for l in range(len(Lw))
-            for t in range(T)
-        ), name="bw_wired"
-    )
+    # m.addConstrs(
+    #     (
+    #         gp.quicksum(
+    #             wg_var[l, r, t, e]
+    #             for r in range(len(R))
+    #             for e in range(len(E))
+    #         ) - gp.quicksum(
+    #             q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
+    #             for u in range(len(reqs))
+    #             for i in range(len(reqs[u].vnfs))
+    #         ) <= my_net.g[Lw[l][0]][Lw[l][1]][Lw[l][2]]["li"].bw
+    #         for l in range(len(Lw))
+    #         for t in range(T)
+    #     ), name="bw_wired"
+    # )
 
-    m.addConstrs(
-        (
-            gp.quicksum(
-                wg_var[l, r, t, e]
-                for l in adj_out[e]
-                for r in range(len(R))
-            ) - gp.quicksum(
-                q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
-                for l in adj_out[e]
-                for u in range(len(reqs))
-                for i in range(len(reqs[u].vnfs))
-            ) <= my_net.g.nodes[E[e]]["nd"].mm_bw_tx
-            for e in range(len(E))
-            for t in range(T)
-        ), name="bw_mm"
-    )
+    # m.addConstrs(
+    #     (
+    #         gp.quicksum(
+    #             wg_var[l, r, t, e]
+    #             for l in adj_out[e]
+    #             for r in range(len(R))
+    #             if l >= len(Lw)
+    #         ) - gp.quicksum(
+    #             q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
+    #             for l in adj_out[e]
+    #             for u in range(len(reqs))
+    #             for i in range(len(reqs[u].vnfs))
+    #             if l >= len(Lw)
+    #         ) <= my_net.g.nodes[E[e]]["nd"].mm_bw_tx
+    #         for e in range(len(E))
+    #         for t in range(T)
+    #     ), name="bw_mm"
+    # )
 
-    m.addConstrs(
-        (
-            gp.quicksum(
-                q_var[l, t, u, i] * my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"].delay
-                for l in range(len(L))
-                for i in range(len(reqs[u].vnfs))
-            ) <= reqs[u].max_delay
-            for u in range(len(reqs))
-            for t in range(T)
-        ), name="delay"
-    )
+    # m.addConstrs(
+    #     (
+    #         gp.quicksum(
+    #             q_var[l, t, u, i] * my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"].delay
+    #             for l in range(len(L))
+    #             for i in range(len(reqs[u].vnfs))
+    #         ) <= reqs[u].max_delay
+    #         for u in range(len(reqs))
+    #         for t in range(T)
+    #     ), name="delay"
+    # )
 
     m.setObjective(
         gp.quicksum(
@@ -334,9 +348,12 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.setParam("Threads", 6)
     m.optimize()
+    m.write("out.lp")
 
     if m.status == GRB.INFEASIBLE:
         m.computeIIS()
         m.write("model.ilp")
+        return 0, 0
 
-    return 0, 0
+    # return 0, 0
+    return m.objVal, 0

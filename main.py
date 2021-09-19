@@ -1,12 +1,11 @@
 from sfc import SfcGenerator
 from my_sys.net import NetGenerator
-from solution import NoShareSolver, ShareSolver, PopularitySolver, ProactiveSolver, StorageAwareSolver
+from solution import NoShareSolver, ShareSolver, PopularitySolver, ProactiveSolver, StorageAwareSolver, GurobiSolver
 from constants import Const
 from statistic_collector import StatCollector, Stat
 import heapq
 import numpy as np
 import sys, getopt
-from opt_gurobi import solve_optimal
 
 
 def test(solver, reqs):
@@ -44,13 +43,15 @@ def optimal_test(inter_arrival):
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
     solvers = [
-        NoShareSolver(my_net, 0),
-        ShareSolver(my_net, 2),
-        PopularitySolver(my_net, 1),
-        ProactiveSolver(my_net, 0.4, 3)
+        GurobiSolver(my_net),
+        NoShareSolver(my_net, 0)
+        # ,
+        # ShareSolver(my_net, 2),
+        # PopularitySolver(my_net, 1),
+        # ProactiveSolver(my_net, 0.4, 3)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
-    algs = ["O"]
+    algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
     iterations = 2
@@ -81,12 +82,18 @@ def optimal_test(inter_arrival):
                 reqs.append(sfc_gen.get_chain(t))
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
             #
-            np.random.seed(itr * 1234)
-            R_ids = [i for i in sfc_gen.layers]
-            R_vols = [sfc_gen.layers[i] for i in R_ids]
-            res, dl_vol = solve_optimal(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
-            stat_collector.add_stat("O", ACCEPT_RATIO, run_name, res)
-            stat_collector.add_stat("O", DOWNLOAD_LAYER, run_name, dl_vol)
+            for solver in solvers:
+                np.random.seed(itr * 1234)
+                res = 0
+                dl_vol = 0
+                if solver.batch:
+                    R_ids = [i for i in sfc_gen.layers]
+                    R_vols = [sfc_gen.layers[i] for i in R_ids]
+                    res, dl_vol = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                else:
+                    res, dl_vol = test(solver, reqs)
+                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
+                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
 
     machine_id = "ut"
     fig_test_id = "{}_optimal".format(machine_id)
