@@ -48,10 +48,10 @@ def optimal_test(inter_arrival):
     RUNTIME = "Runtime (sec)"
     solvers = [
         GurobiSolver(my_net),
-        # NoShareSolver(my_net, 0),
-        ShareSolver(my_net, 2),
-        # PopularitySolver(my_net, 1),
-        # ProactiveSolver(my_net, 0.4, 3)
+        NoShareSolver(my_net, 0),
+        ShareSolver(my_net, 20),
+        PopularitySolver(my_net, 1),
+        ProactiveSolver(my_net, 0.4, 3)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,

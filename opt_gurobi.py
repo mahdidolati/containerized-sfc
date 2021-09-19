@@ -377,8 +377,9 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
                 if i_loc < len(E):
                     for r in reqs[u].vnfs[i].layers:
                         a = m.getVarByName("G[{},{},{}]".format(R_id[r], t, i_loc)).x
-                        print("\tG(r: {}, t: {}, n: {}) = {} vs. {}".format(r, t, i_loc, a, Rvol[r]))
-                        # dls.append(a)
+                        if a + tol_val < Rvol[r]:
+                            print("\tG(r: {}, t: {}, n: {}) = {} vs. {}".format(r, t, i_loc, a, Rvol[r]))
+                            # dls.append(a)
             print("\tlocations: {}".format(locs))
             # print("\tdls: {}".format(dls))
 
@@ -395,4 +396,4 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
                     dl_vol = dl_vol + Rvol[r]
 
     # return 0, 0
-    return m.objVal, dl_vol
+    return m.objVal / len(reqs), dl_vol / m.objVal if m.objVal > 0 else 0
