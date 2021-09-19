@@ -298,7 +298,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
                 wg_var[l, r, t, e]
                 for r in range(len(R))
                 for e in range(len(E))
-            ) - gp.quicksum(
+            ) + gp.quicksum(
                 q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
                 for u in range(len(reqs))
                 for i in range(len(reqs[u].vnfs))
@@ -315,7 +315,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
                 for l in adj_out[e]
                 for r in range(len(R))
                 if l >= len(Lw)
-            ) - gp.quicksum(
+            ) + gp.quicksum(
                 q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
                 for l in adj_out[e]
                 for u in range(len(reqs))

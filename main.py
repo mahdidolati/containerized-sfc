@@ -64,7 +64,7 @@ def optimal_test(inter_arrival):
     n_share_ps = [1.0]
     share_percentages = []
     Const.VNF_LAYER = [5, 16]
-    Const.LAYER_SIZE = [50, 101]
+    Const.LAYER_SIZE = [150, 301]
     Const.VNF_NUM = 5
     Const.LAYER_NUM = 10
     Const.SFC_LEN = [1, 5]
