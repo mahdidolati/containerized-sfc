@@ -360,6 +360,8 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     tol_val = 0.0001
 
     for u in range(len(reqs)):
+        if m.getVarByName("a[{}]".format(u)).x < tol_val:
+            continue
         print("u: {} -- {}-{}".format(u, reqs[u].tau1, reqs[u].tau2))
         for i in range(len(reqs[u].vnfs)):
             locs = []
