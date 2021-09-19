@@ -59,7 +59,7 @@ def optimal_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 2
+    iterations = 5
     arrival_rate = 1.0 / inter_arrival
     n_share_ps = [1.0]
     share_percentages = []
@@ -80,7 +80,7 @@ def optimal_test(inter_arrival):
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 6
+            req_num = 10
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
