@@ -64,11 +64,11 @@ def optimal_test(inter_arrival):
     n_share_ps = [1.0]
     share_percentages = []
     Const.VNF_LAYER = [5, 16]
-    Const.LAYER_SIZE = [15, 101]
+    Const.LAYER_SIZE = [50, 101]
     Const.VNF_NUM = 5
     Const.LAYER_NUM = 10
     Const.SFC_LEN = [1, 5]
-    Const.TAU1 = [5, 7]
+    Const.TAU1 = [2, 5]
     Const.TAU2 = [5, 7]
     for i in range(len(n_share_ps)):
         np.random.seed(i * 100)

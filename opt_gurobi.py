@@ -357,5 +357,40 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         m.write("model.ilp")
         return 0, 0
 
+    tol_val = 0.0001
+
+    for u in range(len(reqs)):
+        print("u: {} -- {}-{}".format(u, reqs[u].tau1, reqs[u].tau2))
+        for i in range(len(reqs[u].vnfs)):
+            locs = []
+            for t in range(reqs[u].tau1, reqs[u].tau2 + 1):
+                i_loc = 0
+                dls = []
+                for n in range(N):
+                    a = m.getVarByName("v[{},{},{},{}]".format(n, t, u, i)).x
+                    if a > tol_val:
+                        # print("\ti: {}, t: {}, n: {}".format(i, t, n))
+                        locs.append(n)
+                        i_loc = n
+                if i_loc < len(E):
+                    for r in reqs[u].vnfs[i].layers:
+                        a = m.getVarByName("G[{},{},{}]".format(R_id[r], t, i_loc)).x
+                        print("\tG(r: {}, t: {}, n: {}) = {} vs. {}".format(r, t, i_loc, a, Rvol[r]))
+                        # dls.append(a)
+            print("\tlocations: {}".format(locs))
+            # print("\tdls: {}".format(dls))
+
+
+    dl_vol = 0
+    for e in range(len(E)):
+        for r in range(len(R)):
+            for t in range(T):
+                g1 = 0
+                g2 = 1 if m.getVarByName("Gamma[{},{},{}]".format(r, t, e)).x > tol_val else 0
+                if t > 0:
+                    g1 = 1 if m.getVarByName("Gamma[{},{},{}]".format(r, t-1, e)).x > tol_val else 0
+                if g2 == 1 and g1 == 0:
+                    dl_vol = dl_vol + Rvol[r]
+
     # return 0, 0
-    return m.objVal, 0
+    return m.objVal, dl_vol
