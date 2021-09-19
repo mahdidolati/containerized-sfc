@@ -139,11 +139,19 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
+            G_var[r, 0, e] <= g_var[r, 0, e]
+            for r in range(len(R))
+            for e in range(len(E))
+        ), name="dl_vol_1"
+    )
+
+    m.addConstrs(
+        (
             G_var[r, t, e] <= G_var[r, t-1, e] + g_var[r, t, e]
             for r in range(len(R))
             for e in range(len(E))
             for t in range(1, T)
-        ), name="dl_vol_1"
+        ), name="dl_vol_2"
     )
 
     m.addConstrs(
@@ -252,9 +260,11 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         ), name="chaining"
     )
 
+    max_dl_rate = max(Const.LINK_BW[1], Const.MM_BW[1])
+
     m.addConstrs(
         (
-            wg_var[l, r, t, e] <= w_var[l, t, r, e] * 500
+            wg_var[l, r, t, e] <= w_var[l, t, r, e] * max_dl_rate
             for l in range(len(L))
             for r in range(len(R))
             for t in range(T)
@@ -274,7 +284,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
 
     m.addConstrs(
         (
-            wg_var[l, r, t, e] >= g_var[r, t, e] - (1 - w_var[l, t, r, e]) * 500
+            wg_var[l, r, t, e] >= g_var[r, t, e] - (1 - w_var[l, t, r, e]) * max_dl_rate
             for l in range(len(L))
             for r in range(len(R))
             for t in range(T)
@@ -298,36 +308,36 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         ), name="bw_wired"
     )
 
-    # m.addConstrs(
-    #     (
-    #         gp.quicksum(
-    #             wg_var[l, r, t, e]
-    #             for l in adj_out[e]
-    #             for r in range(len(R))
-    #             if l >= len(Lw)
-    #         ) - gp.quicksum(
-    #             q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
-    #             for l in adj_out[e]
-    #             for u in range(len(reqs))
-    #             for i in range(len(reqs[u].vnfs))
-    #             if l >= len(Lw)
-    #         ) <= my_net.g.nodes[E[e]]["nd"].mm_bw_tx
-    #         for e in range(len(E))
-    #         for t in range(T)
-    #     ), name="bw_mm"
-    # )
+    m.addConstrs(
+        (
+            gp.quicksum(
+                wg_var[l, r, t, e]
+                for l in adj_out[e]
+                for r in range(len(R))
+                if l >= len(Lw)
+            ) - gp.quicksum(
+                q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
+                for l in adj_out[e]
+                for u in range(len(reqs))
+                for i in range(len(reqs[u].vnfs))
+                if l >= len(Lw)
+            ) <= my_net.g.nodes[E[e]]["nd"].mm_bw_tx
+            for e in range(len(E))
+            for t in range(T)
+        ), name="bw_mm"
+    )
 
-    # m.addConstrs(
-    #     (
-    #         gp.quicksum(
-    #             q_var[l, t, u, i] * my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"].delay
-    #             for l in range(len(L))
-    #             for i in range(len(reqs[u].vnfs))
-    #         ) <= reqs[u].max_delay
-    #         for u in range(len(reqs))
-    #         for t in range(T)
-    #     ), name="delay"
-    # )
+    m.addConstrs(
+        (
+            gp.quicksum(
+                q_var[l, t, u, i] * my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"].delay
+                for l in range(len(L))
+                for i in range(len(reqs[u].vnfs))
+            ) <= reqs[u].max_delay
+            for u in range(len(reqs))
+            for t in range(T)
+        ), name="delay"
+    )
 
     m.setObjective(
         gp.quicksum(
@@ -338,8 +348,9 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     )
 
     m.setParam("Threads", 6)
+    m.setParam("TIME_LIMIT", 500)
     m.optimize()
-    m.write("out.lp")
+    # m.write("out.lp")
 
     if m.status == GRB.INFEASIBLE:
         m.computeIIS()

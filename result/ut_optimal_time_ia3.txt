@@ -1,0 +1,6 @@
+ys_err;[[[22.375], [284.38625]], [[0.015625], [0.140625]]]
+x;[1.0]
+ys;[[149.0625], [0.0625]]
+ls;['Gurobi', 'S-2']
+xtitle;Share Percentage
+ytitle;Runtime (sec)

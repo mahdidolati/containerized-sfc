@@ -1,3 +1,5 @@
+from scipy.integrate import Radau
+
 from sfc import SfcGenerator
 from my_sys.net import NetGenerator
 from solution import NoShareSolver, ShareSolver, PopularitySolver, ProactiveSolver, StorageAwareSolver, GurobiSolver
@@ -6,6 +8,7 @@ from statistic_collector import StatCollector, Stat
 import heapq
 import numpy as np
 import sys, getopt
+from time import process_time
 
 
 def test(solver, reqs):
@@ -42,15 +45,17 @@ def optimal_test(inter_arrival):
     my_net = NetGenerator().get_g()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
+    RUNTIME = "Runtime (sec)"
     solvers = [
         GurobiSolver(my_net),
-        NoShareSolver(my_net, 0)
-        # ,
-        # ShareSolver(my_net, 2),
+        # NoShareSolver(my_net, 0),
+        ShareSolver(my_net, 2),
         # PopularitySolver(my_net, 1),
         # ProactiveSolver(my_net, 0.4, 3)
     ]
-    stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
+    stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
+             DOWNLOAD_LAYER: Stat.MEAN_MODE,
+             RUNTIME: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
@@ -75,7 +80,7 @@ def optimal_test(inter_arrival):
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 3
+            req_num = 6
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -86,14 +91,17 @@ def optimal_test(inter_arrival):
                 np.random.seed(itr * 1234)
                 res = 0
                 dl_vol = 0
+                t1 = process_time()
                 if solver.batch:
                     R_ids = [i for i in sfc_gen.layers]
                     R_vols = [sfc_gen.layers[i] for i in R_ids]
                     res, dl_vol = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
                     res, dl_vol = test(solver, reqs)
+                t2 = process_time()
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
+                stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2-t1)
 
     machine_id = "ut"
     fig_test_id = "{}_optimal".format(machine_id)
@@ -104,6 +112,10 @@ def optimal_test(inter_arrival):
     fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, DOWNLOAD_LAYER, algs, 'Share Percentage',
                                  DOWNLOAD_LAYER)
+
+    fig_3 = './result/{}_time_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_3 + '.txt', share_percentages, 0, RUNTIME, algs, 'Share Percentage',
+                                 RUNTIME)
 
 
 def share_percentage_test(inter_arrival):
@@ -323,7 +335,7 @@ def layer_num_test(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     test_type = "optimal"
-    ia = 5
+    ia = 3
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):

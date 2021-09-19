@@ -1,0 +1,6 @@
+ys_err;[[[0.0], [0.0]], [[0.0], [0.0]]]
+x;[1.0]
+ys;[[0.0], [0.0]]
+ls;['Gurobi', 'S-2']
+xtitle;Share Percentage
+ytitle;Download (MB)
