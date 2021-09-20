@@ -72,7 +72,8 @@ class Sfc:
         self.used_servers = set()
 
     def __str__(self):
-        return "max_delay: {}\nt1-t2: {}-{}".format(self.max_delay, self.tau1, self.tau2)
+        a = [v.vnf_id for v in self.vnfs]
+        return "entry_point: {} --> {}\n\tmax_delay: {}, t1-t2: {}-{}".format(self.entry_point, a, self.max_delay, self.tau1, self.tau2)
 
     def __repr__(self):
         return self.__str__()

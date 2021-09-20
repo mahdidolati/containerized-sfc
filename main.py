@@ -49,8 +49,8 @@ def optimal_test(inter_arrival):
     RUNTIME = "Runtime (sec)"
     solvers = [
         GurobiSolver(my_net),
-        NoShareSolver(my_net, 0)
-        # ShareSolver(my_net, 20),
+        NoShareSolver(my_net, 0),
+        ShareSolver(my_net, 20),
         # PopularitySolver(my_net, 1),
         # ProactiveSolver(my_net, 0.4, 3)
     ]
@@ -60,18 +60,18 @@ def optimal_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 2
+    iterations = 5
     arrival_rate = 1.0 / inter_arrival
-    req_nums = [5]
+    req_nums = [5, 7, 9, 11, 13]
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [150, 301]
     Const.VNF_NUM = 5
     Const.LAYER_NUM = 10
-    Const.SFC_LEN = [1, 5]
+    Const.SFC_LEN = [2, 6]
     Const.TAU1 = [2, 5]
     Const.TAU2 = [5, 7]
-    sfc_gen = SfcGenerator(my_net, 0.5)
-    # sfc_gen.print()
+    sfc_gen = SfcGenerator(my_net, 1.0)
+    sfc_gen.print()
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)
         print("run-name:", run_name)
@@ -82,6 +82,7 @@ def optimal_test(inter_arrival):
             for _ in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
+                print(reqs[-1])
             #
             for solver in solvers:
                 np.random.seed(itr * 1234)
@@ -92,6 +93,7 @@ def optimal_test(inter_arrival):
                     res, dl_vol = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
                     res, dl_vol = test(solver, reqs)
+                    print("Solver: {} got {} out of {}".format(solver.get_name(), res, req_num))
                 t2 = process_time()
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)

@@ -1,6 +1,6 @@
-ys_err;[[[1523.75], [4571.25]]]
+ys_err;[[[1053.0], [10454.0]], [[304.25], [3867.0175]]]
 x;[5]
-ys;[[1523.75]]
-ls;['Gurobi']
+ys;[[4700.5], [2103.75]]
+ls;['Gurobi', 'NS-0']
 xtitle;Share Percentage
 ytitle;Download (MB)
