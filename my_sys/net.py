@@ -192,6 +192,20 @@ class MyNetwork:
             for j in self.g[e[0]][e[1]]:
                 self.g[e[0]][e[1]][j]["li"].reset()
 
+    def print(self):
+        for n in self.g.nodes():
+            ss = self.g.nodes[n]["nd"].cpu
+            rr = self.g.nodes[n]["nd"].ram
+            dd = self.g.nodes[n]["nd"].disk
+            mm = self.g.nodes[n]["nd"].mm_bw_tx
+            print("Node: {}, cpu: {}, ram: {}, disk: {}, mm: {}".format(n, ss, rr, dd, mm))
+        for e in self.g.edges():
+            for j in self.g[e[0]][e[1]]:
+                tt = self.g[e[0]][e[1]][j]["li"].type
+                bb = self.g[e[0]][e[1]][j]["li"].bw
+                dd = self.g[e[0]][e[1]][j]["li"].delay
+                print("Link({}): {} -- {} -- {}, bw: {}, dl: {}".format(tt, e[0], e[1], j, bb, dd))
+
 
 class Link:
     def __init__(self, tp, s, d):
@@ -539,23 +553,23 @@ class NetGenerator:
                 self.g.add_edge(e2, e1, li=li2)
 
     def get_g(self):
-        # fig, ax = plt.subplots()
-        # x = []
-        # y = []
-        # for n in self.g.nodes():
-        #     x.append(self.g.nodes[n]["nd"].loc[0])
-        #     y.append(self.g.nodes[n]["nd"].loc[1])
-        # ax.plot(x, y, '.b')
-        # for n in self.g.nodes():
-        #     ax.annotate(n, self.g.nodes[n]["nd"].loc)
-        # for e in self.g.edges(data=True):
-        #     for j in self.g[e[0]][e[1]]:
-        #         line_t = 'r-'
-        #         if self.g[e[0]][e[1]][j]["li"].type == "mmWave":
-        #             line_t = 'b-'
-        #         ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
-        #                 [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
-        # plt.show()
+        fig, ax = plt.subplots()
+        x = []
+        y = []
+        for n in self.g.nodes():
+            x.append(self.g.nodes[n]["nd"].loc[0])
+            y.append(self.g.nodes[n]["nd"].loc[1])
+        ax.plot(x, y, '.b')
+        for n in self.g.nodes():
+            ax.annotate(n, self.g.nodes[n]["nd"].loc)
+        for e in self.g.edges(data=True):
+            for j in self.g[e[0]][e[1]]:
+                line_t = 'r-'
+                if self.g[e[0]][e[1]][j]["li"].type == "mmWave":
+                    line_t = 'b-'
+                ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
+                        [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
+        plt.show()
         return MyNetwork(self.g)
 
     def get_closest(self, b):

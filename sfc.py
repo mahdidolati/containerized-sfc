@@ -120,3 +120,8 @@ class SfcGenerator:
         new_sfc.tau2 = t2
         new_sfc.traffic_rate = r
         return new_sfc
+
+    def print(self):
+        print("Layers: {}".format(self.layers))
+        for vnf in self.vnfs_list:
+            print("Vnf: {} -> {}".format(vnf.vnf_id, vnf.layers))

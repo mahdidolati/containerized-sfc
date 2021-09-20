@@ -43,15 +43,16 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
+    # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
     RUNTIME = "Runtime (sec)"
     solvers = [
         GurobiSolver(my_net),
-        NoShareSolver(my_net, 0),
-        ShareSolver(my_net, 20),
-        PopularitySolver(my_net, 1),
-        ProactiveSolver(my_net, 0.4, 3)
+        NoShareSolver(my_net, 0)
+        # ShareSolver(my_net, 20),
+        # PopularitySolver(my_net, 1),
+        # ProactiveSolver(my_net, 0.4, 3)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -59,10 +60,9 @@ def optimal_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 5
+    iterations = 2
     arrival_rate = 1.0 / inter_arrival
-    req_nums = [5, 7, 9, 11, 13]
-    share_percentages = []
+    req_nums = [5]
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [150, 301]
     Const.VNF_NUM = 5
@@ -70,13 +70,10 @@ def optimal_test(inter_arrival):
     Const.SFC_LEN = [1, 5]
     Const.TAU1 = [2, 5]
     Const.TAU2 = [5, 7]
-    for i in range(len(req_nums)):
-        np.random.seed(i * 100)
-        req_num = req_nums[i]
-        x = req_num
-        share_percentages.append(x)
-        sfc_gen = SfcGenerator(my_net, req_num)
-        run_name = "{:.2f}".format(x)
+    sfc_gen = SfcGenerator(my_net, 0.5)
+    # sfc_gen.print()
+    for req_num in req_nums:
+        run_name = "{:d}".format(req_num)
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
@@ -88,8 +85,6 @@ def optimal_test(inter_arrival):
             #
             for solver in solvers:
                 np.random.seed(itr * 1234)
-                res = 0
-                dl_vol = 0
                 t1 = process_time()
                 if solver.batch:
                     R_ids = [i for i in sfc_gen.layers]
@@ -105,15 +100,15 @@ def optimal_test(inter_arrival):
     machine_id = "ut"
     fig_test_id = "{}_optimal".format(machine_id)
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, ACCEPT_RATIO, algs, 'Share Percentage',
+    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage',
                                  ACCEPT_RATIO)
 
     fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, DOWNLOAD_LAYER, algs, 'Share Percentage',
+    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, DOWNLOAD_LAYER, algs, 'Share Percentage',
                                  DOWNLOAD_LAYER)
 
     fig_3 = './result/{}_time_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_3 + '.txt', share_percentages, 0, RUNTIME, algs, 'Share Percentage',
+    stat_collector.write_to_file(fig_3 + '.txt', req_nums, 0, RUNTIME, algs, 'Share Percentage',
                                  RUNTIME)
 
 

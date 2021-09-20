@@ -327,17 +327,17 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         ), name="bw_mm"
     )
 
-    m.addConstrs(
-        (
-            gp.quicksum(
-                q_var[l, t, u, i] * my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"].delay
-                for l in range(len(L))
-                for i in range(len(reqs[u].vnfs))
-            ) <= reqs[u].max_delay
-            for u in range(len(reqs))
-            for t in range(T)
-        ), name="delay"
-    )
+    # m.addConstrs(
+    #     (
+    #         gp.quicksum(
+    #             q_var[l, t, u, i] * my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"].delay
+    #             for l in range(len(L))
+    #             for i in range(len(reqs[u].vnfs))
+    #         ) <= reqs[u].max_delay
+    #         for u in range(len(reqs))
+    #         for t in range(T)
+    #     ), name="delay"
+    # )
 
     m.setObjective(
         gp.quicksum(
@@ -347,8 +347,8 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         GRB.MAXIMIZE
     )
 
-    m.setParam("Threads", 6)
-    m.setParam("TIME_LIMIT", 500)
+    # m.setParam("Threads", 6)
+    # m.setParam("TIME_LIMIT", 500)
     m.optimize()
     # m.write("out.lp")
 
