@@ -357,31 +357,32 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         m.write("model.ilp")
         return 0, 0
 
+    DEBUG_FLAG = False
     tol_val = 0.0001
-
-    for u in range(len(reqs)):
-        if m.getVarByName("a[{}]".format(u)).x < tol_val:
-            continue
-        print("u: {} -- {}-{}".format(u, reqs[u].tau1, reqs[u].tau2))
-        for i in range(len(reqs[u].vnfs)):
-            locs = []
-            for t in range(reqs[u].tau1, reqs[u].tau2 + 1):
-                i_loc = 0
-                dls = []
-                for n in range(N):
-                    a = m.getVarByName("v[{},{},{},{}]".format(n, t, u, i)).x
-                    if a > tol_val:
-                        # print("\ti: {}, t: {}, n: {}".format(i, t, n))
-                        locs.append(n)
-                        i_loc = n
-                if i_loc < len(E):
-                    for r in reqs[u].vnfs[i].layers:
-                        a = m.getVarByName("G[{},{},{}]".format(R_id[r], t, i_loc)).x
-                        if a + tol_val < Rvol[r]:
-                            print("\tG(r: {}, t: {}, n: {}) = {} vs. {}".format(r, t, i_loc, a, Rvol[r]))
-                            # dls.append(a)
-            print("\tlocations: {}".format(locs))
-            # print("\tdls: {}".format(dls))
+    if DEBUG_FLAG:
+        for u in range(len(reqs)):
+            if m.getVarByName("a[{}]".format(u)).x < tol_val:
+                continue
+            print("u: {} -- {}-{}".format(u, reqs[u].tau1, reqs[u].tau2))
+            for i in range(len(reqs[u].vnfs)):
+                locs = []
+                for t in range(reqs[u].tau1, reqs[u].tau2 + 1):
+                    i_loc = 0
+                    dls = []
+                    for n in range(N):
+                        a = m.getVarByName("v[{},{},{},{}]".format(n, t, u, i)).x
+                        if a > tol_val:
+                            # print("\ti: {}, t: {}, n: {}".format(i, t, n))
+                            locs.append(n)
+                            i_loc = n
+                    if i_loc < len(E):
+                        for r in reqs[u].vnfs[i].layers:
+                            a = m.getVarByName("G[{},{},{}]".format(R_id[r], t, i_loc)).x
+                            if a + tol_val < Rvol[r]:
+                                print("\tG(r: {}, t: {}, n: {}) = {} vs. {}".format(r, t, i_loc, a, Rvol[r]))
+                                # dls.append(a)
+                print("\tlocations: {}".format(locs))
+                # print("\tdls: {}".format(dls))
 
 
     dl_vol = 0

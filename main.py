@@ -61,7 +61,7 @@ def optimal_test(inter_arrival):
     #
     iterations = 5
     arrival_rate = 1.0 / inter_arrival
-    n_share_ps = [1.0]
+    req_nums = [5, 7, 9, 11, 13]
     share_percentages = []
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [150, 301]
@@ -70,17 +70,16 @@ def optimal_test(inter_arrival):
     Const.SFC_LEN = [1, 5]
     Const.TAU1 = [2, 5]
     Const.TAU2 = [5, 7]
-    for i in range(len(n_share_ps)):
+    for i in range(len(req_nums)):
         np.random.seed(i * 100)
-        n_share_p = n_share_ps[i]
-        x = n_share_p
+        req_num = req_nums[i]
+        x = req_num
         share_percentages.append(x)
-        sfc_gen = SfcGenerator(my_net, n_share_p)
+        sfc_gen = SfcGenerator(my_net, req_num)
         run_name = "{:.2f}".format(x)
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 10
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
