@@ -3,6 +3,7 @@ from scipy.integrate import Radau
 from sfc import SfcGenerator
 from my_sys.net import NetGenerator
 from solution import NoShareSolver, ShareSolver, PopularitySolver, ProactiveSolver, StorageAwareSolver, GurobiSolver
+from solution import GurobiSingle
 from constants import Const
 from statistic_collector import StatCollector, Stat
 import heapq
@@ -43,11 +44,15 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
+    sfc_gen = SfcGenerator(my_net, 1.0)
+    R_ids = [i for i in sfc_gen.layers]
+    R_vols = [sfc_gen.layers[i] for i in R_ids]
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
     RUNTIME = "Runtime (sec)"
     solvers = [
+        GurobiSingle(my_net, R_ids, R_vols),
         GurobiSolver(my_net),
         NoShareSolver(my_net, 0),
         ShareSolver(my_net, 20),
@@ -70,7 +75,6 @@ def optimal_test(inter_arrival):
     Const.SFC_LEN = [2, 6]
     Const.TAU1 = [2, 5]
     Const.TAU2 = [5, 7]
-    sfc_gen = SfcGenerator(my_net, 1.0)
     sfc_gen.print()
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)
@@ -88,8 +92,6 @@ def optimal_test(inter_arrival):
                 np.random.seed(itr * 1234)
                 t1 = process_time()
                 if solver.batch:
-                    R_ids = [i for i in sfc_gen.layers]
-                    R_vols = [sfc_gen.layers[i] for i in R_ids]
                     res, dl_vol = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
                     res, dl_vol = test(solver, reqs)

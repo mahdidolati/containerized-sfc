@@ -18,7 +18,7 @@ def get_max_sfc(reqs):
     return l_max
 
 
-def solve_optimal(my_net, vnfs, R, Rvol, req):
+def solve_single(my_net, R, Rvol, req):
     T = req.tau2 + 1
     I_len = len(req.vnfs)
     B = my_net.get_all_base_stations()
@@ -268,6 +268,6 @@ def solve_optimal(my_net, vnfs, R, Rvol, req):
     # m.write("out.lp")
 
     if m.status == GRB.INFEASIBLE:
-        return 0, 0
+        return False, 0
     else:
-        return 1, 1
+        return True, 1

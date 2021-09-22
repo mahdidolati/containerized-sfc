@@ -1,5 +1,6 @@
 import heapq
 from opt_gurobi import solve_optimal
+from opt_gurobi_single import solve_single
 
 
 class PopularityEntity:
@@ -318,3 +319,13 @@ class GurobiSolver(Solver):
 
     def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
         return solve_optimal(my_net, vnfs_list, R_ids, R_vols, reqs)
+
+
+class GurobiSingle(Solver):
+    def __init__(self, my_net, R_ids, R_vols):
+        super().__init__(my_net)
+        self.R_ids = R_ids
+        self.R_vols = R_vols
+
+    def solve(self, chain_req, t, sr):
+        return solve_single(self.my_net, self.R_ids, self.R_vols, chain_req)
