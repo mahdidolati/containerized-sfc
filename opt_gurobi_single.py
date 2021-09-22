@@ -149,13 +149,12 @@ def solve_single(my_net, R, Rvol, req):
         ), name="chaining"
     )
 
-    m.addConstrs(
-        (
-            gp.quicksum(
-                q_var[l, 0]
-                for l in adj_out[N_id[req.entry_point]]
-            ) == 1
-        ), name="entry_out"
+    m.addConstr(
+        gp.quicksum(
+            q_var[l, 0]
+            for l in adj_out[N_id[req.entry_point]]
+        ) == 1,
+        name="entry_out"
     )
 
     m.addConstrs(
@@ -168,13 +167,12 @@ def solve_single(my_net, R, Rvol, req):
         ), name="first_vnf_in"
     )
 
-    m.addConstrs(
-        (
-            gp.quicksum(
-                q_var[l, len(req.vnfs)]
-                for l in adj_in[N_id[req.entry_point]]
-            ) == 1
-        ), "entry_in"
+    m.addConstr(
+        gp.quicksum(
+            q_var[l, len(req.vnfs)]
+            for l in adj_in[N_id[req.entry_point]]
+        ) == 1,
+        "entry_in"
     )
 
     m.addConstrs(
@@ -187,14 +185,13 @@ def solve_single(my_net, R, Rvol, req):
         ), name="last_vnf_out"
     )
 
-    m.addConstrs(
-        (
-            gp.quicksum(
-                q_var[l, i] * my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"].delay
-                for l in range(len(L))
-                for i in range(len(req.vnfs))
-            ) <= req.max_delay
-        ), name="delay"
+    m.addConstr(
+        gp.quicksum(
+            q_var[l, i] * my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"].delay
+            for l in range(len(L))
+            for i in range(len(req.vnfs))
+        ) <= req.max_delay,
+        name="delay"
     )
 
     m.addConstrs(
