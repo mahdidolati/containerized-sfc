@@ -67,6 +67,49 @@ class MyNetwork:
                                                new_links))
         return 0, np.infty, [], []
 
+    def get_a_path(self, c, d, t, excluded=None):
+        if excluded is None:
+            excluded = []
+        h = []
+        visited = set()
+        counter = 0
+        heapq.heappush(h, (-np.infty, counter, c, [], []))
+        while len(h) > 0:
+            bw, cnt, n, cur_path, cur_links = heapq.heappop(h)
+            if n == d:
+                return -bw, cur_path, cur_links
+            if n in visited:
+                continue
+            visited.add(n)
+            for m in self.g.neighbors(n):
+                if m not in visited and m not in cur_path and self.g.nodes[m]["nd"].id[0] != "b":
+                    for j in self.g[n][m]:
+                        cur_link = self.g[n][m][j]["li"]
+                        if (n, m, j) not in excluded:
+                            bw_avail = cur_link.bw_avail(t)
+                            counter = counter + 1
+                            new_path = list(cur_path)
+                            new_path.append(n)
+                            new_links = list(cur_links)
+                            new_links.append((n, m, j))
+                            heapq.heappush(h, (max(bw, -bw_avail),
+                                               counter, m, new_path, new_links))
+        return 0, [], []
+
+    def pre_compute_paths(self, t):
+        paths = dict()
+        for n in self.g.nodes():
+            if n[0] == "e":
+                paths[n] = []
+                bb, pp, ll = self.get_a_path(n, "c", t)
+                paths[n].append(ll)
+                for l in ll:
+                    bb2, pp2, ll2 = self.get_a_path(n, "c", t, [l])
+                    if bb2 > 0:
+                        paths[n].append(ll2)
+                        break
+        return paths
+
     def get_closest(self, n):
         bestDelay = np.infty
         bestNeighbor = None
