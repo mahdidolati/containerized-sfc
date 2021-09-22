@@ -44,7 +44,16 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
+    req_nums = [5]
+    Const.VNF_LAYER = [5, 16]
+    Const.LAYER_SIZE = [10, 301]
+    Const.VNF_NUM = 5
+    Const.LAYER_NUM = 10
+    Const.SFC_LEN = [2, 6]
+    Const.TAU1 = [2, 5]
+    Const.TAU2 = [5, 7]
     sfc_gen = SfcGenerator(my_net, 1.0)
+    sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
     R_vols = [sfc_gen.layers[i] for i in R_ids]
     # my_net.print()
@@ -67,15 +76,6 @@ def optimal_test(inter_arrival):
     #
     iterations = 2
     arrival_rate = 1.0 / inter_arrival
-    req_nums = [5]
-    Const.VNF_LAYER = [5, 16]
-    Const.LAYER_SIZE = [150, 301]
-    Const.VNF_NUM = 5
-    Const.LAYER_NUM = 10
-    Const.SFC_LEN = [2, 6]
-    Const.TAU1 = [2, 5]
-    Const.TAU2 = [5, 7]
-    sfc_gen.print()
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)
         print("run-name:", run_name)
