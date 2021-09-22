@@ -96,19 +96,16 @@ class MyNetwork:
                                                counter, m, new_path, new_links))
         return 0, [], []
 
-    def pre_compute_paths(self, t):
-        paths = dict()
-        for n in self.g.nodes():
-            if n[0] == "e":
-                paths[n] = []
-                bb, pp, ll = self.get_a_path(n, "c", t)
-                paths[n].append(ll)
-                for l in ll:
-                    bb2, pp2, ll2 = self.get_a_path(n, "c", t, [l])
-                    if bb2 > 0:
-                        paths[n].append(ll2)
-                        break
-        return paths
+    def pre_compute_paths(self, n, t):
+        cur_path = []
+        bb, pp, ll = self.get_a_path(n, "c", t)
+        cur_path.append(ll)
+        for l in ll:
+            bb2, pp2, ll2 = self.get_a_path(n, "c", t, [l])
+            if bb2 > 0:
+                cur_path.append(ll2)
+                break
+        return cur_path
 
     def get_closest(self, n):
         bestDelay = np.infty
