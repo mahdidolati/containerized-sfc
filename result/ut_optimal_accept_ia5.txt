@@ -2,5 +2,5 @@ ys_err;[[[0.0], [0.0]], [[0.0], [0.0]]]
 x;[1.0]
 ys;[[3.0], [1.0]]
 ls;['Gurobi', 'NS-0']
-xtitle;Share Percentage
+xtitle;No. Requests
 ytitle;Accept Ratio
