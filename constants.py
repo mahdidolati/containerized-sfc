@@ -14,8 +14,8 @@ class Const:
     #
     WIRE_LINK_PR = 0.15
     MM_MAX_DIST = 0.9
-    LINK_BW = [50, 150]
-    MM_BW = [10, 50]
+    LINK_BW = [150, 450]
+    MM_BW = [30, 150]
     SERVER_CPU = [16, 32]
     SERVER_RAM = [4, 32]
     SERVER_DISK = [800, 3000]

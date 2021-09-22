@@ -60,24 +60,20 @@ def solve_single(my_net, R, Rvol, req):
         adj_out[N_id[L[l][0]]].append(l)
         adj_in[N_id[L[l][1]]].append(l)
 
+    missing_layers = dict()
+    for e in range(len(E)):
+        for i in range(len(req.vnfs)):
+            R_ei, _ = my_net.get_missing_layers(E[e], req, i, req.tau1)
+            missing_layers[e, i] = R_ei
+
+    T1 = range(req.arrival_time, req.tau1)
+    T2 = range(req.tau1, req.tau2 + 1)
+
     m = gp.Model("Model")
     # BINARY
     v_var = m.addVars(N, I_len, vtype=GRB.BINARY, name="v")
     q_var = m.addVars(L_len, I_len+1, vtype=GRB.BINARY, name="q")
-
-    Gamma_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="Gamma")
-    Psi_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="Psi")
-    z_var = m.addVars(len(R), T, len(E), vtype=GRB.BINARY, name="z")
     y_var = m.addVars(len(E), 2, len(R), vtype=GRB.BINARY, name="y")
-    w_var = m.addVars(L_len, T, len(R), len(E), vtype=GRB.BINARY, name="w")
-
-    # CONTINUOUS
-    G_var = m.addVars(len(R), T, len(E), vtype=GRB.CONTINUOUS, lb=0, name="G")
-    g_var = m.addVars(len(R), T, len(E), vtype=GRB.CONTINUOUS, lb=0, name="g")
-    wg_var = m.addVars(L_len, len(R), T, len(E), vtype=GRB.CONTINUOUS, name="wg")
-
-    T1 = range(req.arrival_time, req.tau1)
-    T2 = range(req.tau1, req.tau2+1)
 
     m.addConstrs(
         (
@@ -202,7 +198,7 @@ def solve_single(my_net, R, Rvol, req):
             )
             for e in range(len(E))
             for i in range(len(req.vnfs))
-            for r in my_net.get_missing_layers(e, req, i, req.tau1)
+            for r in missing_layers[(e,i)]
         ), name="choose_dl_path"
     )
 
@@ -212,8 +208,8 @@ def solve_single(my_net, R, Rvol, req):
                 y_var[e, p, r] * Rvol[r] / len(T1)
                 for r in range(len(R))
                 for e in range(len(E))
-                for p in range(pre_computed_paths[e])
-                if l in pre_computed_paths[e][p]
+                for p in range(len(pre_computed_paths[e]))
+                if Lw[l] in pre_computed_paths[e][p]
             ) <= my_net.g[Lw[l][0]][Lw[l][1]][Lw[l][2]]["li"].bw_avail(t)
             for l in range(len(Lw))
             for t in T1
@@ -226,7 +222,7 @@ def solve_single(my_net, R, Rvol, req):
                 y_var[ee, p, r] * Rvol[r] / len(T1)
                 for ee in range(len(E))
                 for r in range(len(R))
-                for p in range(pre_computed_paths[ee])
+                for p in range(len(pre_computed_paths[ee]))
                 for l in pre_computed_paths[ee][p]
                 if my_net.g[l[0]][l[1]][l[2]]["li"].type == "mmWave"
             ) <= my_net.g.nodes[E[e]]["nd"].mm_tx_avail(t)
@@ -265,6 +261,8 @@ def solve_single(my_net, R, Rvol, req):
     # m.write("out.lp")
 
     if m.status == GRB.INFEASIBLE:
+        m.computeIIS()
+        m.write("s_model.ilp")
         return False, 0
     else:
         return True, 1
