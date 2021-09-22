@@ -53,7 +53,7 @@ def optimal_test(inter_arrival):
     RUNTIME = "Runtime (sec)"
     solvers = [
         GurobiSingle(my_net, R_ids, R_vols),
-        GurobiSolver(my_net),
+        # GurobiSolver(my_net),
         NoShareSolver(my_net, 0),
         ShareSolver(my_net, 20),
         # PopularitySolver(my_net, 1),
@@ -65,9 +65,9 @@ def optimal_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 5
+    iterations = 2
     arrival_rate = 1.0 / inter_arrival
-    req_nums = [5, 7, 9, 11, 13]
+    req_nums = [5]
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [150, 301]
     Const.VNF_NUM = 5
