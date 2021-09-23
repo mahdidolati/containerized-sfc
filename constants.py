@@ -8,7 +8,7 @@ class Const:
     LAYER_NUM = 20
     LAYER_SIZE = [50, 350]  # [2, 70]
     SFC_LEN = [1, 7]
-    SFC_DELAY = [1000, 3500]
+    SFC_DELAY = [100, 200]
     ALPHA_RANGE = [0.8, 1.05]
     LAMBDA_RANGE = [1, 5]
     #
@@ -18,4 +18,4 @@ class Const:
     MM_BW = [600, 3000]
     SERVER_CPU = [16, 32]
     SERVER_RAM = [4, 32]
-    SERVER_DISK = [16000, 100000]
+    SERVER_DISK = [1600, 10000]

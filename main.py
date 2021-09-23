@@ -44,14 +44,14 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [5]
+    req_nums = [100]
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [10, 301]
     Const.VNF_NUM = 5
     Const.LAYER_NUM = 10
     Const.SFC_LEN = [2, 6]
     Const.TAU1 = [2, 5]
-    Const.TAU2 = [5, 7]
+    Const.TAU2 = [5, 100]
     sfc_gen = SfcGenerator(my_net, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -333,7 +333,7 @@ def layer_num_test(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     test_type = "optimal"
-    ia = 10
+    ia = 2
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):

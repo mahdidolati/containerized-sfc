@@ -270,9 +270,10 @@ def solve_single(my_net, R, Rvol, req):
         for n in range(N):
             a = m.getVarByName("v[{},{}]".format(n, i)).x
             if abs(a - 1.0) < tol_val:
-                my_net.g.nodes[n]["nd"].embed(req, i)
+                n_name = E[n] if n < len(E) else cloud_node
+                my_net.g.nodes[n_name]["nd"].embed(req, i)
                 if n < len(E):
-                    my_net.g.nodes[n]["nd"].add_layer(missing_layers[(n, i)], req)
+                    my_net.g.nodes[n_name]["nd"].add_layer(missing_layers[(n, i)], req)
 
     total_dl_vol = 0
     downloads = []
