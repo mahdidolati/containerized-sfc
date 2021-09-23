@@ -44,7 +44,7 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [100]
+    req_nums = [20]
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [10, 301]
     Const.VNF_NUM = 5
@@ -333,7 +333,7 @@ def layer_num_test(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     test_type = "optimal"
-    ia = 2
+    ia = 0.2
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):

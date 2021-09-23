@@ -1,6 +1,7 @@
 import heapq
 from opt_gurobi import solve_optimal
 from opt_gurobi_single import solve_single
+from relax_gurobi_single import solve_single_relax
 
 
 class PopularityEntity:
@@ -332,7 +333,8 @@ class GurobiSingle(Solver):
         return "GrSi"
 
     def solve(self, chain_req, t, sr):
-        return solve_single(self.my_net, self.R_ids, self.R_vols, chain_req)
+        # return solve_single(self.my_net, self.R_ids, self.R_vols, chain_req)
+        return solve_single_relax(self.my_net, self.R_ids, self.R_vols, chain_req)
 
     def reset(self):
         self.my_net.reset()
