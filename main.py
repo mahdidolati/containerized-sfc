@@ -51,8 +51,8 @@ def optimal_test(inter_arrival):
     Const.VNF_NUM = 5
     Const.LAYER_NUM = 10
     Const.SFC_LEN = [2, 6]
-    Const.TAU1 = [2, 5]
-    Const.TAU2 = [5, 100]
+    Const.TAU1 = [10, 15]
+    Const.TAU2 = [5, 11]
     sfc_gen = SfcGenerator(my_net, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]

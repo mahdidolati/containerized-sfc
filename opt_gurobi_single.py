@@ -259,7 +259,7 @@ def solve_single(my_net, R, Rvol, req):
     m.setParam("Threads", 6)
     # m.setParam("TIME_LIMIT", 500)
     m.optimize()
-    # m.write("out.lp")
+    m.write("out.lp")
 
     if m.status == GRB.INFEASIBLE:
         # m.computeIIS()
@@ -273,6 +273,7 @@ def solve_single(my_net, R, Rvol, req):
             if abs(a - 1.0) < tol_val:
                 n_name = E[n] if n < len(E) else cloud_node
                 my_net.g.nodes[n_name]["nd"].embed(req, i)
+                print("Placed {} on {}".format(i, n_name))
                 if n < len(E):
                     my_net.g.nodes[n_name]["nd"].add_layer(missing_layers[(n, i)], req)
 
@@ -286,9 +287,9 @@ def solve_single(my_net, R, Rvol, req):
                     total_dl_vol = total_dl_vol + Rvol[r]
                     layer_download = LayerDownload()
                     downloads.append(layer_download)
-                    for tt in T1:
-                        for l in pre_computed_paths[e][p]:
-                            l_obj = my_net.g[l[0]][l[1]][l[2]]["li"]
+                    for l in pre_computed_paths[e][p]:
+                        l_obj = my_net.g[l[0]][l[1]][l[2]]["li"]
+                        for tt in T1:
                             layer_download.add_data(tt, l_obj, Rvol[r] / len(T1))
 
     for l in range(len(L)):
@@ -297,5 +298,6 @@ def solve_single(my_net, R, Rvol, req):
             if abs(a - 1.0) < tol_val:
                 l_obj = my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"]
                 l_obj.embed(req, i)
+                print("Link embed {} <--> {} towards {}".format(L[l][0], L[l][1], i))
 
     return True, total_dl_vol
