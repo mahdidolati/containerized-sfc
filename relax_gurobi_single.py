@@ -273,21 +273,23 @@ def solve_single_relax(my_net, R, Rvol, req):
         v_max = 0
         v_max_id = None
         for i in range(len(req.vnfs)):
+            if i in rounded:
+                continue
             for n in range(N):
-                if (n, i) in rounded:
-                    continue
                 a = m.getVarByName("v[{},{}]".format(n, i)).x
                 if v_max_id is None or v_max < a:
                     v_max_id = (n, i)
                     v_max = a
 
-        rounded.add(v_max_id)
+        rounded.add(v_max_id[1])
         print("rounded {}".format(rounded))
         v_var[v_max_id[0], v_max_id[1]].lb = 1.0
 
         if v_max_id[0] < len(E):
             selected_e = v_max_id[0]
-            for r in range(len(R)):
+            selected_i = v_max_id[1]
+            for rr in missing_layers[(selected_e, selected_i)]:
+                r = R_id[rr]
                 best_p = 0
                 best_p_id = None
                 for p in range(len(pre_computed_paths[selected_e])):
