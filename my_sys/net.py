@@ -468,6 +468,7 @@ class Node:
             ml.finalized = True
             self.layers[layer_id] = ml
 
+    # do not delete if while admitting a req
     def mark_needed(self, chain_req, i):
         for r in chain_req.vnfs[i].layers:
             if r in self.layers:

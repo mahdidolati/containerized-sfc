@@ -2,6 +2,7 @@ import gurobipy as gp
 from gurobipy import GRB
 from constants import Const
 from itertools import chain
+from sfc import LayerDownload
 
 
 def get_last_t(reqs):
@@ -19,7 +20,6 @@ def get_max_sfc(reqs):
 
 
 def solve_single(my_net, R, Rvol, req):
-    T = req.tau2 + 1
     I_len = len(req.vnfs)
     B = my_net.get_all_base_stations()
     E = my_net.get_all_edge_nodes()
@@ -263,6 +263,37 @@ def solve_single(my_net, R, Rvol, req):
     if m.status == GRB.INFEASIBLE:
         m.computeIIS()
         m.write("s_model.ilp")
-        return False, 0
-    else:
-        return True, 1
+        return False, None
+
+    tol_val = 0.0001
+    for i in range(len(req.vnfs)):
+        for n in range(N):
+            a = m.getVarByName("v[{},{}]".format(n, i)).x
+            if abs(a - 1.0) < tol_val:
+                my_net.g.nodes[n]["nd"].embed(req, i)
+                if n < len(E):
+                    my_net.g.nodes[n]["nd"].add_layer(missing_layers[(n, i)], req)
+
+    total_dl_vol = 0
+    downloads = []
+    for e in range(len(E)):
+        for r in range(len(R)):
+            for p in range(len(pre_computed_paths[e])):
+                a = m.getVarByName("y[{},{},{}]".format(e, p, r)).x
+                if abs(a - 1.0) < tol_val:
+                    total_dl_vol = total_dl_vol + Rvol[r]
+                    layer_download = LayerDownload()
+                    downloads.append(layer_download)
+                    for tt in T1:
+                        for l in pre_computed_paths[e][p]:
+                            l_obj = my_net.g[l[0]][l[1]][l[2]]["li"]
+                            layer_download.add_data(tt, l_obj, Rvol[r] / len(T1))
+
+    for l in range(len(L)):
+        for i in range(len(req.vnfs) + 1):
+            a = m.getVarByName("q[{},{}]".format(l, i)).x
+            if abs(a - 1.0) < tol_val:
+                l_obj = my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"]
+                l_obj.embed(req, i)
+
+    return True, total_dl_vol
