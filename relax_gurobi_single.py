@@ -266,7 +266,43 @@ def solve_single_relax(my_net, R, Rvol, req):
         # m.write("s_model.ilp")
         return False, None
 
-    tol_val = 0.0001
+
+    tol_val = 1e-4
+    rounded = set()
+    for _ in range(len(req.vnfs)):
+        v_max = 0
+        v_max_id = None
+        for i in range(len(req.vnfs)):
+            for n in range(N):
+                if (n, i) in rounded:
+                    continue
+                a = m.getVarByName("v[{},{}]".format(n, i)).x
+                if v_max_id is None or v_max < a:
+                    v_max_id = (n, i)
+                    v_max = a
+
+        rounded.add(v_max_id)
+        print("rounded {}".format(rounded))
+        v_var[v_max_id[0], v_max_id[1]].lb = 1.0
+
+        if v_max_id[0] < len(E):
+            selected_e = v_max_id[0]
+            for r in range(len(R)):
+                best_p = 0
+                best_p_id = None
+                for p in range(len(pre_computed_paths[selected_e])):
+                    a = m.getVarByName("y[{},{},{}]".format(selected_e, p, r)).x
+                    if a > tol_val:
+                        if best_p_id is None or best_p < a:
+                            best_p_id = p
+                            best_p = a
+                if best_p_id is not None:
+                    m.getVarByName("y[{},{},{}]".format(selected_e, best_p_id, r)).lb = 1.0
+
+        m.optimize()
+        if m.status == GRB.INFEASIBLE:
+            return False, None
+
     for i in range(len(req.vnfs)):
         for n in range(N):
             a = m.getVarByName("v[{},{}]".format(n, i)).x

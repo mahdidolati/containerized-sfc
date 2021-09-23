@@ -45,7 +45,7 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [50]
+    req_nums = [10]
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [10, 301]
     Const.VNF_NUM = 5
