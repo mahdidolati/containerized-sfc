@@ -255,14 +255,15 @@ def solve_single(my_net, R, Rvol, req):
         GRB.MINIMIZE
     )
 
+    m.setParam("LogToConsole", False)
     m.setParam("Threads", 6)
     # m.setParam("TIME_LIMIT", 500)
     m.optimize()
     # m.write("out.lp")
 
     if m.status == GRB.INFEASIBLE:
-        m.computeIIS()
-        m.write("s_model.ilp")
+        # m.computeIIS()
+        # m.write("s_model.ilp")
         return False, None
 
     tol_val = 0.0001

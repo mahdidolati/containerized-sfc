@@ -333,7 +333,24 @@ class GurobiSingle(Solver):
         return "GrSi"
 
     def solve(self, chain_req, t, sr):
-        # return solve_single(self.my_net, self.R_ids, self.R_vols, chain_req)
+        return solve_single(self.my_net, self.R_ids, self.R_vols, chain_req)
+
+    def reset(self):
+        self.my_net.reset()
+        self.my_net.share_layer = True
+
+
+class GurobiSingleRelax(Solver):
+    def __init__(self, my_net, R_ids, R_vols):
+        super().__init__(my_net)
+        self.R_ids = R_ids
+        self.R_vols = R_vols
+        self.my_net.share_layer = True
+
+    def get_name(self):
+        return "GrSiRlx"
+
+    def solve(self, chain_req, t, sr):
         return solve_single_relax(self.my_net, self.R_ids, self.R_vols, chain_req)
 
     def reset(self):

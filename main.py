@@ -4,6 +4,7 @@ from sfc import SfcGenerator
 from my_sys.net import NetGenerator
 from solution import NoShareSolver, ShareSolver, PopularitySolver, ProactiveSolver, StorageAwareSolver, GurobiSolver
 from solution import GurobiSingle
+from solution import GurobiSingleRelax
 from constants import Const
 from statistic_collector import StatCollector, Stat
 import heapq
@@ -44,7 +45,7 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [20]
+    req_nums = [50]
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [10, 301]
     Const.VNF_NUM = 5
@@ -62,9 +63,10 @@ def optimal_test(inter_arrival):
     RUNTIME = "Runtime (sec)"
     solvers = [
         GurobiSingle(my_net, R_ids, R_vols),
+        GurobiSingleRelax(my_net, R_ids, R_vols),
         # GurobiSolver(my_net),
-        NoShareSolver(my_net, 0),
-        ShareSolver(my_net, 20),
+        # NoShareSolver(my_net, 0),
+        # ShareSolver(my_net, 20),
         # PopularitySolver(my_net, 1),
         # ProactiveSolver(my_net, 0.4, 3)
     ]
