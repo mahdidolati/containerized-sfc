@@ -45,14 +45,14 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [10]
+    req_nums = [200]
     Const.VNF_LAYER = [5, 16]
     Const.LAYER_SIZE = [10, 301]
     Const.VNF_NUM = 5
     Const.LAYER_NUM = 10
     Const.SFC_LEN = [2, 6]
     Const.TAU1 = [10, 15]
-    Const.TAU2 = [5, 11]
+    Const.TAU2 = [5, 100]
     sfc_gen = SfcGenerator(my_net, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
