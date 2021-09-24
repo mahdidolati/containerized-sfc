@@ -24,7 +24,7 @@ def solve_single_relax(my_net, R, Rvol, req):
     B = my_net.get_all_base_stations()
     E = my_net.get_all_edge_nodes()
     N = len(E) + 1
-    Lw, Lm = my_net.get_link_sets()
+    Lw, Lm, L_iii = my_net.get_link_sets()
     L = Lw + Lm
     L_len = len(L)
     cloud_node = "c"
@@ -306,7 +306,7 @@ def solve_single_relax(my_net, R, Rvol, req):
             _, _, path_nodes, links = my_net.get_biggest_path(loc_of[i-1], loc_of[i], req.tau1)
 
         for l in links:
-            m.getVarByName("q[{},{}]".format(L_id[l], i)).lb = 1.0
+            m.getVarByName("q[{},{}]".format(L_id[L_iii[l]], i)).lb = 1.0
 
         m.optimize()
         if m.status == GRB.INFEASIBLE:
@@ -314,7 +314,7 @@ def solve_single_relax(my_net, R, Rvol, req):
 
     _, _, path_nodes, links = my_net.get_biggest_path(loc_of[len(req.vnfs)-1], req.entry_point, req.tau1)
     for l in links:
-        m.getVarByName("q[{},{}]".format(L_id[l], len(req.vnfs) + 1)).lb = 1.0
+        m.getVarByName("q[{},{}]".format(L_id[L_iii[l]], len(req.vnfs) + 1)).lb = 1.0
 
     m.optimize()
     if m.status == GRB.INFEASIBLE:

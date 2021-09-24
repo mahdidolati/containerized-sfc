@@ -23,7 +23,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
     B = my_net.get_all_base_stations()
     E = my_net.get_all_edge_nodes()
     N = len(E) + 1
-    Lw, Lm = my_net.get_link_sets()
+    Lw, Lm, L_iii = my_net.get_link_sets()
     L = Lw + Lm
     L_len = len(L)
     cloud_node = "c"

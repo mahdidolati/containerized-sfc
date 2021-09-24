@@ -206,13 +206,15 @@ class MyNetwork:
     def get_link_sets(self):
         Lw = list()
         Lm = list()
+        L_iii = dict()
         for e in self.g.edges():
             for j in self.g[e[0]][e[1]]:
+                L_iii[self.g[e[0]][e[1]][j]["li"]] = (e[0], e[1], j)
                 if self.g[e[0]][e[1]][j]["li"].type == "wired":
                     Lw.append((e[0], e[1], j))
                 else:
                     Lm.append((e[0], e[1], j))
-        return Lw, Lm
+        return Lw, Lm, L_iii
 
     def get_all_base_stations(self):
         B = list()
@@ -316,7 +318,7 @@ class Link:
             self.e1.rm_mm_dl(t, r)
 
     def __str__(self):
-        return "{}: {}".format(self.type, self.e1.id)
+        return "{},{},{}".format(self.type, self.e1.id, self.e2.id)
 
     def __repr__(self):
         return self.__str__()
