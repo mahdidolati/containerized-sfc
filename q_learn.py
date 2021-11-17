@@ -30,7 +30,9 @@ class QLearn:
         s2_str = str(s2)
         if s1_str != s2_str:
             if s1_str not in self.q_vals:
-                self.q_vals[s1_str] = {a1_str: 0}
+                self.q_vals[s1_str] = dict()
+            if a1_str not in self.q_vals[s1_str]:
+                self.q_vals[s1_str][a1_str] = 0.0
             if s2_str not in self.q_vals:
                 self.q_vals[s2_str] = dict()
             s2_actions = [self.q_vals[s2_str][a2] - self.q_vals[s1_str][a1_str] for a2 in self.q_vals[s2_str]]

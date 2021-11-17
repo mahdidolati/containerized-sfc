@@ -397,11 +397,6 @@ class GurobiSingleRelax(Solver):
                     if over_used < vol:
                         print("From {}: delete {}, unused {}".format(m, over_used, vol))
                     self.my_net.g.nodes[m]["nd"].empty_storage(t)
-                    # over_use = self.my_net.g.nodes[m]["nd"].disk_avail(t)
-                    # to_del = self.my_net.g.nodes[m]["nd"].get_unused_for_del(-1 * over_use)
-                    # for l in to_del:
-                    #     self.my_net.g.nodes[m]["nd"].layers[l].remove_user(chain_req)
-                    #     del self.my_net.g.nodes[m]["nd"].layers[l]
                 #
                 self.my_net.g.nodes[m]["nd"].make_s2()
                 self.my_net.g.nodes[m]["nd"].q_agent.add_transition(
