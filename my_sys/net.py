@@ -374,13 +374,17 @@ class Node:
 
     def get_local_kept(self):
         kept = set()
+        vol = 0
         for l in self.s1[1]:  # unused at s1
             if l in self.s2[0] or l in self.s2[1]: # l is not in s2
                 kept.add(l)
-        return kept
+            else:
+                vol = vol + self.layers[l].size
+        return vol, kept
 
-    def empty_storage(self):
-        to_keep = self.q_agent.get_action(self.s1)
+    def empty_storage(self, t):
+        to_del = -1 * self.disk_avail(t)
+        to_keep = self.q_agent.get_action(self.s1, to_del)
         for l in self.layers:
             if len(self.layers[l].chain_users) == 0 or not self.layers[l].marked_needed:
                 if l not in to_keep:
