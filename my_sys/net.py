@@ -560,6 +560,7 @@ class Node:
 class NetGenerator:
     def __init__(self):
         base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0), (3, 0), (6, 0)]
+        base_station_loc = [(0, 0)]
         cloud_loc = (10, 3)
         self.g = nx.MultiDiGraph()
         for n in range(len(base_station_loc)):

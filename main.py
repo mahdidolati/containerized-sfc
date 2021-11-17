@@ -339,17 +339,17 @@ def layer_num_test(inter_arrival):
 
 
 def test_qlearning(inter_arrival):
-    Const.LAYER_NUM = 10
+    Const.LAYER_NUM = 6
     Const.VNF_LAYER = [2, 6]
     Const.TAU1 = [10, 12]
     Const.TAU2 = [2, 3]
     Const.LAYER_SIZE = [5, 15]
     Const.SFC_DELAY = [500, 750]
-    Const.SERVER_DISK = [50, 200]
+    Const.SERVER_DISK = [30, 80]
     Const.SERVER_CPU = [50, 100]
     Const.SERVER_RAM = [50, 100]
     my_net = NetGenerator().get_g()
-    sfc_gen = SfcGenerator(my_net, 0.5)
+    sfc_gen = SfcGenerator(my_net, 1.0)
     R_ids = [i for i in sfc_gen.layers]
     R_vols = [sfc_gen.layers[i] for i in R_ids]
     solvers = [

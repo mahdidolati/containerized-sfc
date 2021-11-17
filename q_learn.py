@@ -26,8 +26,11 @@ class QLearn:
                 q_list.append(a)
                 q_sum = q_sum + self.q_vals[s_str][a]
         #
-        prs = [self.q_vals[s_str][a]/q_sum for a in q_list]
-        selected_action = np.random.choice(a=q_list, size=1, p=prs)
+        if q_sum == 0:
+            selected_action = np.random.choice(a=q_list, size=1)
+        else:
+            prs = [self.q_vals[s_str][a]/q_sum for a in q_list]
+            selected_action = np.random.choice(a=q_list, size=1, p=prs)
         return literal_eval(selected_action[1:-1].split(",")[1])
 
     def add_transition(self, s1, a1, r1, s2):
