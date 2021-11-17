@@ -129,12 +129,20 @@ class Solver:
                 del self.my_net.g.nodes[m]["nd"].layers[l]
         return True, layer_download_vol
 
-    def handle_sfc_eviction(self, chain_req):
+    def handle_sfc_eviction(self, chain_req, t):
+        print("-------------- handle eviction --------------------")
         self.my_net.evict_sfc(chain_req)
         for m in chain_req.used_servers:
             for l in self.my_net.g.nodes[m]["nd"].layers:
                 self.my_net.g.nodes[m]["nd"].layers[l].remove_user(chain_req)
+        for m in chain_req.used_servers:
+            print("node {}: has capacity {} and availabe {} available-no-cache {}, has unused {}".format(m,
+                    self.my_net.g.nodes[m]["nd"].disk,
+                    self.my_net.g.nodes[m]["nd"].disk_avail(t),
+                    self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t),
+                    self.my_net.g.nodes[m]["nd"].has_unused_layer(t)))
         chain_req.used_servers = set()
+        print("---------------------------------------------------")
 
     def pre_arrival_procedure(self, t):
         to_be_delete = set()
@@ -144,6 +152,9 @@ class Solver:
                     to_be_delete.add((m, l))
         for m, l in to_be_delete:
             del self.my_net.g.nodes[m]["nd"].layers[l]
+
+    def post_arrival_procedure(self, status, t, chain_req):
+        pass
 
     def delete_layer(self, target_layer, t):
         return True
@@ -274,6 +285,7 @@ class StorageAwareSolver(Solver):
     def __init__(self, my_net):
         super().__init__(my_net)
         self.my_net.share_layer = True
+        self.q_vals = dict()
 
     def get_name(self):
         return "SA"
@@ -305,6 +317,12 @@ class StorageAwareSolver(Solver):
     def reset(self):
         self.my_net.reset()
         self.my_net.share_layer = True
+
+    def pre_arrival_procedure(self, t):
+        for m in self.my_net.g.nodes():
+            for l in self.my_net.g.nodes[m]["nd"].layers:
+                if self.my_net.g.nodes[m]["nd"].layers[l].mark_needed:
+                    pass
 
     def delete_layer(self, target_layer, t):
         return False
@@ -352,6 +370,34 @@ class GurobiSingleRelax(Solver):
 
     def solve(self, chain_req, t, sr):
         return solve_single_relax(self.my_net, self.R_ids, self.R_vols, chain_req)
+
+    def pre_arrival_procedure(self, t):
+        print("-------------- pre arrival --------------------")
+        for m in self.my_net.g.nodes():
+            if m[0] == "e":
+                print("node {}: has capacity {} and availabe {} available-no-cache {}, has unused {}".format(m,
+                                                                    self.my_net.g.nodes[m]["nd"].disk,
+                                                                    self.my_net.g.nodes[m]["nd"].disk_avail(t),
+                                                                    self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t),
+                                                                    self.my_net.g.nodes[m]["nd"].has_unused_layer(t)))
+                for l in self.my_net.g.nodes[m]["nd"].layers:
+                    if len(self.my_net.g.nodes[m]["nd"].layers[l].chain_users) <= 0:
+                        self.my_net.g.nodes[m]["nd"].layers[l].marked_needed = False
+        print("------------------------------------------------")
+
+    def post_arrival_procedure(self, status, t, chain_req):
+        print("-------------- post arrival --------------------")
+        for m in self.my_net.g.nodes():
+            if m[0] == "e":
+                if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
+                    print("should delete some layers {} - {}".format(self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t),
+                                                                     self.my_net.g.nodes[m]["nd"].disk_avail(t)))
+                    over_use = self.my_net.g.nodes[m]["nd"].disk_avail(t)
+                    to_del = self.my_net.g.nodes[m]["nd"].get_unused_for_del(-1 * over_use)
+                    for l in to_del:
+                        self.my_net.g.nodes[m]["nd"].layers[l].remove_user(chain_req)
+                        del self.my_net.g.nodes[m]["nd"].layers[l]
+        print("------------------------------------------------")
 
     def reset(self):
         self.my_net.reset()

@@ -10,7 +10,7 @@ from statistic_collector import StatCollector, Stat
 import heapq
 import numpy as np
 import sys, getopt
-from time import process_time
+from time import process_time, sleep
 
 
 def test(solver, reqs):
@@ -29,14 +29,20 @@ def test(solver, reqs):
             solver.pre_arrival_procedure(t)
             status, dl_vol = solver.solve(s, t, sampling_rate)
             if status:
+                print(ev, t, "embedded!")
+                solver.post_arrival_procedure(status, t, s)
                 layer_dl_vol = layer_dl_vol + dl_vol
                 accepted = accepted + 1
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
+            else:
+                print(ev, t, "rejected!")
         elif ev == "FINISH":
-            solver.handle_sfc_eviction(s)
+            print(ev, t, "departed!")
+            solver.handle_sfc_eviction(s, t)
             pro_dl_vol = solver.pre_fetch_layers(t)
             layer_dl_vol = layer_dl_vol + pro_dl_vol
+        sleep(1)
     avg_rate = accepted / len(reqs)
     avg_dl = layer_dl_vol / accepted if accepted > 0 else 0
     return avg_rate, avg_dl
@@ -332,9 +338,37 @@ def layer_num_test(inter_arrival):
     stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, DOWNLOAD_LAYER, algs, 'No. of Layers', DOWNLOAD_LAYER)
 
 
+def test_qlearning(inter_arrival):
+    Const.LAYER_NUM = 30
+    Const.VNF_LAYER = [2, 6]
+    Const.TAU1 = [10, 12]
+    Const.TAU2 = [2, 3]
+    Const.LAYER_SIZE = [5, 15]
+    Const.SFC_DELAY = [500, 750]
+    Const.SERVER_DISK = [50, 70]
+    Const.SERVER_CPU = [50, 100]
+    Const.SERVER_RAM = [50, 100]
+    my_net = NetGenerator().get_g()
+    sfc_gen = SfcGenerator(my_net, 0.5)
+    R_ids = [i for i in sfc_gen.layers]
+    R_vols = [sfc_gen.layers[i] for i in R_ids]
+    solvers = [
+        GurobiSingleRelax(my_net, R_ids, R_vols)
+    ]
+    arrival_rate = 1.0 / inter_arrival
+    req_num = 350
+    t = 0
+    reqs = []
+    for _ in range(req_num):
+        reqs.append(sfc_gen.get_chain(t))
+        t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
+    for solver in solvers:
+        test(solver, reqs)
+
+
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    test_type = "optimal"
+    test_type = "qlearning"
     ia = 2
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
@@ -357,3 +391,6 @@ if __name__ == "__main__":
     if test_type == "optimal" or test_type == "all":
         print("running optimal because of {}".format(test_type))
         optimal_test(ia)
+    if test_type == "qlearning" or test_type == "all":
+        print("running qlearn because of {}".format(test_type))
+        test_qlearning(ia)

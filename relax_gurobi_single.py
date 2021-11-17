@@ -243,7 +243,7 @@ def solve_single_relax(my_net, R, Rvol, req):
                 y_var[e, p, r] * Rvol[r]
                 for r in range(len(R))
                 for p in range(len(pre_computed_paths[e]))
-            ) <= my_net.g.nodes[E[e]]["nd"].disk_avail(t)
+            ) <= my_net.g.nodes[E[e]]["nd"].disk_avail_no_cache(t)
             for e in range(len(E))
             for t in chain(T1, T2)
         ), name="disk_limit"
@@ -325,9 +325,11 @@ def solve_single_relax(my_net, R, Rvol, req):
             a = m.getVarByName("v[{},{}]".format(n, i)).x
             if abs(a - 1.0) < tol_val:
                 n_name = E[n] if n < len(E) else cloud_node
+                print("vnf {} was embedded in {}, adding {} missed layers".format(i, n_name, len(missing_layers[(n, i)])))
                 my_net.g.nodes[n_name]["nd"].embed(req, i)
-                if n < len(E):
-                    my_net.g.nodes[n_name]["nd"].add_layer(missing_layers[(n, i)], req)
+                req.used_servers.add(n_name)
+                if n_name[0] == "e":
+                    my_net.g.nodes[n_name]["nd"].add_layer(missing_layers[(n, i)], req, True)
 
     total_dl_vol = 0
     downloads = []

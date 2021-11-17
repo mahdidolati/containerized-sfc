@@ -22,6 +22,7 @@ class MyLayer:
         self.marked_delete = False
 
     def add_user(self, u):
+        self.marked_needed = True
         self.chain_users.add(u)
         self.unique_used = self.unique_used + 1
         if u.tau2 > self.last_used:
@@ -189,7 +190,6 @@ class MyNetwork:
         return min_bw
 
     def evict_sfc(self, chain_req):
-        self.mark_no_need_all(chain_req)
         for n in self.g.nodes():
             self.g.nodes[n]["nd"].evict(chain_req)
         for e in self.g.edges():
@@ -222,10 +222,6 @@ class MyNetwork:
             if n[0] == "b":
                 B.append(n)
         return B
-
-    def mark_no_need_all(self, chain_req):
-        for m in chain_req.used_servers:
-            self.g.nodes[m]["nd"].mark_no_need(chain_req)
 
     def reset(self):
         for n in self.g.nodes():
@@ -403,6 +399,16 @@ class Node:
                     u = u + self.layers[my_layer].size
         return self.disk - u
 
+    def has_unused_layer(self, t):
+        if self.type[0] == "b":
+            return False
+        if self.type[0] == "c":
+            return False
+        for my_layer in self.layers:
+            if len(self.layers[my_layer].chain_users) == 0 or not self.layers[my_layer].marked_needed:
+                return True
+        return False
+
     def get_unused_for_del(self, max_del):
         unused = set()
         for my_layer in self.layers:
@@ -482,13 +488,15 @@ class Node:
                 if r in self.layers:
                     self.layers[r].marked_needed = False
 
-    def add_layer(self, R, chain_req):
+    def add_layer(self, R, chain_req, mark_fin=False):
         for r in R:
             if r in self.layers:
                 self.layers[r].add_user(chain_req)
             else:
                 self.layers[r] = MyLayer(r, R[r], chain_req.arrival_time, chain_req.tau1)
                 self.layers[r].add_user(chain_req)
+            if mark_fin:
+                self.layers[r].finalized = True
 
     def add_layer_no_share(self, R, chain_req):
         for r in R:
