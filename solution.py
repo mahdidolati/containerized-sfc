@@ -364,6 +364,7 @@ class GurobiSingleRelax(Solver):
         self.R_ids = R_ids
         self.R_vols = R_vols
         self.my_net.share_layer = True
+        self.q_vals = dict()
 
     def get_name(self):
         return "GrSiRlx"
