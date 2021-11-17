@@ -325,7 +325,7 @@ def solve_single_relax(my_net, R, Rvol, req):
             a = m.getVarByName("v[{},{}]".format(n, i)).x
             if abs(a - 1.0) < tol_val:
                 n_name = E[n] if n < len(E) else cloud_node
-                print("vnf {} was embedded in {}, adding {} missed layers".format(i, n_name, len(missing_layers[(n, i)])))
+                # print("vnf {} was embedded in {}, adding {} missed layers".format(i, n_name, len(missing_layers[(n, i)])))
                 my_net.g.nodes[n_name]["nd"].embed(req, i)
                 req.used_servers.add(n_name)
                 if n_name[0] == "e":

@@ -345,7 +345,7 @@ def test_qlearning(inter_arrival):
     Const.TAU2 = [2, 3]
     Const.LAYER_SIZE = [5, 15]
     Const.SFC_DELAY = [500, 750]
-    Const.SERVER_DISK = [50, 70]
+    Const.SERVER_DISK = [50, 200]
     Const.SERVER_CPU = [50, 100]
     Const.SERVER_RAM = [50, 100]
     my_net = NetGenerator().get_g()

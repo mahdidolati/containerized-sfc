@@ -409,6 +409,18 @@ class Node:
                 return True
         return False
 
+    def get_all_unused(self):
+        vol = 0
+        unused = set()
+        for my_layer in self.layers:
+            if len(self.layers[my_layer].chain_users) == 0 and \
+                    not self.layers[my_layer].marked_needed and \
+                    not self.layers[my_layer].marked_delete:
+                unused.add(my_layer)
+                vol = vol + self.layers[my_layer].size
+        return vol, unused
+
+
     def get_unused_for_del(self, max_del):
         unused = set()
         for my_layer in self.layers:

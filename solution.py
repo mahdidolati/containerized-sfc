@@ -130,19 +130,19 @@ class Solver:
         return True, layer_download_vol
 
     def handle_sfc_eviction(self, chain_req, t):
-        print("-------------- handle eviction --------------------")
+        # print("-------------- handle eviction --------------------")
         self.my_net.evict_sfc(chain_req)
         for m in chain_req.used_servers:
             for l in self.my_net.g.nodes[m]["nd"].layers:
                 self.my_net.g.nodes[m]["nd"].layers[l].remove_user(chain_req)
-        for m in chain_req.used_servers:
-            print("node {}: has capacity {} and availabe {} available-no-cache {}, has unused {}".format(m,
-                    self.my_net.g.nodes[m]["nd"].disk,
-                    self.my_net.g.nodes[m]["nd"].disk_avail(t),
-                    self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t),
-                    self.my_net.g.nodes[m]["nd"].has_unused_layer(t)))
+        # for m in chain_req.used_servers:
+            # print("node {}: has capacity {} and availabe {} available-no-cache {}, has unused {}".format(m,
+            #         self.my_net.g.nodes[m]["nd"].disk,
+            #         self.my_net.g.nodes[m]["nd"].disk_avail(t),
+            #         self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t),
+            #         self.my_net.g.nodes[m]["nd"].has_unused_layer(t)))
         chain_req.used_servers = set()
-        print("---------------------------------------------------")
+        # print("---------------------------------------------------")
 
     def pre_arrival_procedure(self, t):
         to_be_delete = set()
@@ -372,26 +372,28 @@ class GurobiSingleRelax(Solver):
         return solve_single_relax(self.my_net, self.R_ids, self.R_vols, chain_req)
 
     def pre_arrival_procedure(self, t):
-        print("-------------- pre arrival --------------------")
+        # print("-------------- pre arrival --------------------")
         for m in self.my_net.g.nodes():
             if m[0] == "e":
-                print("node {}: has capacity {} and availabe {} available-no-cache {}, has unused {}".format(m,
-                                                                    self.my_net.g.nodes[m]["nd"].disk,
-                                                                    self.my_net.g.nodes[m]["nd"].disk_avail(t),
-                                                                    self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t),
-                                                                    self.my_net.g.nodes[m]["nd"].has_unused_layer(t)))
+                # print("node {}: has capacity {} and availabe {} available-no-cache {}, has unused {}".format(m,
+                #                                                     self.my_net.g.nodes[m]["nd"].disk,
+                #                                                     self.my_net.g.nodes[m]["nd"].disk_avail(t),
+                #                                                     self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t),
+                #                                                     self.my_net.g.nodes[m]["nd"].has_unused_layer(t)))
                 for l in self.my_net.g.nodes[m]["nd"].layers:
                     if len(self.my_net.g.nodes[m]["nd"].layers[l].chain_users) <= 0:
                         self.my_net.g.nodes[m]["nd"].layers[l].marked_needed = False
-        print("------------------------------------------------")
+        # print("------------------------------------------------")
 
     def post_arrival_procedure(self, status, t, chain_req):
         print("-------------- post arrival --------------------")
         for m in self.my_net.g.nodes():
             if m[0] == "e":
                 if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
-                    print("should delete some layers {} - {}".format(self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t),
-                                                                     self.my_net.g.nodes[m]["nd"].disk_avail(t)))
+                    vol, unused_layers = self.my_net.g.nodes[m]["nd"].get_all_unused()
+                    over_used = self.my_net.g.nodes[m]["nd"].disk_avail(t)
+                    if over_used < vol:
+                        print("From {}: delete {}, unused {}".format(m, over_used, vol))
                     over_use = self.my_net.g.nodes[m]["nd"].disk_avail(t)
                     to_del = self.my_net.g.nodes[m]["nd"].get_unused_for_del(-1 * over_use)
                     for l in to_del:
