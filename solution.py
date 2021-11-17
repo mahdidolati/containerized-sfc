@@ -364,7 +364,6 @@ class GurobiSingleRelax(Solver):
         self.R_ids = R_ids
         self.R_vols = R_vols
         self.my_net.share_layer = True
-        self.q_vals = dict()
 
     def get_name(self):
         return "GrSiRlx"
@@ -374,8 +373,10 @@ class GurobiSingleRelax(Solver):
 
     def pre_arrival_procedure(self, t):
         # print("-------------- pre arrival --------------------")
+        pre_state = []
         for m in self.my_net.g.nodes():
             if m[0] == "e":
+                self.my_net.g.nodes[m]["nd"].make_s1()
                 # print("node {}: has capacity {} and availabe {} available-no-cache {}, has unused {}".format(m,
                 #                                                     self.my_net.g.nodes[m]["nd"].disk,
                 #                                                     self.my_net.g.nodes[m]["nd"].disk_avail(t),
@@ -395,11 +396,20 @@ class GurobiSingleRelax(Solver):
                     over_used = self.my_net.g.nodes[m]["nd"].disk_avail(t)
                     if over_used < vol:
                         print("From {}: delete {}, unused {}".format(m, over_used, vol))
-                    over_use = self.my_net.g.nodes[m]["nd"].disk_avail(t)
-                    to_del = self.my_net.g.nodes[m]["nd"].get_unused_for_del(-1 * over_use)
-                    for l in to_del:
-                        self.my_net.g.nodes[m]["nd"].layers[l].remove_user(chain_req)
-                        del self.my_net.g.nodes[m]["nd"].layers[l]
+                    self.my_net.g.nodes[m]["nd"].empty_storage()
+                    # over_use = self.my_net.g.nodes[m]["nd"].disk_avail(t)
+                    # to_del = self.my_net.g.nodes[m]["nd"].get_unused_for_del(-1 * over_use)
+                    # for l in to_del:
+                    #     self.my_net.g.nodes[m]["nd"].layers[l].remove_user(chain_req)
+                    #     del self.my_net.g.nodes[m]["nd"].layers[l]
+                #
+                self.my_net.g.nodes[m]["nd"].make_s2()
+                self.my_net.g.nodes[m]["nd"].q_agent.add_transition(
+                    self.my_net.g.nodes[m]["nd"].s1,
+                    self.my_net.g.nodes[m]["nd"].get_local_kept(),
+                    self.my_net.g.nodes[m]["nd"].get_local_reused(),
+                    self.my_net.g.nodes[m]["nd"].s2
+                )
         print("------------------------------------------------")
 
     def reset(self):

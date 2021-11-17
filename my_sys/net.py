@@ -5,6 +5,7 @@ from itertools import combinations
 import heapq
 from constants import Const
 from sfc import LayerDownload
+from q_learn import QLearn
 
 
 class MyLayer:
@@ -344,6 +345,46 @@ class Node:
         self.mm_embeds_tx = dict()
         self.mm_embeds_rx = dict()
         self.dl_embeds = dict()
+        self.q_agent = QLearn()
+        self.s1 = None
+        self.s2 = None
+
+    def make_state(self):
+        in_use = set()
+        unused = set()
+        for l in self.layers:
+            if len(self.layers[l].chain_users) > 0 or self.layers[l].marked_needed:
+                in_use.add(l)
+            else:
+                unused.add(l)
+        return in_use, unused
+
+    def make_s1(self):
+        self.s1 = self.make_state()
+
+    def make_s2(self):
+        self.s2 = self.make_state()
+
+    def get_local_reused(self):
+        saved = 0
+        for l in self.s1[1]: # unused at s1
+            if l in self.s2[0]: # become inuse at s2
+                saved = saved + self.layers[l].size
+        return saved
+
+    def get_local_kept(self):
+        kept = set()
+        for l in self.s1[1]:  # unused at s1
+            if l in self.s2[0] or l in self.s2[1]: # l is not in s2
+                kept.add(l)
+        return kept
+
+    def empty_storage(self):
+        to_keep = self.q_agent.get_action(self.s1)
+        for l in self.layers:
+            if len(self.layers[l].chain_users) == 0 or not self.layers[l].marked_needed:
+                if l not in to_keep:
+                    del self.layers[l]
 
     def reset(self):
         self.layers = dict()
