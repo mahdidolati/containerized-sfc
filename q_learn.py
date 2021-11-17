@@ -8,7 +8,12 @@ class QLearn:
         self.gamma = 0.1
 
     def has_action(self, s):
-        return s in self.q_vals
+        s_str = str(s)
+        if s_str not in self.q_vals:
+            return False
+        if len(self.q_vals[s_str]) <= 0:
+            return False
+        return True
 
     def get_action(self, s, a_lim=0):
         s_str = str(s)

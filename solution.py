@@ -394,8 +394,7 @@ class GurobiSingleRelax(Solver):
                 if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
                     vol, unused_layers = self.my_net.g.nodes[m]["nd"].get_all_unused()
                     over_used = self.my_net.g.nodes[m]["nd"].disk_avail(t)
-                    if over_used < vol:
-                        print("From {}: delete {}, unused {}".format(m, over_used, vol))
+                    print("From {}: delete {}, unused {}".format(m, over_used, vol))
                     self.my_net.g.nodes[m]["nd"].empty_storage(t)
                 #
                 self.my_net.g.nodes[m]["nd"].make_s2()

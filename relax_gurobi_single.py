@@ -127,19 +127,6 @@ def solve_single_relax(my_net, R, Rvol, req):
     m.addConstrs(
         (
             gp.quicksum(
-                q_var[l, i] * req.vnf_in_rate(i)
-                for l in adj_out[e]
-                for i in range(len(req.vnfs) + 1)
-                if l >= len(Lw)
-            ) <= my_net.g.nodes[E[e]]["nd"].mm_tx_avail(t)
-            for e in range(len(E))
-            for t in T2
-        ), name="bw_mm"
-    )
-
-    m.addConstrs(
-        (
-            gp.quicksum(
                 q_var[l, i + 1]
                 for l in adj_out[n]
             ) - gp.quicksum(
@@ -148,6 +135,7 @@ def solve_single_relax(my_net, R, Rvol, req):
             ) == v_var[n, i] - v_var[n, i + 1]
             for n in range(N)
             for i in range(len(req.vnfs)-1)
+            if n in adj_in and n in adj_out
         ), name="chaining"
     )
 
@@ -166,6 +154,7 @@ def solve_single_relax(my_net, R, Rvol, req):
                 for l in adj_in[n]
             ) == v_var[n, 0]
             for n in range(N)
+            if n in adj_in
         ), name="first_vnf_in"
     )
 
@@ -184,6 +173,7 @@ def solve_single_relax(my_net, R, Rvol, req):
                 for l in adj_out[n]
             ) == v_var[n, len(req.vnfs)-1]
             for n in range(N)
+            if n in adj_out
         ), name="last_vnf_out"
     )
 
@@ -220,21 +210,6 @@ def solve_single_relax(my_net, R, Rvol, req):
             for l in range(len(Lw))
             for t in T1
         ), name="dl_bw_wired"
-    )
-
-    m.addConstrs(
-        (
-            gp.quicksum(
-                y_var[ee, p, r] * Rvol[r] / len(T1)
-                for ee in range(len(E))
-                for r in range(len(R))
-                for p in range(len(pre_computed_paths[ee]))
-                for l in pre_computed_paths[ee][p]
-                if my_net.g[l[0]][l[1]][l[2]]["li"].type == "mmWave"
-            ) <= my_net.g.nodes[E[e]]["nd"].mm_tx_avail(t)
-            for e in range(len(E))
-            for t in T1
-        ), name="dl_bw_mm"
     )
 
     m.addConstrs(

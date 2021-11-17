@@ -236,8 +236,7 @@ class MyNetwork:
             ss = self.g.nodes[n]["nd"].cpu
             rr = self.g.nodes[n]["nd"].ram
             dd = self.g.nodes[n]["nd"].disk
-            mm = self.g.nodes[n]["nd"].mm_bw_tx
-            print("Node: {}, cpu: {}, ram: {}, disk: {}, mm: {}".format(n, ss, rr, dd, mm))
+            print("Node: {}, cpu: {}, ram: {}, disk: {}".format(n, ss, rr, dd))
         for e in self.g.edges():
             for j in self.g[e[0]][e[1]]:
                 tt = self.g[e[0]][e[1]][j]["li"].type
@@ -278,41 +277,29 @@ class Link:
             if t in self.dl:
                 u = u + self.dl[t]
             return self.bw - u
-        else:
-            return min(self.e1.mm_tx_avail(t), self.e2.mm_rx_avail(t))
 
     def embed(self, chain_req, i):
         if self.type == "wired":
             if chain_req not in self.embeds:
                 self.embeds[chain_req] = set()
             self.embeds[chain_req].add(i)
-        else:
-            self.e1.mm_embed_tx(chain_req, i)
-            self.e2.mm_embed_rx(chain_req, i)
 
     def evict(self, chain_req):
         if self.type == "wired":
             if chain_req in self.embeds:
                 del self.embeds[chain_req]
-        else:
-            self.e1.mm_evict(chain_req)
-            self.e2.mm_evict(chain_req)
 
     def add_dl(self, t, r):
         if self.type == "wired":
             if t not in self.dl:
                 self.dl[t] = 0
             self.dl[t] = self.dl[t] + r
-        else:
-            self.e1.add_mm_dl(t, r)
 
     def rm_dl(self, t, r):
         if self.type == "wired":
             if t not in self.dl:
                 return
             self.dl[t] = self.dl[t] - r
-        else:
-            self.e1.rm_mm_dl(t, r)
 
     def __str__(self):
         return "{},{},{}".format(self.type, self.e1.id, self.e2.id)
@@ -338,12 +325,8 @@ class Node:
             self.cpu = np.infty
             self.ram = np.infty
             self.disk = np.infty
-        self.mm_bw_tx = np.random.randint(*Const.MM_BW)
-        self.mm_bw_rx = np.random.randint(*Const.MM_BW)
         self.layers = dict()
         self.embeds = dict()
-        self.mm_embeds_tx = dict()
-        self.mm_embeds_rx = dict()
         self.dl_embeds = dict()
         self.q_agent = QLearn()
         self.s1 = None
@@ -398,8 +381,6 @@ class Node:
     def reset(self):
         self.layers = dict()
         self.embeds = dict()
-        self.mm_embeds_tx = dict()
-        self.mm_embeds_rx = dict()
         self.dl_embeds = dict()
 
     def cpu_avail(self, t):
@@ -569,54 +550,6 @@ class Node:
         if chain_req in self.embeds:
             del self.embeds[chain_req]
 
-    def mm_tx_avail(self, t):
-        u = 0
-        for r in self.mm_embeds_tx:
-            if r.tau1 <= t <= r.tau2:
-                for i in self.mm_embeds_tx[r]:
-                    # Transmitted traffic in the current node towards the location of i-th VNF of chain r
-                    u = u + r.vnf_in_rate(i)
-        if t in self.dl_embeds:
-            u = u + self.dl_embeds[t]
-        return self.mm_bw_tx - u
-
-    def mm_rx_avail(self, t):
-        u = 0
-        for r in self.mm_embeds_rx:
-            if r.tau1 <= t <= r.tau2:
-                for i in self.mm_embeds_rx[r]:
-                    # Transmitted traffic in the current node towards the location of i-th VNF of chain r
-                    u = u + r.vnf_in_rate(i)
-        if t in self.dl_embeds:
-            u = u + self.dl_embeds[t]
-        return self.mm_bw_rx - u
-
-    def mm_embed_tx(self, chain_req, i):
-        if chain_req not in self.mm_embeds_tx:
-            self.mm_embeds_tx[chain_req] = set()
-        self.mm_embeds_tx[chain_req].add(i)
-
-    def mm_embed_rx(self, chain_req, i):
-        if chain_req not in self.mm_embeds_rx:
-            self.mm_embeds_rx[chain_req] = set()
-        self.mm_embeds_rx[chain_req].add(i)
-
-    def mm_evict(self, chain_req):
-        if chain_req in self.mm_embeds_tx:
-            del self.mm_embeds_tx[chain_req]
-        if chain_req in self.mm_embeds_rx:
-            del self.mm_embeds_rx[chain_req]
-
-    def add_mm_dl(self, t, r):
-        if t not in self.dl_embeds:
-            self.dl_embeds[t] = 0
-        self.dl_embeds[t] = self.dl_embeds[t] + r
-
-    def rm_mm_dl(self, t, r):
-        if t not in self.dl_embeds:
-            return
-        self.dl_embeds[t] = self.dl_embeds[t] - r
-
 
 class NetGenerator:
     def __init__(self):
@@ -657,11 +590,6 @@ class NetGenerator:
             if np.random.uniform(0, 1.0) < Const.WIRE_LINK_PR:
                 li1 = Link("wired", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
                 li2 = Link("wired", self.g.nodes[e2]["nd"], self.g.nodes[e1]["nd"])
-                self.g.add_edge(e1, e2, li=li1)
-                self.g.add_edge(e2, e1, li=li2)
-            if np.linalg.norm(self.g.nodes[e1]["nd"].loc - self.g.nodes[e2]["nd"].loc) < Const.MM_MAX_DIST:
-                li1 = Link("mmWave", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
-                li2 = Link("mmWave", self.g.nodes[e2]["nd"], self.g.nodes[e1]["nd"])
                 self.g.add_edge(e1, e2, li=li1)
                 self.g.add_edge(e2, e1, li=li2)
 
