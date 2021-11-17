@@ -1,4 +1,5 @@
 import numpy as np
+from ast import literal_eval
 
 
 class QLearn:
@@ -20,14 +21,14 @@ class QLearn:
         q_list = []
         q_sum = 0
         for a in self.q_vals[s_str]:
-            will_remain = int(a[0:].split(",")[0])
+            will_remain = int(a[1:].split(",")[0])
             if will_remain < a_lim:
                 q_list.append(a)
                 q_sum = q_sum + self.q_vals[s_str][a]
         #
         prs = [self.q_vals[s_str][a]/q_sum for a in q_list]
         selected_action = np.random.choice(a=q_list, size=1, p=prs)
-        return selected_action
+        return literal_eval(selected_action[1:-1].split(",")[1])
 
     def add_transition(self, s1, a1, r1, s2):
         s1_str = str(s1)

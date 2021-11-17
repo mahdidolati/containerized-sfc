@@ -339,7 +339,7 @@ def layer_num_test(inter_arrival):
 
 
 def test_qlearning(inter_arrival):
-    Const.LAYER_NUM = 30
+    Const.LAYER_NUM = 10
     Const.VNF_LAYER = [2, 6]
     Const.TAU1 = [10, 12]
     Const.TAU2 = [2, 3]

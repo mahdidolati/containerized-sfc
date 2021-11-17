@@ -368,9 +368,11 @@ class Node:
 
     def empty_storage(self, t):
         to_del = -1 * self.disk_avail(t)
+        deleted = 0
         if not self.q_agent.has_action(self.s1):
             to_del_layer = self.get_unused_for_del(to_del)
             for l in to_del_layer:
+                deleted = deleted + self.layers[l].size
                 del self.layers[l]
         else:
             will_remain = self.s1_extra - to_del
@@ -378,7 +380,9 @@ class Node:
             for l in self.layers:
                 if len(self.layers[l].chain_users) == 0 or not self.layers[l].marked_needed:
                     if l not in to_keep:
+                        deleted = deleted + self.layers[l].size
                         del self.layers[l]
+        print("Deleted: {}".format(deleted))
 
     def reset(self):
         self.layers = dict()
