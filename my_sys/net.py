@@ -330,6 +330,7 @@ class Node:
         self.dl_embeds = dict()
         self.q_agent = QLearn()
         self.s1 = None
+        self.s1_extra = 0
         self.s2 = None
 
     def make_state(self):
@@ -344,6 +345,7 @@ class Node:
 
     def make_s1(self):
         self.s1 = self.make_state()
+        self.s1_extra, _ = self.get_all_unused()
 
     def make_s2(self):
         self.s2 = self.make_state()
@@ -361,7 +363,6 @@ class Node:
         for l in self.s1[1]:  # unused at s1
             if l in self.s2[0] or l in self.s2[1]: # l is not in s2
                 kept.add(l)
-            else:
                 vol = vol + self.layers[l].size
         return vol, kept
 
@@ -372,7 +373,8 @@ class Node:
             for l in to_del_layer:
                 del self.layers[l]
         else:
-            to_keep = self.q_agent.get_action(self.s1, to_del)
+            will_remain = self.s1_extra - to_del
+            to_keep = self.q_agent.get_action(self.s1, will_remain)
             for l in self.layers:
                 if len(self.layers[l].chain_users) == 0 or not self.layers[l].marked_needed:
                     if l not in to_keep:
