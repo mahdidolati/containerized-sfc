@@ -377,11 +377,14 @@ class Node:
         else:
             will_remain = self.s1_extra - to_del
             to_keep = self.q_agent.get_action(self.s1, will_remain)
+            will_be_deleted = set()
             for l in self.layers:
                 if len(self.layers[l].chain_users) == 0 or not self.layers[l].marked_needed:
                     if l not in to_keep:
-                        deleted = deleted + self.layers[l].size
-                        del self.layers[l]
+                        will_be_deleted.add(l)
+            for l in will_be_deleted:
+                deleted = deleted + self.layers[l].size
+                del self.layers[l]
         print("Deleted: {}".format(deleted))
 
     def reset(self):
