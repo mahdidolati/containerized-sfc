@@ -400,6 +400,7 @@ class Node:
         self.layers = dict()
         self.embeds = dict()
         self.dl_embeds = dict()
+        self.q_agent = QLearn()
 
     def cpu_avail(self, t):
         if self.type[0] == "b":
@@ -469,7 +470,6 @@ class Node:
                 vol = vol + self.layers[my_layer].size
         return vol, unused
 
-
     def get_unused_for_del(self, max_del):
         unused = set()
         for my_layer in self.layers:
@@ -537,7 +537,7 @@ class Node:
             ml.finalized = True
             self.layers[layer_id] = ml
 
-    # do not delete if while admitting a req
+    # do not delete while admitting a req
     def mark_needed(self, chain_req, i):
         for r in chain_req.vnfs[i].layers:
             if r in self.layers:

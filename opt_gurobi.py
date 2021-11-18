@@ -260,7 +260,7 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
         ), name="chaining"
     )
 
-    max_dl_rate = max(Const.LINK_BW[1], Const.MM_BW[1])
+    max_dl_rate = Const.LINK_BW[1]
 
     m.addConstrs(
         (
@@ -306,25 +306,6 @@ def solve_optimal(my_net, vnfs, R, Rvol, reqs):
             for l in range(len(Lw))
             for t in range(T)
         ), name="bw_wired"
-    )
-
-    m.addConstrs(
-        (
-            gp.quicksum(
-                wg_var[l, r, t, e]
-                for l in adj_out[e]
-                for r in range(len(R))
-                if l >= len(Lw)
-            ) + gp.quicksum(
-                q_var[l, t, u, i] * reqs[u].vnf_in_rate(i)
-                for l in adj_out[e]
-                for u in range(len(reqs))
-                for i in range(len(reqs[u].vnfs))
-                if l >= len(Lw)
-            ) <= my_net.g.nodes[E[e]]["nd"].mm_bw_tx
-            for e in range(len(E))
-            for t in range(T)
-        ), name="bw_mm"
     )
 
     m.addConstrs(

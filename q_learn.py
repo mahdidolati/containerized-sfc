@@ -5,8 +5,8 @@ from ast import literal_eval
 class QLearn:
     def __init__(self):
         self.q_vals = dict()
-        self.alpha = 0.1
-        self.gamma = 0.1
+        self.alpha = 0.9
+        self.gamma = 0.9
 
     def has_action(self, s):
         s_str = str(s)

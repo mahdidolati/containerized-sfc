@@ -29,20 +29,16 @@ def test(solver, reqs):
             solver.pre_arrival_procedure(t)
             status, dl_vol = solver.solve(s, t, sampling_rate)
             if status:
-                print(ev, t, "embedded!")
                 solver.post_arrival_procedure(status, t, s)
                 layer_dl_vol = layer_dl_vol + dl_vol
                 accepted = accepted + 1
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
-            else:
-                print(ev, t, "rejected!")
         elif ev == "FINISH":
-            print(ev, t, "departed!")
             solver.handle_sfc_eviction(s, t)
             pro_dl_vol = solver.pre_fetch_layers(t)
             layer_dl_vol = layer_dl_vol + pro_dl_vol
-        sleep(1)
+        # sleep(1)
     avg_rate = accepted / len(reqs)
     avg_dl = layer_dl_vol / accepted if accepted > 0 else 0
     return avg_rate, avg_dl
@@ -339,8 +335,9 @@ def layer_num_test(inter_arrival):
 
 
 def test_qlearning(inter_arrival):
-    Const.LAYER_NUM = 6
-    Const.VNF_LAYER = [4, 6]
+    Const.LAYER_NUM = 8
+    Const.VNF_LAYER = [2, 5]
+    Const.VNF_NUM = 15
     Const.TAU1 = [10, 12]
     Const.TAU2 = [2, 3]
     Const.LAYER_SIZE = [7, 15]
@@ -348,22 +345,46 @@ def test_qlearning(inter_arrival):
     Const.SERVER_DISK = [30, 80]
     Const.SERVER_CPU = [50, 100]
     Const.SERVER_RAM = [50, 100]
+    ACCEPT_RATIO = "Accept Ratio"
+    DOWNLOAD_LAYER = "Download (MB)"
     my_net = NetGenerator().get_g()
     sfc_gen = SfcGenerator(my_net, 1.0)
     R_ids = [i for i in sfc_gen.layers]
     R_vols = [sfc_gen.layers[i] for i in R_ids]
     solvers = [
-        GurobiSingleRelax(my_net, R_ids, R_vols)
+        GurobiSingleRelax(my_net, R_ids, R_vols, "q_learning"),
+        GurobiSingleRelax(my_net, R_ids, R_vols, "default")
     ]
+    stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
+    algs = [s.get_name() for s in solvers]
+    stat_collector = StatCollector(algs, stats)
     arrival_rate = 1.0 / inter_arrival
-    req_num = 350
-    t = 0
-    reqs = []
-    for _ in range(req_num):
-        reqs.append(sfc_gen.get_chain(t))
-        t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
-    for solver in solvers:
-        test(solver, reqs)
+    run_name = "1"
+    iterations = 4
+    x_axis = [1]
+    for itr in range(iterations):
+        req_num = 500
+        t = 0
+        reqs = []
+        np.random.seed(itr * 4321)
+        for _ in range(req_num):
+            reqs.append(sfc_gen.get_chain(t))
+            t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
+        for solver in solvers:
+            np.random.seed(itr * 1234)
+            res, dl_vol = test(solver, reqs)
+            print("{}-Solver: {} got {} out of {}".format(itr, solver.get_name(), res, req_num))
+            stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
+            stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
+
+    machine_id = "ut"
+    fig_test_id = "{}_eviction".format(machine_id)
+    fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_2 + '.txt', x_axis, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
+
+    fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_2 + '.txt', x_axis, 0, DOWNLOAD_LAYER, algs, 'No. of Layers',
+                                 DOWNLOAD_LAYER)
 
 
 if __name__ == "__main__":

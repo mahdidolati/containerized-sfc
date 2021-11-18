@@ -359,14 +359,15 @@ class GurobiSingle(Solver):
 
 
 class GurobiSingleRelax(Solver):
-    def __init__(self, my_net, R_ids, R_vols):
+    def __init__(self, my_net, R_ids, R_vols, eviction_strategy="default"):
         super().__init__(my_net)
         self.R_ids = R_ids
         self.R_vols = R_vols
         self.my_net.share_layer = True
+        self.eviction_strategy = eviction_strategy
 
     def get_name(self):
-        return "GrSiRlx"
+        return "GrSiRlx(" + self.eviction_strategy[0] + ")"
 
     def solve(self, chain_req, t, sr):
         return solve_single_relax(self.my_net, self.R_ids, self.R_vols, chain_req)
@@ -388,14 +389,15 @@ class GurobiSingleRelax(Solver):
         # print("------------------------------------------------")
 
     def post_arrival_procedure(self, status, t, chain_req):
-        print("-------------- post arrival --------------------")
+        # print("-------------- post arrival --------------------")
         for m in self.my_net.g.nodes():
             if m[0] == "e":
                 if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
-                    vol, unused_layers = self.my_net.g.nodes[m]["nd"].get_all_unused()
-                    over_used = self.my_net.g.nodes[m]["nd"].disk_avail(t)
-                    print("From {}: delete {}, unused {}".format(m, over_used, vol))
-                    self.my_net.g.nodes[m]["nd"].empty_storage(t)
+                    # print("From {}: delete {}, unused {}".format(m, over_used, vol))
+                    if self.eviction_strategy == "q_learning":
+                        self.my_net.g.nodes[m]["nd"].empty_storage(t)
+                    else:
+                        self.my_net.g.nodes[m]["nd"].empty_storage_random(t)
                 #
                 self.my_net.g.nodes[m]["nd"].make_s2()
                 self.my_net.g.nodes[m]["nd"].q_agent.add_transition(
@@ -404,7 +406,7 @@ class GurobiSingleRelax(Solver):
                     self.my_net.g.nodes[m]["nd"].get_local_reused(),
                     self.my_net.g.nodes[m]["nd"].s2
                 )
-        print("------------------------------------------------")
+        # print("------------------------------------------------")
 
     def reset(self):
         self.my_net.reset()
