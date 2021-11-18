@@ -22,6 +22,8 @@ class QLearn:
         q_sum = 0
         for a in self.q_vals[s_str]:
             will_remain = int(a[1:].split(",")[0])
+            if will_remain == 0:
+                return set()
             if will_remain < a_lim:
                 q_list.append(a)
                 q_sum = q_sum + self.q_vals[s_str][a]
@@ -31,8 +33,9 @@ class QLearn:
         else:
             prs = [self.q_vals[s_str][a]/q_sum for a in q_list]
             selected_action = np.random.choice(a=q_list, size=1, p=prs)
-        set_str = selected_action[0][1:-1].split(", ")[1]
-        return literal_eval(set_str)
+        set_str = "{" + selected_action[0][1:-1].split("{")[1]
+        set_parsed = literal_eval(set_str)
+        return set_parsed
 
     def add_transition(self, s1, a1, r1, s2):
         s1_str = str(s1)
