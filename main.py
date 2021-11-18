@@ -336,8 +336,8 @@ def layer_num_test(inter_arrival):
 
 def test_qlearning(inter_arrival):
     Const.LAYER_NUM = 8
-    Const.VNF_LAYER = [2, 5]
-    Const.VNF_NUM = 15
+    Const.VNF_LAYER = [2, 6]
+    Const.VNF_NUM = 17
     Const.TAU1 = [10, 12]
     Const.TAU2 = [2, 3]
     Const.LAYER_SIZE = [7, 15]
@@ -363,7 +363,7 @@ def test_qlearning(inter_arrival):
     iterations = 4
     x_axis = [1]
     for itr in range(iterations):
-        req_num = 500
+        req_num = 1500
         t = 0
         reqs = []
         np.random.seed(itr * 4321)

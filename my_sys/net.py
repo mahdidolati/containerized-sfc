@@ -394,7 +394,7 @@ class Node:
                 for l in will_be_deleted:
                     deleted = deleted + self.layers[l].size
                     del self.layers[l]
-        print("Deleted: {}".format(deleted))
+        # print("Deleted: {}".format(deleted))
 
     def reset(self):
         self.layers = dict()
