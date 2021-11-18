@@ -366,25 +366,34 @@ class Node:
                 vol = vol + self.layers[l].size
         return vol, kept
 
+    def empty_storage_random(self, t):
+        to_del = -1 * self.disk_avail(t)
+        deleted = 0
+        to_del_layer = self.get_unused_for_del(to_del)
+        for l in to_del_layer:
+            deleted = deleted + self.layers[l].size
+            del self.layers[l]
+        return deleted
+
     def empty_storage(self, t):
         to_del = -1 * self.disk_avail(t)
         deleted = 0
         if not self.q_agent.has_action(self.s1):
-            to_del_layer = self.get_unused_for_del(to_del)
-            for l in to_del_layer:
-                deleted = deleted + self.layers[l].size
-                del self.layers[l]
+            deleted = self.empty_storage_random(t)
         else:
             will_remain = self.s1_extra - to_del
             to_keep = self.q_agent.get_action(self.s1, will_remain)
-            will_be_deleted = set()
-            for l in self.layers:
-                if len(self.layers[l].chain_users) == 0 or not self.layers[l].marked_needed:
-                    if l not in to_keep:
-                        will_be_deleted.add(l)
-            for l in will_be_deleted:
-                deleted = deleted + self.layers[l].size
-                del self.layers[l]
+            if to_keep is None:
+                deleted = self.empty_storage_random(t)
+            else:
+                will_be_deleted = set()
+                for l in self.layers:
+                    if len(self.layers[l].chain_users) == 0 or not self.layers[l].marked_needed:
+                        if l not in to_keep:
+                            will_be_deleted.add(l)
+                for l in will_be_deleted:
+                    deleted = deleted + self.layers[l].size
+                    del self.layers[l]
         print("Deleted: {}".format(deleted))
 
     def reset(self):

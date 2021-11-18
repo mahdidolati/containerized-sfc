@@ -28,6 +28,8 @@ class QLearn:
                 q_list.append(a)
                 q_sum = q_sum + self.q_vals[s_str][a]
         #
+        if len(q_list) == 0:
+            return None
         if q_sum == 0:
             selected_action = np.random.choice(a=q_list, size=1)
         else:
