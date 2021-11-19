@@ -363,7 +363,7 @@ def test_qlearning(inter_arrival):
     iterations = 4
     x_axis = [1]
     for itr in range(iterations):
-        req_num = 1500
+        req_num = 3000
         t = 0
         reqs = []
         np.random.seed(itr * 4321)
