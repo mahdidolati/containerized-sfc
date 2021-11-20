@@ -80,7 +80,7 @@ class MyNetwork:
                 continue
             visited.add(n)
             for m in self.g.neighbors(n):
-                if m not in visited and m not in cur_path and self.g.nodes[m]["nd"].id[0] != "b":
+                if m not in visited and m not in cur_path:
                     for j in self.g[n][m]:
                         cur_link = self.g[n][m][j]["li"]
                         if (n, m, j) not in excluded:
@@ -501,8 +501,8 @@ class Node:
 class NetGenerator:
     def __init__(self):
         base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0), (3, 0), (6, 0)]
-        base_station_loc = [(0, 0)]
-        self.e_node_num = 1
+        base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0)]
+        self.e_node_num = 5
         cloud_loc = (10, 3)
         self.g = nx.MultiDiGraph()
         for n in range(len(base_station_loc)):
@@ -532,14 +532,23 @@ class NetGenerator:
         self.g.add_edge(e1, e2, li=li1)
         self.g.add_edge(e2, e1, li=li2)
         #
+        for n in range(self.e_node_num-1):
+            e1 = "e{}".format(n)
+            e2 = "e{}".format(n+1)
+            li1 = Link("wired", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
+            li2 = Link("wired", self.g.nodes[e2]["nd"], self.g.nodes[e1]["nd"])
+            self.g.add_edge(e1, e2, li=li1)
+            self.g.add_edge(e2, e1, li=li2)
+        #
         for l in combinations(range(self.e_node_num), 2):
-            e1 = "e{}".format(l[0])
-            e2 = "e{}".format(l[1])
-            if np.random.uniform(0, 1.0) < Const.WIRE_LINK_PR:
-                li1 = Link("wired", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
-                li2 = Link("wired", self.g.nodes[e2]["nd"], self.g.nodes[e1]["nd"])
-                self.g.add_edge(e1, e2, li=li1)
-                self.g.add_edge(e2, e1, li=li2)
+            if l[0] + 1 != l[1]:
+                e1 = "e{}".format(l[0])
+                e2 = "e{}".format(l[1])
+                if np.random.uniform(0, 1.0) < Const.WIRE_LINK_PR:
+                    li1 = Link("wired", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])
+                    li2 = Link("wired", self.g.nodes[e2]["nd"], self.g.nodes[e1]["nd"])
+                    self.g.add_edge(e1, e2, li=li1)
+                    self.g.add_edge(e2, e1, li=li2)
 
     def get_g(self):
         # fig, ax = plt.subplots()
