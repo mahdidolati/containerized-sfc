@@ -557,23 +557,23 @@ class NetGenerator:
                 self.g.add_edge(e2, e1, li=li2)
 
     def get_g(self):
-        fig, ax = plt.subplots()
-        x = []
-        y = []
-        for n in self.g.nodes():
-            x.append(self.g.nodes[n]["nd"].loc[0])
-            y.append(self.g.nodes[n]["nd"].loc[1])
-        ax.plot(x, y, '.b')
-        for n in self.g.nodes():
-            ax.annotate(n, self.g.nodes[n]["nd"].loc)
-        for e in self.g.edges(data=True):
-            for j in self.g[e[0]][e[1]]:
-                line_t = 'r-'
-                if self.g[e[0]][e[1]][j]["li"].type == "mmWave":
-                    line_t = 'b-'
-                ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
-                        [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
-        plt.show()
+        # fig, ax = plt.subplots()
+        # x = []
+        # y = []
+        # for n in self.g.nodes():
+        #     x.append(self.g.nodes[n]["nd"].loc[0])
+        #     y.append(self.g.nodes[n]["nd"].loc[1])
+        # ax.plot(x, y, '.b')
+        # for n in self.g.nodes():
+        #     ax.annotate(n, self.g.nodes[n]["nd"].loc)
+        # for e in self.g.edges(data=True):
+        #     for j in self.g[e[0]][e[1]]:
+        #         line_t = 'r-'
+        #         if self.g[e[0]][e[1]][j]["li"].type == "mmWave":
+        #             line_t = 'b-'
+        #         ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
+        #                 [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
+        # plt.show()
         return MyNetwork(self.g)
 
     def get_closest(self, b):
