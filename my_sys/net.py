@@ -6,6 +6,7 @@ import heapq
 from constants import Const
 from sfc import LayerDownload
 from q_learn import QLearn
+from random import shuffle
 
 
 class MyLayer:
@@ -370,7 +371,7 @@ class Node:
         to_del = -1 * self.disk_avail(t)
         deleted = 0
         to_del_layer = self.get_unused_for_del(to_del)
-        for l in to_del_layer:
+        for l in shuffle(list(to_del_layer)):
             deleted = deleted + self.layers[l].size
             del self.layers[l]
         return deleted

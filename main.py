@@ -338,7 +338,7 @@ def test_qlearning(inter_arrival):
     Const.LAYER_NUM = 8
     Const.VNF_LAYER = [2, 6]
     Const.VNF_NUM = 17
-    Const.TAU1 = [10, 12]
+    Const.TAU1 = [2, 12]
     Const.TAU2 = [2, 3]
     Const.LAYER_SIZE = [7, 15]
     Const.SFC_DELAY = [500, 750]
@@ -390,7 +390,7 @@ def test_qlearning(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     test_type = "qlearning"
-    ia = 2
+    ia = 1.5
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):

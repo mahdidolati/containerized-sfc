@@ -7,8 +7,11 @@ class QLearn:
         self.q_vals = dict()
         self.alpha = 0.9
         self.gamma = 0.9
+        self.epsilon = 0.07
 
     def has_action(self, s):
+        if np.random.uniform(0, 1) <= self.epsilon:
+            return False
         s_str = str(s)
         if s_str not in self.q_vals:
             return False
