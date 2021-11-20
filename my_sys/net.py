@@ -370,8 +370,9 @@ class Node:
     def empty_storage_random(self, t):
         to_del = -1 * self.disk_avail(t)
         deleted = 0
-        to_del_layer = self.get_unused_for_del(to_del)
-        for l in shuffle(list(to_del_layer)):
+        to_del_layer = list(self.get_unused_for_del(to_del))
+        shuffle(to_del_layer)
+        for l in to_del_layer:
             deleted = deleted + self.layers[l].size
             del self.layers[l]
         return deleted
