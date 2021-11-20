@@ -229,9 +229,9 @@ class GurobiSingleRelax(Solver):
         # print("-------------- post arrival --------------------")
         for m in self.my_net.g.nodes():
             if m[0] == "e":
-                print("Node {}, storage: {}, {}".format(m,
-                                                        self.my_net.g.nodes[m]["nd"].disk_avail(t),
-                                                        self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t)))
+                # print("Node {}, storage: {}, {}".format(m,
+                #                                         self.my_net.g.nodes[m]["nd"].disk_avail(t),
+                #                                         self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t)))
                 if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
                     # print("From {}: delete {}, unused {}".format(m, over_used, vol))
                     if self.eviction_strategy == "q_learning":
