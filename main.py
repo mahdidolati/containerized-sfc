@@ -363,7 +363,7 @@ def test_qlearning(inter_arrival):
     iterations = 4
     x_axis = [1]
     for itr in range(iterations):
-        req_num = 3000
+        req_num = 5000
         t = 0
         reqs = []
         np.random.seed(itr * 4321)
@@ -373,7 +373,7 @@ def test_qlearning(inter_arrival):
         for solver in solvers:
             np.random.seed(itr * 1234)
             res, dl_vol = test(solver, reqs)
-            print("{}-Solver: {} got {} out of {}".format(itr, solver.get_name(), res, req_num))
+            print("{}-Solver: {} got {} out of {}, dl_vol {}".format(itr, solver.get_name(), res, req_num, dl_vol))
             stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
             stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
 
