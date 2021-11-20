@@ -13,14 +13,14 @@ class QLearn:
         self.e_steps = 50
 
     def has_action(self, s):
-        if np.random.uniform(0, 1) <= self.epsilon:
-            if self.epsilon > self.e_target:
-                self.epsilon = self.epsilon - (self.e_init - self.e_target) / self.e_steps
-            return False
         s_str = str(s)
         if s_str not in self.q_vals:
             return False
         if len(self.q_vals[s_str]) <= 0:
+            return False
+        if np.random.uniform(0, 1) <= self.epsilon:
+            if self.epsilon > self.e_target:
+                self.epsilon = self.epsilon - (self.e_init - self.e_target) / self.e_steps
             return False
         return True
 

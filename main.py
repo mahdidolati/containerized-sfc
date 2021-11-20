@@ -341,7 +341,7 @@ def test_qlearning(inter_arrival):
     Const.TAU1 = [2, 12]
     Const.TAU2 = [2, 3]
     Const.LAYER_SIZE = [7, 15]
-    Const.SFC_DELAY = [500, 750]
+    Const.SFC_DELAY = [100, 750]
     Const.SERVER_DISK = [30, 80]
     Const.SERVER_CPU = [50, 100]
     Const.SERVER_RAM = [50, 100]
