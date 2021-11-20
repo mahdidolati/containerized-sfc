@@ -112,13 +112,6 @@ class SfcGenerator:
         new_sfc.entry_point = self.my_net.get_random_base_state()
         return new_sfc
 
-    def get_download(self, t1, t2, r):
-        new_sfc = Sfc(t1, [])
-        new_sfc.tau1 = t1
-        new_sfc.tau2 = t2
-        new_sfc.traffic_rate = r
-        return new_sfc
-
     def print(self):
         print("Layers: {}".format(self.layers))
         for vnf in self.vnfs_list:
