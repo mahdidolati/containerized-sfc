@@ -387,10 +387,14 @@ class Node:
                 deleted = self.empty_storage_random(t)
             else:
                 will_be_deleted = set()
+                will_be_deleted_size = 0
                 for l in self.layers:
                     if len(self.layers[l].chain_users) == 0 or not self.layers[l].marked_needed:
                         if l not in to_keep:
                             will_be_deleted.add(l)
+                            will_be_deleted_size = will_be_deleted_size + self.layers[l].size
+                            if will_be_deleted_size >= to_del:
+                                break
                 for l in will_be_deleted:
                     deleted = deleted + self.layers[l].size
                     del self.layers[l]
