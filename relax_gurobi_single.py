@@ -24,8 +24,8 @@ def solve_single_relax(my_net, R, Rvol, req):
     B = my_net.get_all_base_stations()
     E = my_net.get_all_edge_nodes()
     N = len(E) + 1
-    Lw, Lm, L_iii = my_net.get_link_sets()
-    L = Lw + Lm
+    Lw, L_iii = my_net.get_link_sets()
+    L = Lw
     L_len = len(L)
     cloud_node = "c"
 
@@ -66,11 +66,14 @@ def solve_single_relax(my_net, R, Rvol, req):
         adj_out[N_id[L[l][0]]].append(l)
         adj_in[N_id[L[l][1]]].append(l)
 
-    missing_layers = dict()
+    need_dl_layers = dict()
+    need_storage_layers = dict()
     for e in range(len(E)):
         for i in range(len(req.vnfs)):
-            R_ei, _ = my_net.get_missing_layers(E[e], req, i, req.tau1)
-            missing_layers[e, i] = R_ei
+            Rd_ei, _ = my_net.get_missing_layers(E[e], req, i, req.tau1)
+            Rs_ei = my_net.get_need_storage_layers_w_share(E[e], req, i, req.tau1)
+            need_dl_layers[e, i] = Rd_ei
+            need_storage_layers[e, i] = Rs_ei
 
     T1 = range(req.arrival_time, req.tau1)
     T2 = range(req.tau1, req.tau2 + 1)
@@ -80,6 +83,7 @@ def solve_single_relax(my_net, R, Rvol, req):
     v_var = m.addVars(N, I_len, vtype=GRB.CONTINUOUS, lb=0, ub=1, name="v")
     q_var = m.addVars(L_len, I_len+1, vtype=GRB.CONTINUOUS, lb=0, ub=1, name="q")
     y_var = m.addVars(len(E), 2, len(R), vtype=GRB.CONTINUOUS, lb=0, ub=1, name="y")
+    r_var = m.addVars(len(E), len(R), vtype=GRB.CONTINUOUS, lb=0, ub=1, name="r")
 
     m.addConstrs(
         (
@@ -194,7 +198,7 @@ def solve_single_relax(my_net, R, Rvol, req):
             )
             for e in range(len(E))
             for i in range(len(req.vnfs))
-            for r in missing_layers[(e,i)]
+            for r in need_dl_layers[(e,i)]
         ), name="choose_dl_path"
     )
 
@@ -202,8 +206,8 @@ def solve_single_relax(my_net, R, Rvol, req):
         (
             gp.quicksum(
                 y_var[e, p, r] * Rvol[r] / len(T1)
-                for r in range(len(R))
                 for e in range(len(E))
+                for r in range(len(R))
                 for p in range(len(pre_computed_paths[e]))
                 if Lw[l] in pre_computed_paths[e][p]
             ) <= my_net.g[Lw[l][0]][Lw[l][1]][Lw[l][2]]["li"].bw_avail(t)
@@ -214,14 +218,22 @@ def solve_single_relax(my_net, R, Rvol, req):
 
     m.addConstrs(
         (
+            v_var[e, i] <= r_var[e, r]
+            for e in range(len(E))
+            for i in range(len(req.vnfs))
+            for r in need_storage_layers[(e, i)]
+        ), name="disk_limit_1"
+    )
+
+    m.addConstrs(
+        (
             gp.quicksum(
-                y_var[e, p, r] * Rvol[r]
+                Rvol[r] * r_var[e, r]
                 for r in range(len(R))
-                for p in range(len(pre_computed_paths[e]))
             ) <= my_net.g.nodes[E[e]]["nd"].disk_avail_no_cache(t)
             for e in range(len(E))
             for t in chain(T1, T2)
-        ), name="disk_limit"
+        ), name="disk_limit_2"
     )
 
     m.setObjective(
@@ -255,14 +267,16 @@ def solve_single_relax(my_net, R, Rvol, req):
         best_loc = None
         for n in range(N):
             a = m.getVarByName("v[{},{}]".format(n, i)).x
-            if best_loc is None or v_max < a:
-                best_loc = n
-                v_max = a
-
+            if a > tol_val:
+                if best_loc is None or v_max < a:
+                    best_loc = n
+                    v_max = a
+        if best_loc is None:
+            return False, None
         v_var[best_loc, i].lb = 1.0
         loc_of[i] = E[best_loc] if best_loc < len(E) else cloud_node
         if best_loc < len(E):
-            for rr in missing_layers[(best_loc, i)]:
+            for rr in need_dl_layers[(best_loc, i)]:
                 y_max = 0
                 best_path = None
                 for p in range(len(pre_computed_paths[best_loc])):
@@ -273,12 +287,18 @@ def solve_single_relax(my_net, R, Rvol, req):
                             y_max = a
                 if best_path is not None:
                     m.getVarByName("y[{},{},{}]".format(best_loc, best_path, R_id[rr])).lb = 1.0
+                else:
+                    return False, None
 
         links = []
         if i == 0:
             _, _, path_nodes, links = my_net.get_biggest_path(req.entry_point, loc_of[i], req.tau1)
+            if len(links) == 0:
+                return False, None
         elif loc_of[i-1] != loc_of[i]:
             _, _, path_nodes, links = my_net.get_biggest_path(loc_of[i-1], loc_of[i], req.tau1)
+            if loc_of[i-1] != loc_of[i] and len(links) == 0:
+                return False, None
 
         for l in links:
             m.getVarByName("q[{},{}]".format(L_id[L_iii[l]], i)).lb = 1.0
@@ -288,8 +308,10 @@ def solve_single_relax(my_net, R, Rvol, req):
             return False, None
 
     _, _, path_nodes, links = my_net.get_biggest_path(loc_of[len(req.vnfs)-1], req.entry_point, req.tau1)
+    if len(links) == 0:
+        return False, None
     for l in links:
-        m.getVarByName("q[{},{}]".format(L_id[L_iii[l]], len(req.vnfs) + 1)).lb = 1.0
+        m.getVarByName("q[{},{}]".format(L_id[L_iii[l]], len(req.vnfs))).lb = 1.0
 
     m.optimize()
     if m.status == GRB.INFEASIBLE:
@@ -304,22 +326,23 @@ def solve_single_relax(my_net, R, Rvol, req):
                 my_net.g.nodes[n_name]["nd"].embed(req, i)
                 req.used_servers.add(n_name)
                 if n_name[0] == "e":
-                    my_net.g.nodes[n_name]["nd"].add_layer(missing_layers[(n, i)], req, True)
+                    my_net.g.nodes[n_name]["nd"].add_layer(need_storage_layers[(n, i)], req)
 
     total_dl_vol = 0
     downloads = []
     for e in range(len(E)):
-        for r in range(len(R)):
-            for p in range(len(pre_computed_paths[e])):
-                a = m.getVarByName("y[{},{},{}]".format(e, p, r)).x
-                if abs(a - 1.0) < tol_val:
-                    total_dl_vol = total_dl_vol + Rvol[r]
-                    layer_download = LayerDownload()
-                    downloads.append(layer_download)
-                    for tt in T1:
-                        for l in pre_computed_paths[e][p]:
-                            l_obj = my_net.g[l[0]][l[1]][l[2]]["li"]
-                            layer_download.add_data(tt, l_obj, Rvol[r] / len(T1))
+        for i in range(len(req.vnfs)):
+            for r in need_dl_layers[(e, i)]:
+                for p in range(len(pre_computed_paths[e])):
+                    a = m.getVarByName("y[{},{},{}]".format(e, p, r)).x
+                    if abs(a - 1.0) < tol_val:
+                        total_dl_vol = total_dl_vol + Rvol[r]
+                        layer_download = LayerDownload()
+                        downloads.append(layer_download)
+                        for tt in T1:
+                            for l in pre_computed_paths[e][p]:
+                                l_obj = my_net.g[l[0]][l[1]][l[2]]["li"]
+                                layer_download.add_data(tt, l_obj, Rvol[r] / len(T1))
 
     for l in range(len(L)):
         for i in range(len(req.vnfs) + 1):

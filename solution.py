@@ -4,16 +4,6 @@ from opt_gurobi_single import solve_single
 from relax_gurobi_single import solve_single_relax
 
 
-class PopularityEntity:
-    def __init__(self, layer_id, layer_val):
-        self.layer_id = layer_id
-        self.layer_size = layer_val
-        self.layer_val = layer_val
-
-    def update_val(self, layer_val):
-        self.layer_val = self.layer_val + layer_val
-
-
 class Solver:
     def __init__(self, my_net):
         self.my_net = my_net
@@ -32,12 +22,12 @@ class Solver:
         pass
 
     def usable_node(self, s, c, chain_req, i, t, delay_budget):
+        if c[0] == "b":
+            return False, 0
         for tt in range(chain_req.tau1, chain_req.tau2 + 1):
             if self.my_net.g.nodes[c]["nd"].cpu_avail(tt) < chain_req.cpu_req(i) or \
                     self.my_net.g.nodes[c]["nd"].ram_avail(tt) < chain_req.ram_req(i):
                 return False, 0
-        if c[0] == "b":
-            return False, 0
         R, d = self.my_net.get_missing_layers(c, chain_req, i, chain_req.tau1)
         for tt in range(chain_req.tau1, chain_req.tau2 + 1):
             if self.my_net.g.nodes[c]["nd"].disk_avail(tt) < d:
@@ -76,7 +66,6 @@ class Solver:
         prev = chain_req.entry_point
         delay_budge = chain_req.max_delay
         active_dls = []
-        self.update_layer_popularity(chain_req)
         mark_del_layer = dict()
         for i in range(len(chain_req.vnfs)):
             cur_budge = delay_budge / (len(chain_req.vnfs) - i)
@@ -132,9 +121,6 @@ class Solver:
     def handle_sfc_eviction(self, chain_req, t):
         # print("-------------- handle eviction --------------------")
         self.my_net.evict_sfc(chain_req)
-        for m in chain_req.used_servers:
-            for l in self.my_net.g.nodes[m]["nd"].layers:
-                self.my_net.g.nodes[m]["nd"].layers[l].remove_user(chain_req)
         # for m in chain_req.used_servers:
             # print("node {}: has capacity {} and availabe {} available-no-cache {}, has unused {}".format(m,
             #         self.my_net.g.nodes[m]["nd"].disk,
@@ -145,24 +131,9 @@ class Solver:
         # print("---------------------------------------------------")
 
     def pre_arrival_procedure(self, t):
-        to_be_delete = set()
-        for m in self.my_net.g.nodes():
-            for l in self.my_net.g.nodes[m]["nd"].layers:
-                if self.delete_layer(self.my_net.g.nodes[m]["nd"].layers[l], t):
-                    to_be_delete.add((m, l))
-        for m, l in to_be_delete:
-            del self.my_net.g.nodes[m]["nd"].layers[l]
-
-    def post_arrival_procedure(self, status, t, chain_req):
         pass
 
-    def delete_layer(self, target_layer, t):
-        return True
-
-    def pre_fetch_layers(self, t):
-        return 0.0
-
-    def update_layer_popularity(self, chain_req):
+    def post_arrival_procedure(self, status, t, chain_req):
         pass
 
 
@@ -179,12 +150,6 @@ class NoShareSolver(Solver):
         self.my_net.reset()
         self.my_net.share_layer = False
 
-    def delete_layer(self, target_layer, t):
-        if len(target_layer.chain_users) == 0:
-            if t - target_layer.last_used > self.layer_del_th:
-                return True
-        return False
-
 
 class ShareSolver(Solver):
     def __init__(self, my_net, layer_del_th):
@@ -198,134 +163,6 @@ class ShareSolver(Solver):
     def reset(self):
         self.my_net.reset()
         self.my_net.share_layer = True
-
-    def delete_layer(self, target_layer, t):
-        if len(target_layer.chain_users) == 0:
-            if t - target_layer.last_used > self.layer_del_th:
-                return True
-        return False
-
-
-class PopularitySolver(Solver):
-    def __init__(self, my_net, popularity_th):
-        super().__init__(my_net)
-        self.popularity_th = popularity_th
-        self.my_net.share_layer = True
-
-    def get_name(self):
-        return "P-{}".format(self.popularity_th)
-
-    def reset(self):
-        self.my_net.reset()
-        self.my_net.share_layer = True
-
-    def delete_layer(self, target_layer, t):
-        if len(target_layer.chain_users) == 0:
-            if target_layer.unique_used < self.popularity_th:
-                return True
-            else:
-                target_layer.unique_used = target_layer.unique_used - 1
-        return False
-
-
-class ProactiveSolver(Solver):
-    def __init__(self, my_net, disk_thresh, unavail_ahead):
-        super().__init__(my_net)
-        self.my_net.share_layer = True
-        self.popularity_rec = list()
-        self.popularity_obj = dict()
-        self.disk_thresh = disk_thresh
-        self.unavail_ahead = unavail_ahead
-
-    def get_name(self):
-        return "A-{},{}".format(self.disk_thresh, self.unavail_ahead)
-
-    def reset(self):
-        self.my_net.reset()
-        self.my_net.share_layer = True
-
-    def delete_layer(self, target_layer, t):
-        if len(target_layer.chain_users) == 0:
-            if target_layer.last_used + self.unavail_ahead < t:
-                return True
-        return False
-
-    def pre_fetch_layers(self, t):
-        N1 = self.my_net.get_random_edge_nodes(1.0)
-        dl_vol = 0
-        for n in N1:
-            for r in range(len(self.popularity_rec)):
-                if self.disk_thresh <= self.my_net.g.nodes[n]["nd"].disk_avail_ratio(t):
-                    if self.my_net.g.nodes[n]["nd"].layer_avail(self.popularity_rec[r].layer_id, t+self.unavail_ahead):
-                        R = [self.popularity_rec[r].layer_id]
-                        d = self.popularity_rec[r].layer_size
-                        dl_result, dl_obj = self.my_net.do_layer_dl_test(n, R, d, t, t+self.unavail_ahead)
-                        if not dl_result:
-                            continue
-                        dl_vol = dl_vol + d
-                        self.my_net.g.nodes[n]["nd"].add_proactive_layer(
-                                                        self.popularity_rec[r].layer_id,
-                                                        self.popularity_rec[r].layer_size,
-                                                        t, t+self.unavail_ahead+1
-                                                    )
-        return dl_vol
-
-    def update_layer_popularity(self, chain_req):
-        for i in range(len(chain_req.vnfs)):
-            for r in chain_req.vnfs[i].layers:
-                if r not in self.popularity_obj:
-                    self.popularity_obj[r] = PopularityEntity(r, chain_req.vnfs[i].layers[r])
-                    self.popularity_rec.append(self.popularity_obj[r])
-                else:
-                    self.popularity_obj[r].update_val(chain_req.vnfs[i].layers[r])
-        self.popularity_rec.sort(key=lambda x: x.layer_val, reverse=True)
-
-
-class StorageAwareSolver(Solver):
-    def __init__(self, my_net):
-        super().__init__(my_net)
-        self.my_net.share_layer = True
-        self.q_vals = dict()
-
-    def get_name(self):
-        return "SA"
-
-    def usable_node(self, s, c, chain_req, i, t, delay_budget):
-        for tt in range(chain_req.tau1, chain_req.tau2 + 1):
-            if self.my_net.g.nodes[c]["nd"].cpu_avail(tt) < chain_req.cpu_req(i) or \
-                    self.my_net.g.nodes[c]["nd"].ram_avail(tt) < chain_req.ram_req(i):
-                return False, 0
-        if c[0] == "b":
-            return False, 0
-        R, d = self.my_net.get_missing_layers(c, chain_req, i, chain_req.tau1)
-        for tt in range(chain_req.tau1, chain_req.tau2 + 1):
-            if self.my_net.g.nodes[c]["nd"].disk_avail_no_cache(tt) < d:
-                return False, 0
-        dl_result, dl_obj = self.my_net.do_layer_dl_test(c, R, d, t, chain_req.tau1-1)
-        if not dl_result:
-            return False, 0
-        dl_obj.cancel_download()
-        if s != c:
-            path_bw, path_delay, path_nodes, links = self.my_net.get_biggest_path(s, c, chain_req.tau1, delay_budget)
-            if path_bw == 0 or path_delay > delay_budget:
-                return False, 0
-            min_bw = self.my_net.get_min_bw(links, chain_req.tau1, chain_req.tau2)
-            if min_bw < chain_req.vnf_in_rate(i):
-                return False, 0
-        return True, len(R)
-
-    def reset(self):
-        self.my_net.reset()
-        self.my_net.share_layer = True
-
-    def pre_arrival_procedure(self, t):
-        for m in self.my_net.g.nodes():
-            for l in self.my_net.g.nodes[m]["nd"].layers:
-                if self.my_net.g.nodes[m]["nd"].layers[l].mark_needed:
-                    pass
-
-    def delete_layer(self, target_layer, t):
-        return False
 
 
 class GurobiSolver(Solver):
@@ -392,6 +229,9 @@ class GurobiSingleRelax(Solver):
         # print("-------------- post arrival --------------------")
         for m in self.my_net.g.nodes():
             if m[0] == "e":
+                print("Node {}, storage: {}, {}".format(m,
+                                                        self.my_net.g.nodes[m]["nd"].disk_avail(t),
+                                                        self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t)))
                 if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
                     # print("From {}: delete {}, unused {}".format(m, over_used, vol))
                     if self.eviction_strategy == "q_learning":
