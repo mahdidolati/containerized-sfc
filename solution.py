@@ -1,5 +1,4 @@
 import heapq
-from opt_gurobi import solve_optimal
 from opt_gurobi_single import solve_single
 from relax_gurobi_single import solve_single_relax
 
@@ -100,10 +99,7 @@ class Solver:
             if len(R) > 0:
                 dl_result, dl_obj = self.my_net.do_layer_dl_test(m, R, d, t, chain_req.tau1 - 1)
                 active_dls.append(dl_obj)
-                if self.my_net.share_layer:
-                    self.my_net.g.nodes[m]["nd"].add_layer(R, chain_req)
-                else:
-                    self.my_net.g.nodes[m]["nd"].add_layer_no_share(R, chain_req)
+                self.my_net.g.nodes[m]["nd"].add_layer(R, chain_req)
             if prev != m:
                 path_bw, path_delay, path_nodes, links = self.my_net.get_biggest_path(prev, m, chain_req.tau1, cur_budge)
                 delay_budge = delay_budge - path_delay
@@ -141,40 +137,28 @@ class NoShareSolver(Solver):
     def __init__(self, my_net, layer_del_th):
         super().__init__(my_net)
         self.layer_del_th = layer_del_th
-        self.my_net.share_layer = False
+        self.my_net.disable_layer_sharing()
 
     def get_name(self):
         return "NS-{}".format(self.layer_del_th)
 
     def reset(self):
         self.my_net.reset()
-        self.my_net.share_layer = False
+        self.my_net.disable_layer_sharing()
 
 
 class ShareSolver(Solver):
     def __init__(self, my_net, layer_del_th):
         super().__init__(my_net)
         self.layer_del_th = layer_del_th
-        self.my_net.share_layer = True
+        self.my_net.enable_layer_sharing()
 
     def get_name(self):
         return "S-{}".format(self.layer_del_th)
 
     def reset(self):
         self.my_net.reset()
-        self.my_net.share_layer = True
-
-
-class GurobiSolver(Solver):
-    def __init__(self, my_net):
-        super().__init__(my_net)
-        self.batch = True
-
-    def get_name(self):
-        return "Gurobi"
-
-    def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
-        return solve_optimal(my_net, vnfs_list, R_ids, R_vols, reqs)
+        self.my_net.enable_layer_sharing()
 
 
 class GurobiSingle(Solver):
@@ -182,7 +166,7 @@ class GurobiSingle(Solver):
         super().__init__(my_net)
         self.R_ids = R_ids
         self.R_vols = R_vols
-        self.my_net.share_layer = True
+        self.my_net.enable_layer_sharing()
 
     def get_name(self):
         return "GrSi"
@@ -192,7 +176,7 @@ class GurobiSingle(Solver):
 
     def reset(self):
         self.my_net.reset()
-        self.my_net.share_layer = True
+        self.my_net.enable_layer_sharing()
 
 
 class GurobiSingleRelax(Solver):
@@ -200,7 +184,7 @@ class GurobiSingleRelax(Solver):
         super().__init__(my_net)
         self.R_ids = R_ids
         self.R_vols = R_vols
-        self.my_net.share_layer = True
+        self.my_net.enable_layer_sharing()
         self.eviction_strategy = eviction_strategy
 
     def get_name(self):
@@ -220,9 +204,6 @@ class GurobiSingleRelax(Solver):
                 #                                                     self.my_net.g.nodes[m]["nd"].disk_avail(t),
                 #                                                     self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t),
                 #                                                     self.my_net.g.nodes[m]["nd"].has_unused_layer(t)))
-                for l in self.my_net.g.nodes[m]["nd"].layers:
-                    if len(self.my_net.g.nodes[m]["nd"].layers[l].chain_users) <= 0:
-                        self.my_net.g.nodes[m]["nd"].layers[l].marked_needed = False
         # print("------------------------------------------------")
 
     def post_arrival_procedure(self, status, t, chain_req):
@@ -250,4 +231,4 @@ class GurobiSingleRelax(Solver):
 
     def reset(self):
         self.my_net.reset()
-        self.my_net.share_layer = True
+        self.my_net.enable_layer_sharing()

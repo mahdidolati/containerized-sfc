@@ -60,11 +60,14 @@ def solve_single(my_net, R, Rvol, req):
         adj_out[N_id[L[l][0]]].append(l)
         adj_in[N_id[L[l][1]]].append(l)
 
-    missing_layers = dict()
+    need_dl_layers = dict()
+    need_storage_layers = dict()
     for e in range(len(E)):
         for i in range(len(req.vnfs)):
-            R_ei, _ = my_net.get_missing_layers(E[e], req, i, req.tau1)
-            missing_layers[e, i] = R_ei
+            Rd_ei, _ = my_net.get_missing_layers(E[e], req, i, req.tau1)
+            Rs_ei = my_net.get_need_storage_layers(E[e], req, i, req.tau1)
+            need_dl_layers[e, i] = Rd_ei
+            need_storage_layers[e, i] = Rs_ei
 
     T1 = range(req.arrival_time, req.tau1)
     T2 = range(req.tau1, req.tau2 + 1)
@@ -74,6 +77,7 @@ def solve_single(my_net, R, Rvol, req):
     v_var = m.addVars(N, I_len, vtype=GRB.BINARY, name="v")
     q_var = m.addVars(L_len, I_len+1, vtype=GRB.BINARY, name="q")
     y_var = m.addVars(len(E), 2, len(R), vtype=GRB.BINARY, name="y")
+    r_var = m.addVars(len(E), len(R), vtype=GRB.BINARY, name="r")
 
     m.addConstrs(
         (
@@ -208,14 +212,22 @@ def solve_single(my_net, R, Rvol, req):
 
     m.addConstrs(
         (
+            v_var[e, i] <= r_var[e, r]
+            for e in range(len(E))
+            for i in range(len(req.vnfs))
+            for r in need_storage_layers[(e, i)]
+        ), name="disk_limit_1"
+    )
+
+    m.addConstrs(
+        (
             gp.quicksum(
-                y_var[e, p, r] * Rvol[r]
+                Rvol[r] * r_var[e, r]
                 for r in range(len(R))
-                for p in range(len(pre_computed_paths[e]))
             ) <= my_net.g.nodes[E[e]]["nd"].disk_avail_no_cache(t)
             for e in range(len(E))
             for t in chain(T1, T2)
-        ), name="disk_limit"
+        ), name="disk_limit_2"
     )
 
     m.setObjective(
@@ -250,7 +262,7 @@ def solve_single(my_net, R, Rvol, req):
                 my_net.g.nodes[n_name]["nd"].embed(req, i)
                 # print("Placed {} on {}".format(i, n_name))
                 if n < len(E):
-                    my_net.g.nodes[n_name]["nd"].add_layer(missing_layers[(n, i)], req)
+                    my_net.g.nodes[n_name]["nd"].add_layer(need_storage_layers[(n, i)], req)
 
     total_dl_vol = 0
     downloads = []

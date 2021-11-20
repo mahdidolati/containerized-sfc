@@ -2,7 +2,7 @@ from scipy.integrate import Radau
 
 from sfc import SfcGenerator
 from my_sys.net import NetGenerator
-from solution import NoShareSolver, ShareSolver, GurobiSolver
+from solution import NoShareSolver, ShareSolver
 from solution import GurobiSingle
 from solution import GurobiSingleRelax
 from constants import Const

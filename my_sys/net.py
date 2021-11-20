@@ -31,7 +31,10 @@ class MyLayer:
 class MyNetwork:
     def __init__(self, g, share_layer=True):
         self.g = g
-        self.share_layer = share_layer
+        if share_layer:
+            self.enable_layer_sharing()
+        else:
+            self.disable_layer_sharing()
 
     def get_biggest_path(self, c, d, t, delay_cap=np.infty):
         h = []
@@ -112,6 +115,16 @@ class MyNetwork:
                     bestNeighbor = (n, m, j)
         return bestNeighbor
 
+    def enable_layer_sharing(self):
+        for n in self.g.nodes():
+            if n[0] == "e":
+                self.g.nodes[n]["nd"].sharing = True
+
+    def disable_layer_sharing(self):
+        for n in self.g.nodes():
+            if n[0] == "e":
+                self.g.nodes[n]["nd"].sharing = False
+
     def get_random_base_state(self):
         C = list()
         for n in self.g.nodes():
@@ -134,30 +147,15 @@ class MyNetwork:
         return E
 
     def get_missing_layers(self, server, chain_req, vnf_i, t):
-        if self.share_layer:
-            return self.get_missing_layers_w_share(server, chain_req, vnf_i, t)
-        else:
-            return self.get_missing_layers_no_share(server, chain_req, vnf_i, t)
-
-    def get_missing_layers_w_share(self, server, chain_req, vnf_i, t):
         R = dict()
         d = 0
         for r in chain_req.vnfs[vnf_i].layers:
-            if not self.g.nodes[server]["nd"].layer_avail(r, t):
+            if not self.g.nodes[server]["nd"].layer_avail(r, t, chain_req):
                 R[r] = chain_req.vnfs[vnf_i].layers[r]
                 d = d + R[r]
         return R, d
 
-    def get_missing_layers_no_share(self, server, chain_req, vnf_i, t):
-        R = dict()
-        d = 0
-        for r in chain_req.vnfs[vnf_i].layers:
-            if not self.g.nodes[server]["nd"].layer_avail_no_share(r, chain_req, t):
-                R[r] = chain_req.vnfs[vnf_i].layers[r]
-                d = d + R[r]
-        return R, d
-
-    def get_need_storage_layers_w_share(self, server, chain_req, vnf_i, t):
+    def get_need_storage_layers(self, server, chain_req, vnf_i, t):
         R = dict()
         for r in chain_req.vnfs[vnf_i].layers:
             if not self.g.nodes[server]["nd"].layer_avail(r, t) \
@@ -243,12 +241,9 @@ class Link:
         if self.e1.id[0] == "c" or self.e2.id[0] == "c":
             self.bw = np.infty
             self.delay = 100 * np.linalg.norm(self.e1.loc - self.e2.loc)
-        elif self.type == "wired":
-            self.delay = 10 * np.linalg.norm(self.e1.loc - self.e2.loc)
-            self.bw = np.random.randint(*Const.LINK_BW)
         else:
             self.delay = 10 * np.linalg.norm(self.e1.loc - self.e2.loc)
-            self.bw = 0
+            self.bw = np.random.randint(*Const.LINK_BW)
         # print(self.delay)
         self.embeds = dict()
         self.dl = dict()
@@ -258,38 +253,33 @@ class Link:
         self.dl = dict()
 
     def bw_avail(self, t):
-        if self.type == "wired":
-            u = 0
-            for r in self.embeds:
-                if r.tau1 <= t <= r.tau2:
-                    for i in self.embeds[r]:
-                        u = u + r.vnf_in_rate(i)
-            if t in self.dl:
-                u = u + self.dl[t]
-            return self.bw - u
+        u = 0
+        for r in self.embeds:
+            if r.tau1 <= t <= r.tau2:
+                for i in self.embeds[r]:
+                    u = u + r.vnf_in_rate(i)
+        if t in self.dl:
+            u = u + self.dl[t]
+        return self.bw - u
 
     def embed(self, chain_req, i):
-        if self.type == "wired":
-            if chain_req not in self.embeds:
-                self.embeds[chain_req] = set()
-            self.embeds[chain_req].add(i)
+        if chain_req not in self.embeds:
+            self.embeds[chain_req] = set()
+        self.embeds[chain_req].add(i)
 
     def evict(self, chain_req):
-        if self.type == "wired":
-            if chain_req in self.embeds:
-                del self.embeds[chain_req]
+        if chain_req in self.embeds:
+            del self.embeds[chain_req]
 
     def add_dl(self, t, r):
-        if self.type == "wired":
-            if t not in self.dl:
-                self.dl[t] = 0
-            self.dl[t] = self.dl[t] + r
+        if t not in self.dl:
+            self.dl[t] = 0
+        self.dl[t] = self.dl[t] + r
 
     def rm_dl(self, t, r):
-        if self.type == "wired":
-            if t not in self.dl:
-                return
-            self.dl[t] = self.dl[t] - r
+        if t not in self.dl:
+            return
+        self.dl[t] = self.dl[t] - r
 
     def __str__(self):
         return "{},{},{}".format(self.type, self.e1.id, self.e2.id)
@@ -303,6 +293,7 @@ class Node:
         self.id = id
         self.type = t
         self.loc = loc
+        self.sharing = True
         if self.type[0] == "b":
             self.cpu = 0
             self.ram = 0
@@ -317,7 +308,6 @@ class Node:
             self.disk = np.infty
         self.layers = dict()
         self.embeds = dict()
-        self.dl_embeds = dict()
         self.q_agent = QLearn()
         self.s1 = None
         self.s1_extra = 0
@@ -394,7 +384,6 @@ class Node:
     def reset(self):
         self.layers = dict()
         self.embeds = dict()
-        self.dl_embeds = dict()
         self.q_agent = QLearn()
 
     def cpu_avail(self, t):
@@ -467,26 +456,22 @@ class Node:
         a = self.disk_avail(t)
         return a / self.disk
 
-    def layer_avail(self, r, t):
+    def layer_avail(self, r, t, chain_req=None):
         if self.type[0] == "b":
             return False
         if self.type[0] == "c":
             return True
-        if r not in self.layers:
-            return False
-        return t >= self.layers[r].avail_from
+        if self.sharing or chain_req is None:
+            if r not in self.layers:
+                return False
+            return t >= self.layers[r].avail_from
+        else:
+            if (r, chain_req) not in self.layers:
+                return False
+            return t >= self.layers[(r, chain_req)].avail_from
 
     def layer_inuse(self, r):
         return len(self.layers[r].chain_users) > 0
-
-    def layer_avail_no_share(self, r, chain_req, t):
-        if self.type[0] == "b":
-            return False
-        if self.type[0] == "c":
-            return True
-        if (r, chain_req) not in self.layers:
-            return False
-        return t >= self.layers[(r, chain_req)].avail_from
 
     def embed(self, chain_req, i):
         if chain_req not in self.embeds:
@@ -494,17 +479,17 @@ class Node:
         self.embeds[chain_req].add(i)
 
     def add_layer(self, R, chain_req):
-        for r in R:
-            if r in self.layers:
-                self.layers[r].add_user(chain_req)
-            else:
-                self.layers[r] = MyLayer(r, R[r], chain_req.arrival_time, chain_req.tau1)
-                self.layers[r].add_user(chain_req)
-
-    def add_layer_no_share(self, R, chain_req):
-        for r in R:
-            self.layers[(r, chain_req)] = MyLayer(r, R[r], chain_req.arrival_time, chain_req.tau1)
-            self.layers[(r, chain_req)].add_user(chain_req)
+        if self.sharing:
+            for r in R:
+                if r in self.layers:
+                    self.layers[r].add_user(chain_req)
+                else:
+                    self.layers[r] = MyLayer(r, R[r], chain_req.arrival_time, chain_req.tau1)
+                    self.layers[r].add_user(chain_req)
+        else:
+            for r in R:
+                self.layers[(r, chain_req)] = MyLayer(r, R[r], chain_req.arrival_time, chain_req.tau1)
+                self.layers[(r, chain_req)].add_user(chain_req)
 
     def evict(self, chain_req):
         if chain_req in self.embeds:
@@ -539,7 +524,7 @@ class NetGenerator:
             li2 = Link("wired", self.g.nodes[e2]["nd"], self.g.nodes[e1]["nd"])
             self.g.add_edge(e1, e2, li=li1)
             self.g.add_edge(e2, e1, li=li2)
-
+        # connect cloud to nearest edge server
         e1 = "c"
         e2 = "e{}".format(self.get_closest(e1))
         li1 = Link("wired", self.g.nodes[e1]["nd"], self.g.nodes[e2]["nd"])

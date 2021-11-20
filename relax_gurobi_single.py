@@ -71,7 +71,7 @@ def solve_single_relax(my_net, R, Rvol, req):
     for e in range(len(E)):
         for i in range(len(req.vnfs)):
             Rd_ei, _ = my_net.get_missing_layers(E[e], req, i, req.tau1)
-            Rs_ei = my_net.get_need_storage_layers_w_share(E[e], req, i, req.tau1)
+            Rs_ei = my_net.get_need_storage_layers(E[e], req, i, req.tau1)
             need_dl_layers[e, i] = Rd_ei
             need_storage_layers[e, i] = Rs_ei
 
