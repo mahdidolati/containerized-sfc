@@ -10,7 +10,7 @@ class QLearn:
         self.epsilon = 1.0
         self.e_init = 1.0
         self.e_target = 0.05
-        self.e_steps = 500
+        self.e_steps = 50
 
     def has_action(self, s):
         if np.random.uniform(0, 1) <= self.epsilon:
