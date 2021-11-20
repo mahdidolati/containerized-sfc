@@ -24,8 +24,8 @@ def solve_single(my_net, R, Rvol, req):
     B = my_net.get_all_base_stations()
     E = my_net.get_all_edge_nodes()
     N = len(E) + 1
-    Lw, Lm, L_iii = my_net.get_link_sets()
-    L = Lw + Lm
+    Lw, L_iii = my_net.get_link_sets()
+    L = Lw
     L_len = len(L)
     cloud_node = "c"
 
@@ -121,19 +121,6 @@ def solve_single(my_net, R, Rvol, req):
     m.addConstrs(
         (
             gp.quicksum(
-                q_var[l, i] * req.vnf_in_rate(i)
-                for l in adj_out[e]
-                for i in range(len(req.vnfs) + 1)
-                if l >= len(Lw)
-            ) <= my_net.g.nodes[E[e]]["nd"].mm_tx_avail(t)
-            for e in range(len(E))
-            for t in T2
-        ), name="bw_mm"
-    )
-
-    m.addConstrs(
-        (
-            gp.quicksum(
                 q_var[l, i + 1]
                 for l in adj_out[n]
             ) - gp.quicksum(
@@ -142,6 +129,7 @@ def solve_single(my_net, R, Rvol, req):
             ) == v_var[n, i] - v_var[n, i + 1]
             for n in range(N)
             for i in range(len(req.vnfs)-1)
+            if n in adj_in and n in adj_out
         ), name="chaining"
     )
 
@@ -160,6 +148,7 @@ def solve_single(my_net, R, Rvol, req):
                 for l in adj_in[n]
             ) == v_var[n, 0]
             for n in range(N)
+            if n in adj_in
         ), name="first_vnf_in"
     )
 
@@ -178,6 +167,7 @@ def solve_single(my_net, R, Rvol, req):
                 for l in adj_out[n]
             ) == v_var[n, len(req.vnfs)-1]
             for n in range(N)
+            if n in adj_out
         ), name="last_vnf_out"
     )
 
@@ -219,25 +209,10 @@ def solve_single(my_net, R, Rvol, req):
     m.addConstrs(
         (
             gp.quicksum(
-                y_var[ee, p, r] * Rvol[r] / len(T1)
-                for ee in range(len(E))
-                for r in range(len(R))
-                for p in range(len(pre_computed_paths[ee]))
-                for l in pre_computed_paths[ee][p]
-                if my_net.g[l[0]][l[1]][l[2]]["li"].type == "mmWave"
-            ) <= my_net.g.nodes[E[e]]["nd"].mm_tx_avail(t)
-            for e in range(len(E))
-            for t in T1
-        ), name="dl_bw_mm"
-    )
-
-    m.addConstrs(
-        (
-            gp.quicksum(
                 y_var[e, p, r] * Rvol[r]
                 for r in range(len(R))
                 for p in range(len(pre_computed_paths[e]))
-            ) <= my_net.g.nodes[E[e]]["nd"].disk_avail(t)
+            ) <= my_net.g.nodes[E[e]]["nd"].disk_avail_no_cache(t)
             for e in range(len(E))
             for t in chain(T1, T2)
         ), name="disk_limit"

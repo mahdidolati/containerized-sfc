@@ -16,24 +16,16 @@ class MyLayer:
         self.dl_start = dl_start
         self.avail_from = avail_from
         self.last_used = avail_from
-        self.unique_used = 0
         self.chain_users = set()
-        self.finalized = False
-        # for storage aware-ness
-        self.marked_needed = False
-        self.marked_delete = False
 
     def add_user(self, u):
-        self.marked_needed = True
         self.chain_users.add(u)
-        self.unique_used = self.unique_used + 1
         if u.tau2 > self.last_used:
             self.last_used = u.tau2
 
     def remove_user(self, u):
         if u in self.chain_users:
             self.chain_users.remove(u)
-        self.marked_needed = len(self.chain_users) > 0
 
 
 class MyNetwork:
@@ -54,7 +46,7 @@ class MyNetwork:
                 continue
             visited.add(n)
             for m in self.g.neighbors(n):
-                if m not in visited and m not in cur_path and self.g.nodes[m]["nd"].id[0] != "b":
+                if m not in visited and m not in cur_path:
                     for j in self.g[n][m]:
                         bw_avail = self.g[n][m][j]["li"].bw_avail(t)
                         link_delay = self.g[n][m][j]["li"].delay
@@ -165,6 +157,14 @@ class MyNetwork:
                 d = d + R[r]
         return R, d
 
+    def get_need_storage_layers_w_share(self, server, chain_req, vnf_i, t):
+        R = dict()
+        for r in chain_req.vnfs[vnf_i].layers:
+            if not self.g.nodes[server]["nd"].layer_avail(r, t) \
+                    or not self.g.nodes[server]["nd"].layer_inuse(r):
+                R[r] = chain_req.vnfs[vnf_i].layers[r]
+        return R
+
     def do_layer_dl_test(self, server, candid_layers, volume, start_t, end_t):
         # If an ongoing download exists but can not prepare the layer before end_t+1, return False
         for c_layer in candid_layers:
@@ -197,26 +197,15 @@ class MyNetwork:
         for e in self.g.edges():
             for j in self.g[e[0]][e[1]]:
                 self.g[e[0]][e[1]][j]["li"].evict(chain_req)
-        to_be_delete = set()
-        for m in chain_req.used_servers:
-            for l in self.g.nodes[m]["nd"].layers:
-                if not self.g.nodes[m]["nd"].layers[l].finalized:
-                    to_be_delete.add((m, l))
-        for m, l in to_be_delete:
-            del self.g.nodes[m]["nd"].layers[l]
 
     def get_link_sets(self):
         Lw = list()
-        Lm = list()
         L_iii = dict()
         for e in self.g.edges():
             for j in self.g[e[0]][e[1]]:
                 L_iii[self.g[e[0]][e[1]][j]["li"]] = (e[0], e[1], j)
-                if self.g[e[0]][e[1]][j]["li"].type == "wired":
-                    Lw.append((e[0], e[1], j))
-                else:
-                    Lm.append((e[0], e[1], j))
-        return Lw, Lm, L_iii
+                Lw.append((e[0], e[1], j))
+        return Lw, L_iii
 
     def get_all_base_stations(self):
         B = list()
@@ -338,7 +327,7 @@ class Node:
         in_use = set()
         unused = set()
         for l in self.layers:
-            if len(self.layers[l].chain_users) > 0 or self.layers[l].marked_needed:
+            if len(self.layers[l].chain_users) > 0:
                 in_use.add(l)
             else:
                 unused.add(l)
@@ -391,7 +380,7 @@ class Node:
                 will_be_deleted = set()
                 will_be_deleted_size = 0
                 for l in self.layers:
-                    if len(self.layers[l].chain_users) == 0 or not self.layers[l].marked_needed:
+                    if len(self.layers[l].chain_users) == 0:
                         if l not in to_keep:
                             will_be_deleted.add(l)
                             will_be_deleted_size = will_be_deleted_size + self.layers[l].size
@@ -450,28 +439,16 @@ class Node:
             return np.infty
         u = 0
         for my_layer in self.layers:
-            if len(self.layers[my_layer].chain_users) > 0 or self.layers[my_layer].marked_needed:
+            if self.layer_inuse(my_layer):
                 if t >= self.layers[my_layer].dl_start:
                     u = u + self.layers[my_layer].size
         return self.disk - u
-
-    def has_unused_layer(self, t):
-        if self.type[0] == "b":
-            return False
-        if self.type[0] == "c":
-            return False
-        for my_layer in self.layers:
-            if len(self.layers[my_layer].chain_users) == 0 or not self.layers[my_layer].marked_needed:
-                return True
-        return False
 
     def get_all_unused(self):
         vol = 0
         unused = set()
         for my_layer in self.layers:
-            if len(self.layers[my_layer].chain_users) == 0 and \
-                    not self.layers[my_layer].marked_needed and \
-                    not self.layers[my_layer].marked_delete:
+            if not self.layer_inuse(my_layer):
                 unused.add(my_layer)
                 vol = vol + self.layers[my_layer].size
         return vol, unused
@@ -479,12 +456,9 @@ class Node:
     def get_unused_for_del(self, max_del):
         unused = set()
         for my_layer in self.layers:
-            if len(self.layers[my_layer].chain_users) == 0 and \
-                    not self.layers[my_layer].marked_needed and \
-                    not self.layers[my_layer].marked_delete:
+            if not self.layer_inuse(my_layer):
                 unused.add(my_layer)
                 max_del = max_del - self.layers[my_layer].size
-                self.layers[my_layer].marked_delete = True
             if max_del <= 0:
                 break
         return unused
@@ -500,10 +474,10 @@ class Node:
             return True
         if r not in self.layers:
             return False
-        if self.layers[r].marked_delete:
-            if not self.swap_layer(r):
-                return False
         return t >= self.layers[r].avail_from
+
+    def layer_inuse(self, r):
+        return len(self.layers[r].chain_users) > 0
 
     def layer_avail_no_share(self, r, chain_req, t):
         if self.type[0] == "b":
@@ -514,56 +488,18 @@ class Node:
             return False
         return t >= self.layers[(r, chain_req)].avail_from
 
-    def swap_layer(self, r):
-        del_vol = 0
-        to_del = set()
-        for rr in self.layers:
-            if len(self.layers[rr].chain_users) == 0 and\
-                    not self.layers[rr].marked_needed and\
-                    not self.layers[rr].marked_delete:
-                del_vol = del_vol + self.layers[rr].size
-                to_del.add(rr)
-            if del_vol >= self.layers[r].size:
-                break
-        if del_vol < self.layers[r].size:
-            return False
-        self.layers[r].marked_delete = False
-        for rr in to_del:
-            self.layers[rr].marked_delete = True
-        return True
-
     def embed(self, chain_req, i):
         if chain_req not in self.embeds:
             self.embeds[chain_req] = set()
         self.embeds[chain_req].add(i)
 
-    def add_proactive_layer(self, layer_id, layer_size, dl_start, avail_from):
-        if layer_id not in self.layers:
-            ml = MyLayer(layer_id, layer_size, dl_start, avail_from)
-            ml.finalized = True
-            self.layers[layer_id] = ml
-
-    # do not delete while admitting a req
-    def mark_needed(self, chain_req, i):
-        for r in chain_req.vnfs[i].layers:
-            if r in self.layers:
-                self.layers[r].marked_needed = True
-
-    def mark_no_need(self, chain_req):
-        for i in range(len(chain_req.vnfs)):
-            for r in chain_req.vnfs[i].layers:
-                if r in self.layers:
-                    self.layers[r].marked_needed = False
-
-    def add_layer(self, R, chain_req, mark_fin=False):
+    def add_layer(self, R, chain_req):
         for r in R:
             if r in self.layers:
                 self.layers[r].add_user(chain_req)
             else:
                 self.layers[r] = MyLayer(r, R[r], chain_req.arrival_time, chain_req.tau1)
                 self.layers[r].add_user(chain_req)
-            if mark_fin:
-                self.layers[r].finalized = True
 
     def add_layer_no_share(self, R, chain_req):
         for r in R:
@@ -573,6 +509,8 @@ class Node:
     def evict(self, chain_req):
         if chain_req in self.embeds:
             del self.embeds[chain_req]
+        for l in self.layers:
+            self.layers[l].remove_user(chain_req)
 
 
 class NetGenerator:
@@ -585,7 +523,7 @@ class NetGenerator:
             n_id = "b{}".format(n)
             nd = Node("base-station", base_station_loc[n], n_id)
             self.g.add_node(n_id, nd=nd)
-        self.e_node_num = 15
+        self.e_node_num = 1
         for n in range(self.e_node_num):
             n_id = "e{}".format(n)
             nd = Node("edge", np.random.uniform(0.5, 5.5, 2), n_id)
@@ -619,23 +557,23 @@ class NetGenerator:
                 self.g.add_edge(e2, e1, li=li2)
 
     def get_g(self):
-        # fig, ax = plt.subplots()
-        # x = []
-        # y = []
-        # for n in self.g.nodes():
-        #     x.append(self.g.nodes[n]["nd"].loc[0])
-        #     y.append(self.g.nodes[n]["nd"].loc[1])
-        # ax.plot(x, y, '.b')
-        # for n in self.g.nodes():
-        #     ax.annotate(n, self.g.nodes[n]["nd"].loc)
-        # for e in self.g.edges(data=True):
-        #     for j in self.g[e[0]][e[1]]:
-        #         line_t = 'r-'
-        #         if self.g[e[0]][e[1]][j]["li"].type == "mmWave":
-        #             line_t = 'b-'
-        #         ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
-        #                 [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
-        # plt.show()
+        fig, ax = plt.subplots()
+        x = []
+        y = []
+        for n in self.g.nodes():
+            x.append(self.g.nodes[n]["nd"].loc[0])
+            y.append(self.g.nodes[n]["nd"].loc[1])
+        ax.plot(x, y, '.b')
+        for n in self.g.nodes():
+            ax.annotate(n, self.g.nodes[n]["nd"].loc)
+        for e in self.g.edges(data=True):
+            for j in self.g[e[0]][e[1]]:
+                line_t = 'r-'
+                if self.g[e[0]][e[1]][j]["li"].type == "mmWave":
+                    line_t = 'b-'
+                ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
+                        [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
+        plt.show()
         return MyNetwork(self.g)
 
     def get_closest(self, b):
