@@ -331,18 +331,17 @@ def solve_single_relax(my_net, R, Rvol, req):
     total_dl_vol = 0
     downloads = []
     for e in range(len(E)):
-        for i in range(len(req.vnfs)):
-            for r in need_dl_layers[(e, i)]:
-                for p in range(len(pre_computed_paths[e])):
-                    a = m.getVarByName("y[{},{},{}]".format(e, p, r)).x
-                    if abs(a - 1.0) < tol_val:
-                        total_dl_vol = total_dl_vol + Rvol[r]
-                        layer_download = LayerDownload()
-                        downloads.append(layer_download)
-                        for tt in T1:
-                            for l in pre_computed_paths[e][p]:
-                                l_obj = my_net.g[l[0]][l[1]][l[2]]["li"]
-                                layer_download.add_data(tt, l_obj, Rvol[r] / len(T1))
+        for r in range(len(R)):
+            for p in range(len(pre_computed_paths[e])):
+                a = m.getVarByName("y[{},{},{}]".format(e, p, r)).x
+                if abs(a - 1.0) < tol_val:
+                    total_dl_vol = total_dl_vol + Rvol[r]
+                    layer_download = LayerDownload()
+                    downloads.append(layer_download)
+                    for tt in T1:
+                        for l in pre_computed_paths[e][p]:
+                            l_obj = my_net.g[l[0]][l[1]][l[2]]["li"]
+                            layer_download.add_data(tt, l_obj, Rvol[r] / len(T1))
 
     for l in range(len(L)):
         for i in range(len(req.vnfs) + 1):

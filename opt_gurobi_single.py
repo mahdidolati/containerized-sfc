@@ -192,7 +192,7 @@ def solve_single(my_net, R, Rvol, req):
             )
             for e in range(len(E))
             for i in range(len(req.vnfs))
-            for r in missing_layers[(e,i)]
+            for r in need_dl_layers[(e,i)]
         ), name="choose_dl_path"
     )
 

@@ -502,13 +502,13 @@ class NetGenerator:
     def __init__(self):
         base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0), (3, 0), (6, 0)]
         base_station_loc = [(0, 0)]
+        self.e_node_num = 1
         cloud_loc = (10, 3)
         self.g = nx.MultiDiGraph()
         for n in range(len(base_station_loc)):
             n_id = "b{}".format(n)
             nd = Node("base-station", base_station_loc[n], n_id)
             self.g.add_node(n_id, nd=nd)
-        self.e_node_num = 1
         for n in range(self.e_node_num):
             n_id = "e{}".format(n)
             nd = Node("edge", np.random.uniform(0.5, 5.5, 2), n_id)
