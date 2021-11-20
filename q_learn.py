@@ -7,10 +7,15 @@ class QLearn:
         self.q_vals = dict()
         self.alpha = 0.9
         self.gamma = 0.9
-        self.epsilon = 0.07
+        self.epsilon = 1.0
+        self.e_init = 1.0
+        self.e_target = 0.05
+        self.e_steps = 500
 
     def has_action(self, s):
         if np.random.uniform(0, 1) <= self.epsilon:
+            if self.epsilon > self.e_target:
+                self.epsilon = self.epsilon - (self.e_init - self.e_target) / self.e_steps
             return False
         s_str = str(s)
         if s_str not in self.q_vals:
