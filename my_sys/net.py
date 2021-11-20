@@ -330,6 +330,7 @@ class Node:
     def make_s2(self):
         self.s2 = self.make_state()
 
+    # for reward
     def get_local_reused(self):
         saved = 0
         for l in self.s1[1]: # unused at s1
@@ -337,6 +338,7 @@ class Node:
                 saved = saved + self.layers[l].size
         return saved
 
+    # for action
     def get_local_kept(self):
         kept = set()
         vol = 0
@@ -348,24 +350,25 @@ class Node:
 
     def empty_storage_random(self, t):
         to_del = -1 * self.disk_avail(t)
-        deleted = 0
-        to_del_layer = list(self.get_unused_for_del(to_del))
-        shuffle(to_del_layer)
-        for l in to_del_layer:
-            deleted = deleted + self.layers[l].size
+        _, unused_layers = self.get_all_unused()
+        unused_layers = list(unused_layers)
+        shuffle(unused_layers)
+        for l in unused_layers:
+            to_del = to_del - self.layers[l].size
             del self.layers[l]
-        return deleted
+            if to_del <= 0:
+                break
 
     def empty_storage(self, t):
         to_del = -1 * self.disk_avail(t)
         deleted = 0
         if not self.q_agent.has_action(self.s1):
-            deleted = self.empty_storage_random(t)
+            self.empty_storage_random(t)
         else:
             will_remain = self.s1_extra - to_del
             to_keep = self.q_agent.get_action(self.s1, will_remain)
             if to_keep is None:
-                deleted = self.empty_storage_random(t)
+                self.empty_storage_random(t)
             else:
                 will_be_deleted = set()
                 will_be_deleted_size = 0
@@ -379,7 +382,6 @@ class Node:
                 for l in will_be_deleted:
                     deleted = deleted + self.layers[l].size
                     del self.layers[l]
-        # print("Deleted: {}".format(deleted))
 
     def reset(self):
         self.layers = dict()
@@ -451,10 +453,6 @@ class Node:
             if max_del <= 0:
                 break
         return unused
-
-    def disk_avail_ratio(self, t):
-        a = self.disk_avail(t)
-        return a / self.disk
 
     def layer_avail(self, r, t, chain_req=None):
         if self.type[0] == "b":
