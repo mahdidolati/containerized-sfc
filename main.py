@@ -330,12 +330,12 @@ def layer_num_test(inter_arrival):
 
 def test_qlearning(inter_arrival):
     np.random.seed(1)
-    Const.LAYER_NUM = 20
-    Const.VNF_LAYER = [5, 9]
+    Const.LAYER_NUM = 6
+    Const.VNF_LAYER = [2, 6]
     Const.VNF_NUM = 20
-    Const.SFC_LEN = [3, 7]
+    Const.SFC_LEN = [1, 10]
     Const.TAU1 = [2, 7]
-    Const.TAU2 = [10, 20]
+    Const.TAU2 = [2, 7]
     Const.LAYER_SIZE = [10, 21]
     Const.SFC_DELAY = [100, 200]
     Const.SERVER_DISK = [70, 100]
@@ -345,7 +345,7 @@ def test_qlearning(inter_arrival):
     DOWNLOAD_LAYER = "Download (MB)"
     STEP_DL_LAYER = "Rung Download (MB)"
     my_net = NetGenerator().get_g()
-    sfc_gen = SfcGenerator(my_net, 1.0)
+    sfc_gen = SfcGenerator(my_net, 0.8)
     R_ids = [i for i in sfc_gen.layers]
     R_vols = [sfc_gen.layers[i] for i in R_ids]
     solvers = [
@@ -400,7 +400,7 @@ def test_qlearning(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     test_type = "qlearning"
-    ia = 1.0
+    ia = 8.0
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):
