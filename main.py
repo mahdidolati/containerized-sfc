@@ -329,14 +329,15 @@ def layer_num_test(inter_arrival):
 
 
 def test_qlearning(inter_arrival):
+    np.random.seed(1)
     Const.LAYER_NUM = 6
     Const.VNF_LAYER = [2, 6]
     Const.VNF_NUM = 20
-    Const.SFC_LEN = [1, 5]
+    Const.SFC_LEN = [1, 10]
     Const.TAU1 = [2, 7]
     Const.TAU2 = [2, 7]
     Const.LAYER_SIZE = [10, 21]
-    Const.SFC_DELAY = [100, 750]
+    Const.SFC_DELAY = [100, 200]
     Const.SERVER_DISK = [70, 100]
     Const.SERVER_CPU = [50, 100]
     Const.SERVER_RAM = [50, 100]
@@ -395,10 +396,11 @@ def test_qlearning(inter_arrival):
     fig_2 = './result/{}_cg_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector2.write_to_file(fig_2 + '.txt', x_axis2, 0, STEP_DL_LAYER, algs, 'Steps', STEP_DL_LAYER)
 
+
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     test_type = "qlearning"
-    ia = 8.0
+    ia = 2.0
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):
