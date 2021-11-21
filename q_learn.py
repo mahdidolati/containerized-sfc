@@ -10,7 +10,7 @@ class QLearn:
         self.epsilon = 1.0
         self.e_init = 1.0
         self.e_target = 0.15
-        self.e_steps = 100
+        self.e_steps = 1000
 
     def has_action(self, s):
         s_str = str(s)

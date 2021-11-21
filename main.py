@@ -362,11 +362,11 @@ def test_qlearning(inter_arrival):
     stat_collector2 = StatCollector(algs, stats2)
     arrival_rate = 1.0 / inter_arrival
     run_name = "1"
-    iterations = 3
+    iterations = 4
     x_axis = [1]
     x_axis2 = []
     for itr in range(iterations):
-        req_num = 500
+        req_num = 7000
         t = 0
         reqs = []
         np.random.seed(itr * 4321)
