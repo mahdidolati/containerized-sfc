@@ -263,6 +263,7 @@ def solve_single_relax(my_net, R, Rvol, req):
     tol_val = 1e-4
     loc_of = dict()
     dl_path_of = dict()
+    routing_paths = dict()
     for i in range(len(req.vnfs)):
         v_max = 0
         best_loc = None
@@ -302,6 +303,7 @@ def solve_single_relax(my_net, R, Rvol, req):
             if loc_of[i-1] != loc_of[i] and len(links) == 0:
                 return False, None
 
+        routing_paths[i] = links
         for l in links:
             m.getVarByName("q[{},{}]".format(L_id[L_iii[l]], i)).lb = 1.0
 
@@ -312,6 +314,7 @@ def solve_single_relax(my_net, R, Rvol, req):
     _, _, path_nodes, links = my_net.get_biggest_path(loc_of[len(req.vnfs)-1], req.entry_point, req.tau1)
     if len(links) == 0:
         return False, None
+    routing_paths[len(req.vnfs)] = links
     for l in links:
         m.getVarByName("q[{},{}]".format(L_id[L_iii[l]], len(req.vnfs))).lb = 1.0
 
@@ -339,11 +342,9 @@ def solve_single_relax(my_net, R, Rvol, req):
                 l_obj = my_net.g[ll[0]][ll[1]][ll[2]]["li"]
                 layer_download.add_data(tt, l_obj, Rvol[rr] / len(T1))
 
-    for l in range(len(L)):
-        for i in range(len(req.vnfs) + 1):
-            a = m.getVarByName("q[{},{}]".format(l, i)).x
-            if abs(a - 1.0) < tol_val:
-                l_obj = my_net.g[L[l][0]][L[l][1]][L[l][2]]["li"]
+    for i in range(len(req.vnfs)+1):
+        if i in routing_paths:
+            for l_obj in routing_paths[i]:
                 l_obj.embed(req, i)
 
     return True, total_dl_vol
