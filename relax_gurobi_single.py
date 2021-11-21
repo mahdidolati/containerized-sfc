@@ -262,6 +262,7 @@ def solve_single_relax(my_net, R, Rvol, req):
 
     tol_val = 1e-4
     loc_of = dict()
+    dl_path_of = dict()
     for i in range(len(req.vnfs)):
         v_max = 0
         best_loc = None
@@ -286,6 +287,7 @@ def solve_single_relax(my_net, R, Rvol, req):
                             best_path = p
                             y_max = a
                 if best_path is not None:
+                    dl_path_of[(loc_of[i], R_id[rr])] = best_path
                     m.getVarByName("y[{},{},{}]".format(best_loc, best_path, R_id[rr])).lb = 1.0
                 else:
                     return False, None
@@ -318,30 +320,24 @@ def solve_single_relax(my_net, R, Rvol, req):
         return False, None
 
     for i in range(len(req.vnfs)):
-        for n in range(N):
-            a = m.getVarByName("v[{},{}]".format(n, i)).x
-            if abs(a - 1.0) < tol_val:
-                n_name = E[n] if n < len(E) else cloud_node
-                # print("vnf {} was embedded in {}, adding {} missed layers".format(i, n_name, len(missing_layers[(n, i)])))
-                my_net.g.nodes[n_name]["nd"].embed(req, i)
-                req.used_servers.add(n_name)
-                if n_name[0] == "e":
-                    my_net.g.nodes[n_name]["nd"].add_layer(need_storage_layers[(n, i)], req)
+        my_net.g.nodes[loc_of[i]]["nd"].embed(req, i)
+        req.used_servers.add(loc_of[i])
+        if loc_of[i][0] == "e":
+            my_net.g.nodes[loc_of[i]]["nd"].add_layer(
+                need_storage_layers[(N_id[loc_of[i]], i)], req
+            )
 
     total_dl_vol = 0
     downloads = []
-    for e in range(len(E)):
-        for r in range(len(R)):
-            for p in range(len(pre_computed_paths[e])):
-                a = m.getVarByName("y[{},{},{}]".format(e, p, r)).x
-                if abs(a - 1.0) < tol_val:
-                    total_dl_vol = total_dl_vol + Rvol[r]
-                    layer_download = LayerDownload()
-                    downloads.append(layer_download)
-                    for tt in T1:
-                        for l in pre_computed_paths[e][p]:
-                            l_obj = my_net.g[l[0]][l[1]][l[2]]["li"]
-                            layer_download.add_data(tt, l_obj, Rvol[r] / len(T1))
+    for ee, rr in dl_path_of:
+        total_dl_vol = total_dl_vol + Rvol[rr]
+        layer_download = LayerDownload()
+        downloads.append(layer_download)
+        pp = dl_path_of[(ee, rr)]
+        for tt in T1:
+            for ll in pre_computed_paths[ee][pp]:
+                l_obj = my_net.g[ll[0]][ll[1]][ll[2]]["li"]
+                layer_download.add_data(tt, l_obj, Rvol[rr] / len(T1))
 
     for l in range(len(L)):
         for i in range(len(req.vnfs) + 1):
