@@ -335,7 +335,7 @@ def solve_single_relax(my_net, R, Rvol, req):
         downloads.append(layer_download)
         pp = dl_path_of[(ee, rr)]
         for tt in T1:
-            for ll in pre_computed_paths[ee][pp]:
+            for ll in pre_computed_paths[N_id[ee]][pp]:
                 l_obj = my_net.g[ll[0]][ll[1]][ll[2]]["li"]
                 layer_download.add_data(tt, l_obj, Rvol[rr] / len(T1))
 
