@@ -38,7 +38,7 @@ def test(solver, reqs):
             solver.handle_sfc_eviction(s, t)
         # sleep(1)
     avg_rate = accepted / len(reqs)
-    avg_dl = layer_dl_vol / accepted if accepted > 0 else 0
+    avg_dl = layer_dl_vol
     return avg_rate, avg_dl
 
 
