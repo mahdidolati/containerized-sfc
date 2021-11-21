@@ -20,12 +20,14 @@ def test(solver, reqs):
     sampling_rate = 1.0
     events = []
     counter = 1
+    arrivals = 0
     for s in reqs:
         heapq.heappush(events, (s.arrival_time, counter, "ARRIVAL", s))
         counter += 1
     while len(events) > 0:
         t, cnt, ev, s = heapq.heappop(events)
         if ev == "ARRIVAL":
+            arrivals = arrivals + 1
             solver.pre_arrival_procedure(t)
             status, dl_vol = solver.solve(s, t, sampling_rate)
             if status:
@@ -36,6 +38,8 @@ def test(solver, reqs):
                 counter += 1
         elif ev == "FINISH":
             solver.handle_sfc_eviction(s, t)
+        if arrivals % 101 == 0:
+            print("{}, {}, {}".format(arrivals, accepted/arrivals, layer_dl_vol/accepted))
         # sleep(1)
     avg_rate = accepted / len(reqs)
     avg_dl = layer_dl_vol
@@ -326,8 +330,8 @@ def test_qlearning(inter_arrival):
     Const.LAYER_NUM = 8
     Const.VNF_LAYER = [2, 6]
     Const.VNF_NUM = 17
-    Const.TAU1 = [2, 5]
-    Const.TAU2 = [2, 10]
+    Const.TAU1 = [2, 7]
+    Const.TAU2 = [2, 15]
     Const.LAYER_SIZE = [10, 18]
     Const.SFC_DELAY = [100, 750]
     Const.SERVER_DISK = [70, 100]
@@ -351,7 +355,7 @@ def test_qlearning(inter_arrival):
     iterations = 4
     x_axis = [1]
     for itr in range(iterations):
-        req_num = 5000
+        req_num = 7000
         t = 0
         reqs = []
         np.random.seed(itr * 4321)
@@ -378,7 +382,7 @@ def test_qlearning(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     test_type = "qlearning"
-    ia = 0.5
+    ia = 0.1
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):

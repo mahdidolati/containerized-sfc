@@ -9,8 +9,8 @@ class QLearn:
         self.gamma = 0.9
         self.epsilon = 1.0
         self.e_init = 1.0
-        self.e_target = 0.05
-        self.e_steps = 50
+        self.e_target = 0.15
+        self.e_steps = 100
 
     def has_action(self, s):
         s_str = str(s)

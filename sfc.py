@@ -86,7 +86,7 @@ class SfcGenerator:
         self.no_share_id = Const.LAYER_NUM
         layer_pr = []
         for layer_id in sharable_ids:
-            layer_pr.append(1.0 / (layer_id+1))
+            layer_pr.append(layer_id+1)
         s = 0
         for x in layer_pr:
             s += x
