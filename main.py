@@ -329,12 +329,13 @@ def layer_num_test(inter_arrival):
 
 
 def test_qlearning(inter_arrival):
-    Const.LAYER_NUM = 8
+    Const.LAYER_NUM = 6
     Const.VNF_LAYER = [2, 6]
-    Const.VNF_NUM = 17
+    Const.VNF_NUM = 20
+    Const.SFC_LEN = [1, 5]
     Const.TAU1 = [2, 7]
-    Const.TAU2 = [8, 10]
-    Const.LAYER_SIZE = [10, 18]
+    Const.TAU2 = [2, 7]
+    Const.LAYER_SIZE = [10, 21]
     Const.SFC_DELAY = [100, 750]
     Const.SERVER_DISK = [70, 100]
     Const.SERVER_CPU = [50, 100]
@@ -362,11 +363,11 @@ def test_qlearning(inter_arrival):
     stat_collector2 = StatCollector(algs, stats2)
     arrival_rate = 1.0 / inter_arrival
     run_name = "1"
-    iterations = 4
+    iterations = 6
     x_axis = [1]
     x_axis2 = []
     for itr in range(iterations):
-        req_num = 10000
+        req_num = 3000
         t = 0
         reqs = []
         np.random.seed(itr * 4321)
@@ -397,7 +398,7 @@ def test_qlearning(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     test_type = "qlearning"
-    ia = 0.08
+    ia = 8.0
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):

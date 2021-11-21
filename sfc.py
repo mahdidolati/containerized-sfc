@@ -84,18 +84,28 @@ class SfcGenerator:
         for i in sharable_ids:
             self.layers[i] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
         self.no_share_id = Const.LAYER_NUM
-        layer_pr = []
+        layer_pr1 = []
+        layer_pr2 = []
         for layer_id in sharable_ids:
-            layer_pr.append(layer_id+1)
-        s = 0
-        for x in layer_pr:
-            s += x
-        for i in range(len(layer_pr)):
-            layer_pr[i] = layer_pr[i] / s
+            layer_pr1.append(layer_id+1)
+            layer_pr2.append(1.0 / (layer_id + 1))
+        s1 = 0
+        s2 = 0
+        for x in layer_pr1:
+            s1 += x
+        for x in layer_pr2:
+            s2 += x
+        for i in range(len(layer_pr1)):
+            layer_pr1[i] = layer_pr1[i] / s1
+        for i in range(len(layer_pr2)):
+            layer_pr2[i] = layer_pr2[i] / s2
         self.vnfs_list = list()
         self.vnf_num = Const.VNF_NUM
         for i in range(self.vnf_num):
-            a_vnf = Vnf(i, sharable_ids, self.layers, n_share_p, layer_pr)
+            if np.random.uniform(0, 1) < 0.5:
+                a_vnf = Vnf(i, sharable_ids, self.layers, n_share_p, layer_pr1)
+            else:
+                a_vnf = Vnf(i, sharable_ids, self.layers, n_share_p, layer_pr2)
             for r in a_vnf.layers:
                 if r not in self.layers:
                     self.layers[r] = a_vnf.layers[r]
