@@ -21,6 +21,7 @@ def test(solver, reqs):
     events = []
     counter = 1
     arrivals = 0
+    vol_consumed = list()
     for s in reqs:
         heapq.heappush(events, (s.arrival_time, counter, "ARRIVAL", s))
         counter += 1
@@ -36,14 +37,15 @@ def test(solver, reqs):
                 accepted = accepted + 1
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
+            if arrivals % 200 == 0:
+                vol_consumed.append(layer_dl_vol / accepted)
+                print("{}, {}, {}".format(arrivals, accepted / arrivals, layer_dl_vol / accepted))
         elif ev == "FINISH":
             solver.handle_sfc_eviction(s, t)
-        if arrivals % 101 == 0:
-            print("{}, {}, {}".format(arrivals, accepted/arrivals, layer_dl_vol/accepted))
         # sleep(1)
     avg_rate = accepted / len(reqs)
     avg_dl = layer_dl_vol
-    return avg_rate, avg_dl
+    return avg_rate, avg_dl, vol_consumed
 
 
 def optimal_test(inter_arrival):
@@ -339,6 +341,7 @@ def test_qlearning(inter_arrival):
     Const.SERVER_RAM = [50, 100]
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
+    STEP_DL_LAYER = "Rung Download (MB)"
     my_net = NetGenerator().get_g()
     sfc_gen = SfcGenerator(my_net, 1.0)
     R_ids = [i for i in sfc_gen.layers]
@@ -347,15 +350,23 @@ def test_qlearning(inter_arrival):
         GurobiSingleRelax(my_net, R_ids, R_vols, "q_learning"),
         GurobiSingleRelax(my_net, R_ids, R_vols, "default")
     ]
-    stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
+    stats = {
+        ACCEPT_RATIO: Stat.MEAN_MODE,
+        DOWNLOAD_LAYER: Stat.MEAN_MODE
+    }
+    stats2 = {
+        STEP_DL_LAYER: Stat.MEAN_MODE
+    }
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
+    stat_collector2 = StatCollector(algs, stats2)
     arrival_rate = 1.0 / inter_arrival
     run_name = "1"
-    iterations = 4
+    iterations = 3
     x_axis = [1]
+    x_axis2 = []
     for itr in range(iterations):
-        req_num = 7000
+        req_num = 500
         t = 0
         reqs = []
         np.random.seed(itr * 4321)
@@ -364,8 +375,11 @@ def test_qlearning(inter_arrival):
             t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
         for solver in solvers:
             np.random.seed(itr * 1234)
-            res, dl_vol = test(solver, reqs)
+            res, dl_vol, vol_consumed = test(solver, reqs)
             print("{}-Solver: {} got {} out of {}, dl_vol {}".format(itr, solver.get_name(), res, req_num, dl_vol))
+            x_axis2 = list(range(len(vol_consumed)))
+            for i in range(len(vol_consumed)):
+                stat_collector2.add_stat(solver.get_name(), STEP_DL_LAYER, str(i), vol_consumed[i])
             stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
             stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
 
@@ -375,9 +389,10 @@ def test_qlearning(inter_arrival):
     stat_collector.write_to_file(fig_2 + '.txt', x_axis, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
 
     fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', x_axis, 0, DOWNLOAD_LAYER, algs, 'No. of Layers',
-                                 DOWNLOAD_LAYER)
+    stat_collector.write_to_file(fig_2 + '.txt', x_axis, 0, DOWNLOAD_LAYER, algs, 'No. of Layers', DOWNLOAD_LAYER)
 
+    fig_2 = './result/{}_cg_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector2.write_to_file(fig_2 + '.txt', x_axis2, 0, STEP_DL_LAYER, algs, 'Steps', STEP_DL_LAYER)
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]

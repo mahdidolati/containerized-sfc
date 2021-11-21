@@ -52,7 +52,7 @@ class Stat:
                 2.11, 2.10, 2.09, 2.08]
         if len(self.stat) <= 1:
             t_95n = t_95[0]
-        elif  len(self.stat) >= 22:
+        elif len(self.stat) >= 22:
             t_95n = t_95[-1]
         else:
             t_95n = t_95[len(self.stat) - 2]
