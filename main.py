@@ -330,15 +330,15 @@ def layer_num_test(inter_arrival):
 
 def test_qlearning(inter_arrival):
     np.random.seed(1)
-    Const.LAYER_NUM = 15
+    Const.LAYER_NUM = 25
     Const.VNF_LAYER = [2, 8]
-    Const.VNF_NUM = 30
+    Const.VNF_NUM = 40
     Const.SFC_LEN = [1, 10]
     Const.TAU1 = [2, 7]
     Const.TAU2 = [2, 7]
     Const.LAYER_SIZE = [10, 21]
-    Const.SFC_DELAY = [100, 200]
-    Const.SERVER_DISK = [70, 100]
+    Const.SFC_DELAY = [200, 400]
+    Const.SERVER_DISK = [150, 300]
     Const.SERVER_CPU = [50, 100]
     Const.SERVER_RAM = [50, 100]
     ACCEPT_RATIO = "Accept Ratio"
@@ -368,7 +368,7 @@ def test_qlearning(inter_arrival):
     x_axis = [1]
     x_axis2 = []
     for itr in range(iterations):
-        req_num = 7000
+        req_num = 11000
         t = 0
         reqs = []
         np.random.seed(itr * 4321)
