@@ -5,7 +5,7 @@ from ast import literal_eval
 class QLearn:
     def __init__(self):
         self.q_vals = dict()
-        self.alpha = 0.9
+        self.alpha = 0.3
         self.gamma = 0.9
         self.epsilon = 1.0
         self.e_init = 1.0
