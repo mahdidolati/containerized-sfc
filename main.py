@@ -353,8 +353,8 @@ def test_qlearning(inter_arrival):
     R_ids = [i for i in sfc_gen.layers]
     R_vols = [sfc_gen.layers[i] for i in R_ids]
     solvers = [
-        GurobiSingleRelax(my_net, R_ids, R_vols, "popularity_learn"),
-        GurobiSingleRelax(my_net, R_ids, R_vols, "q_learning")
+        GurobiSingleRelax(my_net, R_ids, R_vols, "q_learning"),
+        GurobiSingleRelax(my_net, R_ids, R_vols, "popularity_learn")
     ]
     stats = {
         ACCEPT_RATIO: Stat.MEAN_MODE,
