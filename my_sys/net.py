@@ -7,6 +7,7 @@ from constants import Const
 from sfc import LayerDownload
 from q_learn import QLearn
 from random import shuffle
+from popularity_learn import PLearn
 
 
 class MyLayer:
@@ -138,6 +139,19 @@ class MyNetwork:
             if n[0] == "e":
                 E.append(n)
         return np.random.choice(E, int(sr * len(E)), replace=False)
+
+    def get_net_util(self, t):
+        e_cpu = dict()
+        e_ram = dict()
+        e_disk = dict()
+        for n in self.get_all_edge_nodes():
+            c = self.g.nodes[n]["nd"].cpu_util(t)
+            r = self.g.nodes[n]["nd"].ram_util(t)
+            d = self.g.nodes[n]["nd"].disk_util(t)
+            e_cpu[n] = c
+            e_ram[n] = r
+            e_disk[n] = d
+        return e_cpu, e_ram, e_disk
 
     def get_all_edge_nodes(self):
         E = list()
@@ -312,6 +326,7 @@ class Node:
         self.s1 = None
         self.s1_extra = 0
         self.s2 = None
+        self.p_agent = PLearn()
 
     def make_state(self):
         in_use = set()
@@ -347,6 +362,13 @@ class Node:
                 kept.add(l)
                 vol = vol + self.layers[l].size
         return vol, kept
+
+    def empty_storage_popularity(self, t):
+        to_del = -1 * self.disk_avail(t)
+        _, unused_layers = self.get_all_unused()
+        to_del_set = self.p_agent.get_action(unused_layers, to_del, self.layers)
+        for ll in to_del_set:
+            del self.layers[ll]
 
     def empty_storage_random(self, t):
         to_del = -1 * self.disk_avail(t)
@@ -387,6 +409,7 @@ class Node:
         self.layers = dict()
         self.embeds = dict()
         self.q_agent = QLearn()
+        self.p_agent = PLearn()
 
     def cpu_avail(self, t):
         if self.type[0] == "b":
@@ -400,6 +423,10 @@ class Node:
                     u = u + r.cpu_req(i)
         return self.cpu - u
 
+    def cpu_util(self, t):
+        cpu_a = self.cpu_avail(t)
+        return (self.cpu - cpu_a) / self.cpu
+
     def ram_avail(self, t):
         if self.type[0] == "b":
             return 0
@@ -412,6 +439,10 @@ class Node:
                     u = u + r.ram_req(i)
         return self.ram - u
 
+    def ram_util(self, t):
+        ram_a = self.ram_avail(t)
+        return (self.ram - ram_a) / self.ram
+
     def disk_avail(self, t):
         if self.type[0] == "b":
             return 0
@@ -422,6 +453,10 @@ class Node:
             if t >= self.layers[my_layer].dl_start:
                 u = u + self.layers[my_layer].size
         return self.disk - u
+
+    def disk_util(self, t):
+        disk_a = self.disk_avail(t)
+        return (self.disk - disk_a) / self.disk
 
     def disk_avail_no_cache(self, t):
         if self.type[0] == "b":
@@ -443,6 +478,13 @@ class Node:
                 unused.add(my_layer)
                 vol = vol + self.layers[my_layer].size
         return vol, unused
+
+    def get_all_inuse(self):
+        inuse = set()
+        for my_layer in self.layers:
+            if self.layer_inuse(my_layer):
+                inuse.add(my_layer)
+        return inuse
 
     def get_unused_for_del(self, max_del):
         unused = set()
@@ -501,7 +543,7 @@ class NetGenerator:
         base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0), (3, 0), (6, 0)]
         base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0)]
         self.e_node_num = 5
-        cloud_loc = (50, 3)
+        cloud_loc = (20, 3)
         self.g = nx.MultiDiGraph()
         for n in range(len(base_station_loc)):
             n_id = "b{}".format(n)

@@ -137,7 +137,7 @@ def share_percentage_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 5
+    iterations = 3
     arrival_rate = 1.0 / inter_arrival
     n_share_ps = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
     share_percentages = []
@@ -330,15 +330,16 @@ def layer_num_test(inter_arrival):
 
 def test_qlearning(inter_arrival):
     np.random.seed(1)
-    Const.LAYER_NUM = 10
-    Const.VNF_LAYER = [6, 8]
-    Const.VNF_NUM = 40
-    Const.SFC_LEN = [1, 2]
-    Const.TAU1 = [2, 7]
-    Const.TAU2 = [2, 7]
-    Const.LAYER_SIZE = [10, 11]
+    Const.LAYER_NUM = 20
+    Const.VNF_LAYER = [3, 10]
+    Const.VNF_NUM = 15
+    Const.SFC_LEN = [2, 7]
+    Const.TAU1 = [4, 5]
+    Const.TAU2 = [5, 15]
+    Const.LAMBDA_RANGE = [1, 5]
+    Const.LAYER_SIZE = [10, 200]
     Const.SFC_DELAY = [200, 400]
-    Const.SERVER_DISK = [100, 101]
+    Const.SERVER_DISK = [500, 2000]
     Const.SERVER_CPU = [50, 100]
     Const.SERVER_RAM = [50, 100]
     Const.LINK_BW = [500, 1000]
@@ -346,11 +347,13 @@ def test_qlearning(inter_arrival):
     DOWNLOAD_LAYER = "Download (MB)"
     STEP_DL_LAYER = "Rung Download (MB)"
     my_net = NetGenerator().get_g()
-    sfc_gen = SfcGenerator(my_net, 1.0)
+    sfc_gen = SfcGenerator(my_net, {
+        1: 1.0
+    }, 0.9)
     R_ids = [i for i in sfc_gen.layers]
     R_vols = [sfc_gen.layers[i] for i in R_ids]
     solvers = [
-        GurobiSingleRelax(my_net, R_ids, R_vols, "q_learning"),
+        GurobiSingleRelax(my_net, R_ids, R_vols, "popularity_learn"),
         GurobiSingleRelax(my_net, R_ids, R_vols, "default")
     ]
     stats = {
@@ -369,7 +372,7 @@ def test_qlearning(inter_arrival):
     x_axis = [1]
     x_axis2 = []
     for itr in range(iterations):
-        req_num = 2000
+        req_num = 3000
         t = 0
         reqs = []
         np.random.seed(itr * 4321)
@@ -401,7 +404,7 @@ def test_qlearning(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     test_type = "qlearning"
-    ia = 2.0
+    ia = 1.0
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):

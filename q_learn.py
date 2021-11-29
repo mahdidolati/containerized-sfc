@@ -11,6 +11,7 @@ class QLearn:
         self.e_init = 1.0
         self.e_target = 0.15
         self.e_steps = 300
+        self.memory = set()
 
     def has_action(self, s):
         s_str = str(s)
@@ -64,4 +65,24 @@ class QLearn:
             self.q_vals[s1_str][a1_str] = self.q_vals[s1_str][a1_str] + self.alpha * (
                 r1 + self.gamma * max(s2_actions)
             )
-        pass
+            ##
+            if len(self.memory) > 1000:
+                to_rem = None
+                for mm in self.memory:
+                    to_rem = mm
+                self.memory.remove(to_rem)
+            self.memory.add((s1_str, a1_str, r1, s2_str))
+        if np.random.uniform(0, 1.0) < 0.1 and len(self.memory) > 20:
+            self.re_train()
+
+    def re_train(self):
+        for mm in self.memory:
+            s1_str = mm[0]
+            a1_str = mm[1]
+            r1 = mm[2]
+            s2_str = mm[3]
+            s2_actions = [self.q_vals[s2_str][a2] - self.q_vals[s1_str][a1_str] for a2 in self.q_vals[s2_str]]
+            if len(s2_actions) > 0:
+                self.q_vals[s1_str][a1_str] = self.q_vals[s1_str][a1_str] + self.alpha * (
+                        r1 + self.gamma * max(s2_actions)
+                )

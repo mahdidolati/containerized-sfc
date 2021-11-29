@@ -217,16 +217,22 @@ class GurobiSingleRelax(Solver):
                     # print("From {}: delete {}, unused {}".format(m, over_used, vol))
                     if self.eviction_strategy == "q_learning":
                         self.my_net.g.nodes[m]["nd"].empty_storage(t)
+                    elif self.eviction_strategy == "popularity_learn":
+                        self.my_net.g.nodes[m]["nd"].empty_storage_popularity(t)
                     else:
                         self.my_net.g.nodes[m]["nd"].empty_storage_random(t)
                 #
-                self.my_net.g.nodes[m]["nd"].make_s2()
-                self.my_net.g.nodes[m]["nd"].q_agent.add_transition(
-                    self.my_net.g.nodes[m]["nd"].s1,
-                    self.my_net.g.nodes[m]["nd"].get_local_kept(),
-                    self.my_net.g.nodes[m]["nd"].get_local_reused(),
-                    self.my_net.g.nodes[m]["nd"].s2
-                )
+                if self.eviction_strategy == "q_learning":
+                    self.my_net.g.nodes[m]["nd"].make_s2()
+                    self.my_net.g.nodes[m]["nd"].q_agent.add_transition(
+                        self.my_net.g.nodes[m]["nd"].s1,
+                        self.my_net.g.nodes[m]["nd"].get_local_kept(),
+                        self.my_net.g.nodes[m]["nd"].get_local_reused(),
+                        self.my_net.g.nodes[m]["nd"].s2
+                    )
+                elif self.eviction_strategy == "popularity_learn":
+                    inuse = self.my_net.g.nodes[m]["nd"].get_all_inuse()
+                    self.my_net.g.nodes[m]["nd"].p_agent.add_inuse(inuse)
         # print("------------------------------------------------")
 
     def reset(self):

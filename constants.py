@@ -4,7 +4,7 @@ class Const:
     VNF_RAM = [0.1, 0.4]
     VNF_LAYER = [5, 12]  # [5, 12]
     TAU1 = [3, 8]
-    TAU2 = [10, 20]
+    TAU2 = [1, 4]
     LAYER_NUM = 20
     LAYER_SIZE = [50, 350]  # [2, 70]
     SFC_LEN = [1, 7]
