@@ -31,9 +31,9 @@ class QLearn:
         q_sum = 0
         for a in self.q_vals[s_str]:
             will_remain = int(a[1:].split(",")[0])
-            if will_remain == 0:
-                return set()
-            if will_remain < a_lim:
+            # if will_remain == 0:
+            #     return set()
+            if will_remain <= a_lim:
                 q_list.append(a)
                 q_sum = q_sum + self.q_vals[s_str][a]
         #

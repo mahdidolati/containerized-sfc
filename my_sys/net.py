@@ -332,7 +332,7 @@ class Node:
         in_use = set()
         unused = set()
         for l in self.layers:
-            if len(self.layers[l].chain_users) > 0:
+            if self.layer_inuse(l):
                 in_use.add(l)
             else:
                 unused.add(l)
@@ -408,8 +408,8 @@ class Node:
     def reset(self):
         self.layers = dict()
         self.embeds = dict()
-        self.q_agent = QLearn()
-        self.p_agent = PLearn()
+        # self.q_agent = QLearn()
+        # self.p_agent = PLearn()
 
     def cpu_avail(self, t):
         if self.type[0] == "b":

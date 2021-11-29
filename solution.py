@@ -194,11 +194,12 @@ class GurobiSingleRelax(Solver):
         return solve_single_relax(self.my_net, self.R_ids, self.R_vols, chain_req)
 
     def pre_arrival_procedure(self, t):
+        pass
         # print("-------------- pre arrival --------------------")
-        pre_state = []
-        for m in self.my_net.g.nodes():
-            if m[0] == "e":
-                self.my_net.g.nodes[m]["nd"].make_s1()
+        # pre_state = []
+        # for m in self.my_net.g.nodes():
+        #     if m[0] == "e":
+        #         self.my_net.g.nodes[m]["nd"].make_s1()
                 # print("node {}: has capacity {} and availabe {} available-no-cache {}, has unused {}".format(m,
                 #                                                     self.my_net.g.nodes[m]["nd"].disk,
                 #                                                     self.my_net.g.nodes[m]["nd"].disk_avail(t),
@@ -213,6 +214,7 @@ class GurobiSingleRelax(Solver):
                 # print("Node {}, storage: {}, {}".format(m,
                 #                                         self.my_net.g.nodes[m]["nd"].disk_avail(t),
                 #                                         self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t)))
+                self.my_net.g.nodes[m]["nd"].make_s1()
                 if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
                     # print("From {}: delete {}, unused {}".format(m, over_used, vol))
                     if self.eviction_strategy == "q_learning":
