@@ -224,8 +224,7 @@ class MyNetwork:
         for n in self.g.nodes():
             self.g.nodes[n]["nd"].evict(chain_req)
         for e in self.g.edges():
-            for j in self.g[e[0]][e[1]]:
-                self.g[e[0]][e[1]][j]["li"].evict(chain_req)
+                self.g[e[0]][e[1]]["li"].evict(chain_req)
 
     def get_link_sets(self):
         Lw = list()

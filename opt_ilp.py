@@ -14,6 +14,24 @@ def get_T(reqs):
     return range(t1, t2+1)
 
 
+def solve_batch_opt(reqs, my_net, R, Rvol):
+    m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(reqs, my_net, R,
+                                                                                                    Rvol)
+    m.setParam("LogToConsole", False)
+    m.setParam("Threads", 6)
+    # m.setParam("TIME_LIMIT", 500)
+    m.optimize()
+    # m.write("out.lp")
+
+    if m.status == GRB.INFEASIBLE:
+        # m.computeIIS()
+        # m.write("s_model.ilp")
+        return False, None
+    else:
+        print(m.objVal)
+        return True, 1
+
+
 def get_ilp(reqs, my_net, R, Rvol):
     T_all = get_T(reqs)
     B = my_net.get_all_base_stations()
@@ -118,26 +136,36 @@ def get_ilp(reqs, my_net, R, Rvol):
         ), name="layer_prereq"
     )
 
-    m.addConstrs(
-        (
-            r_var[e, R_id[r], T_all[0]] == 0
-            for e in E_id
-            for r in R
-        ), name="layer_0"
-    )
+    if 0 in T_all:
+        m.addConstrs(
+            (
+                r_var[e, R_id[r], 0] == 0
+                for e in E_id
+                for r in R
+            ), name="layer_0"
+        )
 
-    m.addConstrs(
-        (
-            r_var[e, R_id[r], t]
-            <=
-            r_var[e, R_id[r], t-1] + w_var[req_id][e][N_map[cloud_node]][pth_id, R_id[r]]
-            for e in E_id
-            for r in R
-            for t in T_all[1:]
-            for req_id in range(len(reqs))
-            for pth_id in range(len(my_net.paths_links[N_map_inv[e]][cloud_node]))
-        ), name="layer_download"
-    )
+    for e in E_id:
+        for r in R:
+            for t in T_all:
+                if t == 0:
+                    continue
+                if my_net.g.nodes[N_map_inv[e]]["nd"].layer_avail(r, t):
+                    if my_net.g.nodes[N_map_inv[e]]["nd"].layer_inuse(r):
+                        r_var[e, R_id[r], t].lb = 1.0
+                    else:
+                        pass # may assume or not with no problem
+                else:
+                    m.addConstrs(
+                        (
+                            r_var[e, R_id[r], t]
+                            <=
+                            r_var[e, R_id[r], t-1] + w_var[req_id][e][N_map[cloud_node]][pth_id, R_id[r]]
+                            for req_id in range(len(reqs))
+                            if t in reqs[req_id].T2
+                            for pth_id in range(len(my_net.paths_links[N_map_inv[e]][cloud_node]))
+                        ), name="layer_download,{},{},{}".format(e, r, t)
+                    )
 
     m.addConstrs(
         (
@@ -236,7 +264,7 @@ def get_ilp(reqs, my_net, R, Rvol):
         ), GRB.MINIMIZE
     )
 
-    return m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv
+    return m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node
 
     # m.setParam("LogToConsole", False)
     # m.setParam("Threads", 6)

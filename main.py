@@ -52,7 +52,7 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [2]
+    req_nums = [10]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -391,7 +391,7 @@ def test_qlearning(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     test_type = "optimal"
-    ia = 1.0
+    ia = 0.5
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):

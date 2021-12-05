@@ -1,7 +1,7 @@
 import heapq
 from opt_gurobi_single import solve_single
 from relax_gurobi_single import solve_single_relax
-from opt_ilp import get_ilp
+from opt_ilp import solve_batch_opt
 
 class Solver:
     def __init__(self, my_net):
@@ -173,7 +173,7 @@ class GurobiBatch(Solver):
         return "GrBt"
 
     def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
-        return get_ilp(reqs, self.my_net, self.R_ids, self.R_vols)
+        return solve_batch_opt(reqs, self.my_net, self.R_ids, self.R_vols)
 
     def reset(self):
         self.my_net.reset()
@@ -246,7 +246,7 @@ class GurobiSingleRelax(Solver):
                     self.my_net.g.nodes[m]["nd"].p_agent.add_inuse(inuse)
                 # Transition of emptying disk
                 if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
-                    # print("From {}: delete {}, unused {}".format(m, over_used, vol))
+                    # print("From {}: delete".format(m))
                     if self.eviction_strategy == "q_learning":
                         self.my_net.g.nodes[m]["nd"].make_s1()
                         self.my_net.g.nodes[m]["nd"].empty_storage(t)
