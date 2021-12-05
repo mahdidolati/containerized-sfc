@@ -13,10 +13,10 @@ class Const:
     LAMBDA_RANGE = [1, 5]
     #
     WIRE_LINK_PR = 0.1
-    LINK_BW = [100, 200]
+    LINK_BW = [1000, 2000]
     SERVER_CPU = [16, 32]
     SERVER_RAM = [4, 32]
-    SERVER_DISK = [70, 100]
+    SERVER_DISK = [700, 1000]
 
 
 class ConstSingleQ:

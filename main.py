@@ -5,6 +5,7 @@ from my_sys.net import NetGenerator
 from solution import NoShareSolver, ShareSolver
 from solution import GurobiSingle
 from solution import GurobiSingleRelax
+from solution import GurobiBatch
 from constants import Const
 from statistic_collector import StatCollector, Stat
 import heapq
@@ -51,15 +52,8 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [20,40, 60, 80, 100, 120]
-    Const.VNF_LAYER = [5, 16]
-    Const.LAYER_SIZE = [10, 301]
-    Const.VNF_NUM = 5
-    Const.LAYER_NUM = 10
-    Const.SFC_LEN = [2, 6]
-    Const.TAU1 = [10, 15]
-    Const.TAU2 = [5, 20]
-    sfc_gen = SfcGenerator(my_net, 1.0)
+    req_nums = [2]
+    sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
     R_vols = [sfc_gen.layers[i] for i in R_ids]
@@ -68,13 +62,7 @@ def optimal_test(inter_arrival):
     DOWNLOAD_LAYER = "Download (MB)"
     RUNTIME = "Runtime (sec)"
     solvers = [
-        GurobiSingle(my_net, R_ids, R_vols),
-        GurobiSingleRelax(my_net, R_ids, R_vols),
-        # GurobiSolver(my_net),
-        # NoShareSolver(my_net, 0),
-        # ShareSolver(my_net, 20),
-        # PopularitySolver(my_net, 1),
-        # ProactiveSolver(my_net, 0.4, 3)
+        GurobiBatch(my_net, R_ids, R_vols)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -102,7 +90,7 @@ def optimal_test(inter_arrival):
                 if solver.batch:
                     res, dl_vol = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
-                    res, dl_vol = test(solver, reqs)
+                    res, dl_vol, _ = test(solver, reqs)
                     print("Solver: {} got {} out of {}".format(solver.get_name(), res, req_num))
                 t2 = process_time()
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
@@ -347,9 +335,7 @@ def test_qlearning(inter_arrival):
     DOWNLOAD_LAYER = "Download (MB)"
     STEP_DL_LAYER = "Rung Download (MB)"
     my_net = NetGenerator().get_g()
-    sfc_gen = SfcGenerator(my_net, {
-        1: 1.0
-    }, 0.9)
+    sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 0.9)
     R_ids = [i for i in sfc_gen.layers]
     R_vols = [sfc_gen.layers[i] for i in R_ids]
     solvers = [
@@ -403,7 +389,7 @@ def test_qlearning(inter_arrival):
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    test_type = "qlearning"
+    test_type = "optimal"
     ia = 1.0
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:

@@ -1,7 +1,7 @@
 import heapq
 from opt_gurobi_single import solve_single
 from relax_gurobi_single import solve_single_relax
-
+from opt_ilp import get_ilp
 
 class Solver:
     def __init__(self, my_net):
@@ -155,6 +155,25 @@ class ShareSolver(Solver):
 
     def get_name(self):
         return "S-{}".format(self.layer_del_th)
+
+    def reset(self):
+        self.my_net.reset()
+        self.my_net.enable_layer_sharing()
+
+
+class GurobiBatch(Solver):
+    def __init__(self, my_net, R_ids, R_vols):
+        super().__init__(my_net)
+        self.R_ids = R_ids
+        self.R_vols = R_vols
+        self.my_net.enable_layer_sharing()
+        self.batch = True
+
+    def get_name(self):
+        return "GrBt"
+
+    def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
+        return get_ilp(reqs, self.my_net, self.R_ids, self.R_vols)
 
     def reset(self):
         self.my_net.reset()

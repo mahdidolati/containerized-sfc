@@ -616,12 +616,11 @@ class NetGenerator:
         # for n in self.g.nodes():
         #     ax.annotate(n, self.g.nodes[n]["nd"].loc)
         # for e in self.g.edges(data=True):
-        #     for j in self.g[e[0]][e[1]]:
-        #         line_t = 'r-'
-        #         if self.g[e[0]][e[1]][j]["li"].type == "mmWave":
-        #             line_t = 'b-'
-        #         ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
-        #                 [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
+        #     line_t = 'r-'
+        #     if self.g[e[0]][e[1]]["li"].type == "mmWave":
+        #         line_t = 'b-'
+        #     ax.plot([self.g.nodes[e[0]]["nd"].loc[0], self.g.nodes[e[1]]["nd"].loc[0]],
+        #             [self.g.nodes[e[0]]["nd"].loc[1], self.g.nodes[e[1]]["nd"].loc[1]], line_t)
         # plt.show()
         return MyNetwork(self.g)
 
