@@ -36,6 +36,22 @@ class MyNetwork:
             self.enable_layer_sharing()
         else:
             self.disable_layer_sharing()
+        self.paths_links = dict()
+        self.paths_nodes = dict()
+        for n1 in self.g.nodes():
+            self.paths_links[n1] = dict()
+            self.paths_nodes[n1] = dict()
+            for n2 in self.g.nodes():
+                if n1 != n2:
+                    self.paths_links[n1][n2], self.paths_nodes[n1][n2] = self.pre_compute_paths(n1, n2)
+        self.link_to_path = dict()
+        for n1 in self.paths_links:
+            for n2 in self.paths_links[n1]:
+                for pth_id in range(len(self.paths_links[n1][n2])):
+                    for ll in self.paths_links[n1][n2][pth_id]:
+                        if ll not in self.link_to_path:
+                            self.link_to_path[ll] = set()
+                        self.link_to_path[ll].add((n1, n2, pth_id))
 
     def get_biggest_path(self, c, d, t, delay_cap=np.infty):
         h = []
@@ -76,44 +92,45 @@ class MyNetwork:
         while len(h) > 0:
             bw, cnt, n, cur_path, cur_links = heapq.heappop(h)
             if n == d:
+                cur_path.append(d)
                 return -bw, cur_path, cur_links
             if n in visited:
                 continue
             visited.add(n)
             for m in self.g.neighbors(n):
                 if m not in visited and m not in cur_path:
-                    for j in self.g[n][m]:
-                        cur_link = self.g[n][m][j]["li"]
-                        if (n, m, j) not in excluded:
-                            bw_avail = cur_link.bw_avail(t)
-                            counter = counter + 1
-                            new_path = list(cur_path)
-                            new_path.append(n)
-                            new_links = list(cur_links)
-                            new_links.append((n, m, j))
-                            heapq.heappush(h, (max(bw, -bw_avail),
-                                               counter, m, new_path, new_links))
+                    cur_link = self.g[n][m]["li"]
+                    if (n, m) not in excluded:
+                        bw_avail = cur_link.bw_avail(t)
+                        counter = counter + 1
+                        new_path = list(cur_path)
+                        new_path.append(n)
+                        new_links = list(cur_links)
+                        new_links.append((n, m))
+                        heapq.heappush(h, (max(bw, -bw_avail),
+                                           counter, m, new_path, new_links))
         return 0, [], []
 
-    def pre_compute_paths(self, n, t):
-        cur_path = []
-        bb, pp, ll = self.get_a_path(n, "c", t)
-        cur_path.append(ll)
+    def pre_compute_paths(self, n1, n2, t=0):
+        paths_link = []
+        paths_nodes = []
+        bb, pp, ll = self.get_a_path(n1, n2, t)
+        paths_link.append(ll)
+        paths_nodes.append(pp)
         for l in ll:
-            bb2, pp2, ll2 = self.get_a_path(n, "c", t, [l])
+            bb2, pp2, ll2 = self.get_a_path(n1, n2, t, [l])
             if bb2 > 0:
-                cur_path.append(ll2)
-                break
-        return cur_path
+                paths_link.append(ll2)
+                paths_nodes.append(pp2)
+        return paths_link, paths_nodes
 
     def get_closest(self, n):
         bestDelay = np.infty
         bestNeighbor = None
         for m in self.g.neighbors(n):
-            for j in self.g[n][m]:
-                if bestNeighbor is None or bestDelay > self.g[m][n][j]["delay"]:
-                    bestDelay = self.g[m][n][j]["li"].delay
-                    bestNeighbor = (n, m, j)
+            if bestNeighbor is None or bestDelay > self.g[m][n]["delay"]:
+                bestDelay = self.g[m][n]["li"].delay
+                bestNeighbor = (n, m)
         return bestNeighbor
 
     def enable_layer_sharing(self):
@@ -214,9 +231,8 @@ class MyNetwork:
         Lw = list()
         L_iii = dict()
         for e in self.g.edges():
-            for j in self.g[e[0]][e[1]]:
-                L_iii[self.g[e[0]][e[1]][j]["li"]] = (e[0], e[1], j)
-                Lw.append((e[0], e[1], j))
+                L_iii[self.g[e[0]][e[1]]["li"]] = (e[0], e[1])
+                Lw.append((e[0], e[1]))
         return Lw, L_iii
 
     def get_all_base_stations(self):
@@ -240,11 +256,10 @@ class MyNetwork:
             dd = self.g.nodes[n]["nd"].disk
             print("Node: {}, cpu: {}, ram: {}, disk: {}".format(n, ss, rr, dd))
         for e in self.g.edges():
-            for j in self.g[e[0]][e[1]]:
-                tt = self.g[e[0]][e[1]][j]["li"].type
-                bb = self.g[e[0]][e[1]][j]["li"].bw
-                dd = self.g[e[0]][e[1]][j]["li"].delay
-                print("Link({}): {} -- {} -- {}, bw: {}, dl: {}".format(tt, e[0], e[1], j, bb, dd))
+            tt = self.g[e[0]][e[1]]["li"].type
+            bb = self.g[e[0]][e[1]]["li"].bw
+            dd = self.g[e[0]][e[1]]["li"].delay
+            print("Link({}): {} -- {}, bw: {}, dl: {}".format(tt, e[0], e[1], bb, dd))
 
 
 class Link:
@@ -544,7 +559,7 @@ class NetGenerator:
         base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0)]
         self.e_node_num = 5
         cloud_loc = (20, 3)
-        self.g = nx.MultiDiGraph()
+        self.g = nx.DiGraph()
         for n in range(len(base_station_loc)):
             n_id = "b{}".format(n)
             nd = Node("base-station", base_station_loc[n], n_id)

@@ -53,6 +53,8 @@ class Sfc:
         self.vnfs = vnfs
         self.entry_point = None
         self.used_servers = set()
+        self.T1 = range(self.arrival_time, self.tau1)
+        self.T2 = range(self.tau1, self.tau2 + 1)
 
     def vnf_in_rate(self, i):
         a = 1.0
