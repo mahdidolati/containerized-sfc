@@ -246,8 +246,7 @@ class MyNetwork:
         for n in self.g.nodes():
             self.g.nodes[n]["nd"].reset()
         for e in self.g.edges():
-            for j in self.g[e[0]][e[1]]:
-                self.g[e[0]][e[1]][j]["li"].reset()
+            self.g[e[0]][e[1]]["li"].reset()
 
     def print(self):
         for n in self.g.nodes():

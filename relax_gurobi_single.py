@@ -3,6 +3,7 @@ from gurobipy import GRB
 from constants import Const
 from itertools import chain
 from sfc import LayerDownload
+from opt_ilp import get_ilp
 
 
 def get_last_t(reqs):
@@ -20,6 +21,26 @@ def get_max_sfc(reqs):
 
 
 def solve_single_relax(my_net, R, Rvol, req):
+    reqs = [req]
+    m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv = get_ilp(reqs, my_net, R, Rvol)
+
+    m.update()
+    for v in m.getVars():
+        v.setAttr('vtype', 'C')
+
+    m.setParam("LogToConsole", False)
+    m.setParam("Threads", 6)
+    # m.setParam("TIME_LIMIT", 500)
+    m.optimize()
+    # m.write("out.lp")
+
+    if m.status == GRB.INFEASIBLE:
+        # m.computeIIS()
+        # m.write("s_model.ilp")
+        return False, None
+    else:
+        print(m.objVal)
+
     I_len = len(req.vnfs)
     B = my_net.get_all_base_stations()
     E = my_net.get_all_edge_nodes()

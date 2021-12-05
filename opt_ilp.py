@@ -236,15 +236,17 @@ def get_ilp(reqs, my_net, R, Rvol):
         ), GRB.MINIMIZE
     )
 
-    m.setParam("LogToConsole", False)
-    m.setParam("Threads", 6)
-    # m.setParam("TIME_LIMIT", 500)
-    m.optimize()
-    # m.write("out.lp")
+    return m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv
 
-    if m.status == GRB.INFEASIBLE:
-        m.computeIIS()
-        m.write("s_model.ilp")
-        return False
-
-    return True
+    # m.setParam("LogToConsole", False)
+    # m.setParam("Threads", 6)
+    # # m.setParam("TIME_LIMIT", 500)
+    # m.optimize()
+    # # m.write("out.lp")
+    #
+    # if m.status == GRB.INFEASIBLE:
+    #     # m.computeIIS()
+    #     # m.write("s_model.ilp")
+    #     return False
+    #
+    # return True
