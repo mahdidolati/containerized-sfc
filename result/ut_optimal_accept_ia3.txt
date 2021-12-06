@@ -1,6 +1,0 @@
-ys_err;[[[0.0], [0.0]], [[0.0], [0.0]], [[0.0], [0.0]]]
-x;[5]
-ys;[[0.0], [0.0], [0.0]]
-ls;['GrSi', 'NS-0', 'S-20']
-xtitle;Share Percentage
-ytitle;Accept Ratio
