@@ -246,7 +246,7 @@ class GurobiSingleRelax(Solver):
                     self.my_net.g.nodes[m]["nd"].p_agent.add_inuse(inuse)
                 # Transition of emptying disk
                 if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
-                    # print("From {}: delete".format(m))
+                    print("From {}: delete".format(m))
                     if self.eviction_strategy == "q_learning":
                         self.my_net.g.nodes[m]["nd"].make_s1()
                         self.my_net.g.nodes[m]["nd"].empty_storage(t)

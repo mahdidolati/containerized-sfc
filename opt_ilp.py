@@ -172,7 +172,7 @@ def get_ilp(reqs, my_net, R, Rvol):
             gp.quicksum(
                 r_var[e, R_id[r], t] * Rvol[R_id[r]]
                 for r in R
-            ) <= my_net.g.nodes[N_map_inv[e]]["nd"].disk_avail(t)
+            ) <= my_net.g.nodes[N_map_inv[e]]["nd"].disk
             for e in E_id
             for t in T_all
         ), name="disk"

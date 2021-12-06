@@ -35,8 +35,8 @@ def solve_single_relax(my_net, R, Rvol, req):
     # m.write("out.lp")
 
     if m.status == GRB.INFEASIBLE:
-        # m.computeIIS()
-        # m.write("s_model.ilp")
+        m.computeIIS()
+        m.write("s_model.ilp")
         return False, None
     else:
         print(m.objVal)
@@ -60,6 +60,10 @@ def solve_single_relax(my_net, R, Rvol, req):
             return False, None
         v_var[0][best_loc, i].lb = 1.0
         loc_of[i] = N_map_inv[best_loc]
+        m.optimize()
+        if m.status == GRB.INFEASIBLE:
+            return False, None
+
         if best_loc in E_id:
             Rd_ei, _ = my_net.get_missing_layers(N_map_inv[best_loc], req, i, req.tau1)
             for rr in Rd_ei:
