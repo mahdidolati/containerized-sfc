@@ -46,23 +46,31 @@ def solve_single_relax(my_net, R, Rvol, req):
     dl_path_of = dict()
     routing_paths = dict()
     for i in range(len(req.vnfs)):
-        v_max = 0
         best_loc = None
-        for n in Ec_id:
-            a = v_var[0][n, i].x
-            if a > tol_val:
-                if best_loc is None or v_max < a:
-                    best_loc = n
-                    v_max = a
-            if v_max >= 1.0 - tol_val:
+        for ttt in range(3):
+            v_max = 0
+            best_loc = None
+            for n in Ec_id:
+                a = v_var[0][n, i].x
+                if a > tol_val:
+                    if best_loc is None or v_max < a:
+                        best_loc = n
+                        v_max = a
+                if v_max >= 1.0 - tol_val:
+                    break
+            if best_loc is None:
+                return False, None
+            v_var[0][best_loc, i].lb = 1.0
+            m.optimize()
+            if m.status != GRB.INFEASIBLE:
                 break
-        if best_loc is None:
-            return False, None
-        v_var[0][best_loc, i].lb = 1.0
-        loc_of[i] = N_map_inv[best_loc]
-        m.optimize()
+            else:
+                v_var[0][best_loc, i].lb = 0.0
+                v_var[0][best_loc, i].ub = 0.0
+                m.optimize()
         if m.status == GRB.INFEASIBLE:
             return False, None
+        loc_of[i] = N_map_inv[best_loc]
 
         if best_loc in E_id:
             Rd_ei, _ = my_net.get_missing_layers(N_map_inv[best_loc], req, i, req.tau1)
@@ -103,7 +111,7 @@ def solve_single_relax(my_net, R, Rvol, req):
             q_max = 0
             best_path = None
             for pth_id in range(len(my_net.paths_links[loc_of[i-1]][loc_of[i]])):
-                a = q_var[0][N_map[loc_of[i]]][best_loc][pth_id, i].x
+                a = q_var[0][N_map[loc_of[i-1]]][best_loc][pth_id, i].x
                 if a > tol_val:
                     if best_path is None or q_max < a:
                         best_path = pth_id
@@ -112,7 +120,7 @@ def solve_single_relax(my_net, R, Rvol, req):
                     break
             if best_path is not None:
                 routing_paths[i] = my_net.paths_links[loc_of[i-1]][loc_of[i]][best_path]
-                q_var[0][loc_of[i-1]][best_loc][best_path, i].lb = 1.0
+                q_var[0][N_map[loc_of[i-1]]][best_loc][best_path, i].lb = 1.0
             else:
                 return False, None
 
