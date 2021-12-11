@@ -18,6 +18,7 @@ def solve_single(my_net, R, Rvol, req):
     # m.write("out.lp")
 
     if m.status == GRB.INFEASIBLE:
+        print("one failed!")
         # m.computeIIS()
         # m.write("s_model.ilp")
         return False, 0, 0
@@ -75,4 +76,5 @@ def solve_single(my_net, R, Rvol, req):
                         l_obj = my_net.g[ll[0]][ll[1]]["li"]
                         layer_download.add_data(tt, l_obj, Rvol[rr] / len(req.T1))
 
+    print("one success!")
     return True, sum(total_dl_vol.values()), m.objVal

@@ -54,7 +54,7 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [2, 4, 6, 8]
+    req_nums = [8]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -66,8 +66,8 @@ def optimal_test(inter_arrival):
     CHAIN_BW = "Chain (mbps)"
     solvers = [
         GurobiSingleRelax(my_net, R_ids, R_vols, "popularity_learn"),
-        # GurobiBatch(my_net, R_ids, R_vols),
-        GurobiSingle(my_net, R_ids, R_vols, "popularity_learn")
+        GurobiBatch(my_net, R_ids, R_vols)
+        # GurobiSingle(my_net, R_ids, R_vols, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -94,8 +94,7 @@ def optimal_test(inter_arrival):
                 np.random.seed(itr * 1234)
                 t1 = process_time()
                 if solver.batch:
-                    chain_bw_total = 0
-                    res, dl_vol = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                    res, dl_vol, _, chain_bw_total = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
                     res, dl_vol, _, chain_bw_total = test(solver, reqs)
                     print("Solver: {} got {} out of {}".format(solver.get_name(), res, req_num))

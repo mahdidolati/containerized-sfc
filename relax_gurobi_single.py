@@ -107,9 +107,11 @@ def solve_single_relax(my_net, R, Rvol, req):
                         if ii in dl_paths:
                             for rr in dl_paths[ii]:
                                 w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
+                            del dl_paths[ii]
                         if ii in downloads:
                             for ld in downloads[ii]:
                                 ld.cancel_download()
+                            del downloads[ii]
                 i = i_back
                 v_var[0][N_map[loc_of[i]], i].ub = 0.0
                 continue
@@ -180,9 +182,11 @@ def solve_single_relax(my_net, R, Rvol, req):
                         if ii in dl_paths:
                             for rr in dl_paths[ii]:
                                 w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
+                            del dl_paths[ii]
                         if ii in downloads:
                             for ld in downloads[ii]:
                                 ld.cancel_download()
+                            del downloads[ii]
                 i = i_back
                 v_var[0][N_map[loc_of[i]], i].ub = 0.0
                 continue
@@ -241,9 +245,11 @@ def solve_single_relax(my_net, R, Rvol, req):
                         if ii in dl_paths:
                             for rr in dl_paths[ii]:
                                 w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
+                            del dl_paths[ii]
                         if ii in downloads:
                             for ld in downloads[ii]:
                                 ld.cancel_download()
+                            del downloads[ii]
                 i = i_back
                 v_var[0][N_map[loc_of[i]], i].ub = 0.0
                 continue

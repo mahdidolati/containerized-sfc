@@ -15,21 +15,23 @@ def get_T(reqs):
 
 
 def solve_batch_opt(reqs, my_net, R, Rvol):
-    m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(reqs, my_net, R,
+    for ii in range(len(reqs)):
+        m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(reqs[ii:], my_net, R,
                                                                                                     Rvol)
-    m.setParam("LogToConsole", False)
-    m.setParam("Threads", 6)
-    m.setParam("TIME_LIMIT", 30)
-    m.optimize()
-    # m.write("out.lp")
+        m.setParam("LogToConsole", False)
+        m.setParam("Threads", 6)
+        m.setParam("TIME_LIMIT", 30)
+        m.optimize()
+        # m.write("out.lp")
 
-    if m.status == GRB.INFEASIBLE:
-        # m.computeIIS()
-        # m.write("s_model.ilp")
-        return False, 1
-    else:
-        print(m.objVal)
-        return True, 1
+        if m.status == GRB.INFEASIBLE:
+            # m.computeIIS()
+            # m.write("s_model.ilp")
+            # return False, 1, 0
+            print("rejected one!")
+        else:
+            print(m.objVal)
+            return 1.0 * (len(reqs)-ii)/len(reqs), 1, 1, 1
 
 
 def get_ilp(reqs, my_net, R, Rvol):
