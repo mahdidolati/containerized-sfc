@@ -181,17 +181,55 @@ class GurobiBatch(Solver):
 
 
 class GurobiSingle(Solver):
-    def __init__(self, my_net, R_ids, R_vols):
+    def __init__(self, my_net, R_ids, R_vols, eviction_strategy="default"):
         super().__init__(my_net)
         self.R_ids = R_ids
         self.R_vols = R_vols
         self.my_net.enable_layer_sharing()
+        self.eviction_strategy = eviction_strategy
 
     def get_name(self):
         return "GrSi"
 
     def solve(self, chain_req, t, sr):
         return solve_single(self.my_net, self.R_ids, self.R_vols, chain_req)
+
+    def pre_arrival_procedure(self, t):
+        for m in self.my_net.g.nodes():
+            if m[0] == "e":
+                self.my_net.g.nodes[m]["nd"].make_s1()
+
+    def post_arrival_procedure(self, status, t, chain_req):
+        for m in self.my_net.g.nodes():
+            if m[0] == "e":
+                if self.eviction_strategy == "q_learning":
+                    self.my_net.g.nodes[m]["nd"].make_s2()
+                    self.my_net.g.nodes[m]["nd"].q_agent.add_transition(
+                        self.my_net.g.nodes[m]["nd"].s1,
+                        self.my_net.g.nodes[m]["nd"].get_local_kept(),
+                        self.my_net.g.nodes[m]["nd"].get_local_reused(),
+                        self.my_net.g.nodes[m]["nd"].s2
+                    )
+                elif self.eviction_strategy == "popularity_learn":
+                    inuse = self.my_net.g.nodes[m]["nd"].get_all_inuse()
+                    self.my_net.g.nodes[m]["nd"].p_agent.add_inuse(inuse)
+                # Transition of emptying disk
+                if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
+                    print("From {}: delete".format(m))
+                    if self.eviction_strategy == "q_learning":
+                        self.my_net.g.nodes[m]["nd"].make_s1()
+                        self.my_net.g.nodes[m]["nd"].empty_storage(t)
+                        self.my_net.g.nodes[m]["nd"].make_s2()
+                        self.my_net.g.nodes[m]["nd"].q_agent.add_transition(
+                            self.my_net.g.nodes[m]["nd"].s1,
+                            self.my_net.g.nodes[m]["nd"].get_local_kept(),
+                            self.my_net.g.nodes[m]["nd"].get_local_reused(),
+                            self.my_net.g.nodes[m]["nd"].s2
+                        )
+                    elif self.eviction_strategy == "popularity_learn":
+                        self.my_net.g.nodes[m]["nd"].empty_storage_popularity(t)
+                    else:
+                        self.my_net.g.nodes[m]["nd"].empty_storage_random(t)
 
     def reset(self):
         self.my_net.reset()

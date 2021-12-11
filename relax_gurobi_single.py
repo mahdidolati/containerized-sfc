@@ -113,12 +113,10 @@ def solve_single_relax(my_net, R, Rvol, req):
                 v_var[0][N_map[loc_of[i]], i].ub = 0.0
                 continue
         # get best location
-        loc_id = list()
         loc_pr = list()
         for n in Ec_id:
-            loc_id.append(n)
             loc_pr.append(v_var[0][n, i].x)
-        best_loc = np.random.choice(a=loc_id, p=loc_pr)
+        best_loc = Ec_id[loc_pr.index(max(loc_pr))]
         v_var[0][best_loc, i].lb = 1.0
         loc_of[i] = N_map_inv[best_loc]
         my_net.g.nodes[loc_of[i]]["nd"].embed(req, i)

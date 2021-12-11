@@ -63,7 +63,8 @@ def optimal_test(inter_arrival):
     RUNTIME = "Runtime (sec)"
     solvers = [
         GurobiSingleRelax(my_net, R_ids, R_vols, "popularity_learn"),
-        GurobiBatch(my_net, R_ids, R_vols)
+        # GurobiBatch(my_net, R_ids, R_vols),
+        GurobiSingle(my_net, R_ids, R_vols, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
