@@ -19,14 +19,14 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
                                                                                                     Rvol)
     m.setParam("LogToConsole", False)
     m.setParam("Threads", 6)
-    # m.setParam("TIME_LIMIT", 500)
+    m.setParam("TIME_LIMIT", 30)
     m.optimize()
     # m.write("out.lp")
 
     if m.status == GRB.INFEASIBLE:
         # m.computeIIS()
         # m.write("s_model.ilp")
-        return False, None
+        return False, 1
     else:
         print(m.objVal)
         return True, 1
@@ -73,7 +73,7 @@ def get_ilp(reqs, my_net, R, Rvol):
             q_var[req_id] = dict()
         if req_id not in w_var:
             w_var[req_id] = dict()
-        v_var[req_id] = m.addVars(Ec_id, len(reqs[req_id].vnfs), vtype=GRB.BINARY, name="v,{}".format(req_id))
+        v_var[req_id] = m.addVars(Ec_id, len(reqs[req_id].vnfs), vtype=GRB.BINARY, name="v,{},".format(req_id))
         for n1 in my_net.paths_links:
             if n1 not in q_var[req_id]:
                 q_var[req_id][N_map[n1]] = dict()
@@ -83,9 +83,9 @@ def get_ilp(reqs, my_net, R, Rvol):
                 if len(my_net.paths_links[n1][n2]) > 0:
                     # print("{} -- {}: {} , {}".format(n1, n2, len(my_net.paths_links[n1][n2]), len(reqs[req_id].vnfs)+1))
                     q_var[req_id][N_map[n1]][N_map[n2]] = m.addVars(len(my_net.paths_links[n1][n2]), len(reqs[req_id].vnfs)+1,
-                                                      vtype=GRB.BINARY, name="q,{}".format(req_id))
+                                                      vtype=GRB.BINARY, name="q,{},{},{},".format(req_id,n1,n2))
                     w_var[req_id][N_map[n1]][N_map[n2]] = m.addVars(len(my_net.paths_links[n1][n2]), len(R),
-                                                      vtype=GRB.BINARY, name="w,{}".format(req_id))
+                                                      vtype=GRB.BINARY, name="w,{},{},{},".format(req_id,n1,n2))
     r_var = m.addVars(E_id, len(R), T_all, vtype=GRB.BINARY, name="r")
 
     m.addConstrs(
@@ -102,7 +102,7 @@ def get_ilp(reqs, my_net, R, Rvol):
     m.addConstrs(
         (
             gp.quicksum(
-                v_var[req_id][e, i] * reqs[req_id].vnfs[i].cpu * reqs[req_id].vnf_in_rate(i)
+                v_var[req_id][e, i] * reqs[req_id].cpu_req(i)
                 for req_id in range(len(reqs))
                 if t in reqs[req_id].T2
                 for i in range(len(reqs[req_id].vnfs))
@@ -115,7 +115,7 @@ def get_ilp(reqs, my_net, R, Rvol):
     m.addConstrs(
         (
             gp.quicksum(
-                v_var[req_id][e, i] * reqs[req_id].vnfs[i].ram * reqs[req_id].vnf_in_rate(i)
+                v_var[req_id][e, i] * reqs[req_id].ram_req(i)
                 for req_id in range(len(reqs))
                 if t in reqs[req_id].T2
                 for i in range(len(reqs[req_id].vnfs))
@@ -251,11 +251,12 @@ def get_ilp(reqs, my_net, R, Rvol):
     m.addConstrs(
         (
             gp.quicksum(
-                q_var[req_id][n1][n2][pth_id, i]
+                q_var[req_id][n1][n2][pth_id, i] * my_net.get_path_delay(N_map_inv[n1], N_map_inv[n2], pth_id)
                 for i in range(len(reqs[req_id].vnfs)+1)
-                for n1 in Ec_id
-                for n2 in Ec_id
+                for n1 in N_map.values()
+                for n2 in N_map.values()
                 if n1 != n2
+                if n1 in Ec_id or n2 in Ec_id
                 for pth_id in range(len(my_net.paths_links[N_map_inv[n1]][N_map_inv[n2]]))
             ) <= reqs[req_id].max_delay
             for req_id in range(len(reqs))
@@ -264,12 +265,13 @@ def get_ilp(reqs, my_net, R, Rvol):
 
     m.setObjective(
         gp.quicksum(
-            q_var[req_id][n1][n2][pth_id, i]
+            q_var[req_id][n1][n2][pth_id, i] * len(my_net.paths_links[N_map_inv[n1]][N_map_inv[n2]][pth_id]) * reqs[req_id].vnf_in_rate(i)
             for req_id in range(len(reqs))
             for i in range(len(reqs[req_id].vnfs) + 1)
-            for n1 in Ec_id
-            for n2 in Ec_id
+            for n1 in N_map.values()
+            for n2 in N_map.values()
             if n1 != n2
+            if n1 in Ec_id or n2 in Ec_id
             for pth_id in range(len(my_net.paths_links[N_map_inv[n1]][N_map_inv[n2]]))
         ), GRB.MINIMIZE
     )

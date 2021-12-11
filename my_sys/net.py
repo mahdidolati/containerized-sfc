@@ -133,6 +133,12 @@ class MyNetwork:
                 min_bw = bw_a
         return min_bw
 
+    def get_path_delay(self, n1, n2, pth_id):
+        d = 0
+        for ll in self.paths_links[n1][n2][pth_id]:
+            d = d + self.g[ll[0]][ll[1]]["li"].delay
+        return d
+
     def get_closest(self, n):
         bestDelay = np.infty
         bestNeighbor = None
@@ -453,6 +459,7 @@ class Node:
             cpu_a = self.cpu_avail(t)
             if cpu_a < min_cpu:
                 min_cpu = cpu_a
+        # print("In period {}, Cpu available is: {}".format(T, min_cpu))
         return min_cpu
 
     def cpu_avail(self, t):
@@ -477,6 +484,7 @@ class Node:
             ram_a = self.ram_avail(t)
             if ram_a < min_ram:
                 min_ram = ram_a
+        # print("In period {}, Ram available is: {}".format(T, min_ram))
         return min_ram
 
     def ram_avail(self, t):
@@ -516,6 +524,7 @@ class Node:
             disk_a = self.disk_avail_no_cache(t)
             if disk_a < min_disk:
                 min_disk = disk_a
+        # print("In period {}, Disk available is: {}".format(T, min_disk))
         return min_disk
 
     def disk_avail_no_cache(self, t):
@@ -595,10 +604,10 @@ class Node:
             if i in self.embeds[chain_req]:
                 self.embeds[chain_req].remove(i)
             rm_usr = set()
-            for ll in chain_req.vnf[i].layers:
+            for ll in chain_req.vnfs[i].layers:
                 to_be_rm = True
                 for ii in self.embeds[chain_req]:
-                    if ll in chain_req.vnf[ii].layers:
+                    if ll in chain_req.vnfs[ii].layers:
                         to_be_rm = False
                         break
                 if to_be_rm:
@@ -606,8 +615,8 @@ class Node:
             for ll in rm_usr:
                 if ll in self.layers:
                     self.layers[ll].remove_user(chain_req)
-                if len(self.layers[ll].chain_users) == 0 and not self.layers[ll].finalized:
-                    del self.layers[ll]
+                    if len(self.layers[ll].chain_users) == 0 and not self.layers[ll].finalized:
+                        del self.layers[ll]
 
     def embed(self, chain_req, i):
         if chain_req not in self.embeds:
@@ -626,7 +635,7 @@ class NetGenerator:
         base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0), (3, 0), (6, 0)]
         base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0)]
         self.e_node_num = 5
-        cloud_loc = (20, 3)
+        cloud_loc = (50, 3)
         self.g = nx.DiGraph()
         for n in range(len(base_station_loc)):
             n_id = "b{}".format(n)

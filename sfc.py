@@ -69,10 +69,14 @@ class Sfc:
         return a * self.traffic_rate * self.vnfs[i].alpha
 
     def cpu_req(self, i):
-        return self.vnf_in_rate(i) * self.vnfs[i].cpu
+        cr = self.vnf_in_rate(i) * self.vnfs[i].cpu
+        # print("Cpu req is: {}".format(cr))
+        return cr
 
     def ram_req(self, i):
-        return self.vnf_in_rate(i) * self.vnfs[i].ram
+        rr = self.vnf_in_rate(i) * self.vnfs[i].ram
+        # print("Ram req is: {}".format(rr))
+        return rr
 
     def __str__(self):
         a = [v.vnf_id for v in self.vnfs]
