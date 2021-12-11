@@ -20,13 +20,13 @@ def solve_single_relax(my_net, R, Rvol, req):
     m.setParam("LogToConsole", False)
     m.setParam("Threads" , 6)
     # m.setParam("TIME_LIMIT", 500)
-    m.optimize()
-    m.write("out.lp")
+    # m.optimize()
+    # m.write("out.lp")
 
     if m.status == GRB.INFEASIBLE:
-        m.computeIIS()
-        m.write("s_model.ilp")
-        return False, None
+        # m.computeIIS()
+        # m.write("s_model.ilp")
+        return False, 0, 0
     # else:
     #     print(m.objVal)
 
@@ -66,8 +66,8 @@ def solve_single_relax(my_net, R, Rvol, req):
         # solve to obtain loc
         m.optimize()
         if m.status == GRB.INFEASIBLE:
-            m.computeIIS()
-            m.write("s_model.ilp")
+            # m.computeIIS()
+            # m.write("s_model.ilp")
             if i == 0 or gamma < Gamma:
                 print("one failed!")
                 for ii in range(len(req.vnfs)):
@@ -77,7 +77,7 @@ def solve_single_relax(my_net, R, Rvol, req):
                 for ii in downloads:
                     for ld in downloads[ii]:
                         ld.cancel_download()
-                return False, None
+                return False, 0, 0
             elif gamma == Gamma:
                 print("Doing a backtack!")
                 gamma = max(gamma-Gamma-1, gamma-i-1)
@@ -107,6 +107,7 @@ def solve_single_relax(my_net, R, Rvol, req):
                         if ii in dl_paths:
                             for rr in dl_paths[ii]:
                                 w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
+                        if ii in downloads:
                             for ld in downloads[ii]:
                                 ld.cancel_download()
                 i = i_back
@@ -138,8 +139,8 @@ def solve_single_relax(my_net, R, Rvol, req):
         # solve to obtain layer download vals
         m.optimize()
         if m.status == GRB.INFEASIBLE:
-            m.computeIIS()
-            m.write("s_model.ilp")
+            # m.computeIIS()
+            # m.write("s_model.ilp")
             if i == 0 or gamma < Gamma:
                 print("one failed!")
                 for ii in range(len(req.vnfs)):
@@ -149,7 +150,7 @@ def solve_single_relax(my_net, R, Rvol, req):
                 for ii in downloads:
                     for ld in downloads[ii]:
                         ld.cancel_download()
-                return False, None
+                return False, 0, 0
             elif gamma == Gamma:
                 print("Doing a backtack!")
                 gamma = max(gamma - Gamma - 1, gamma - i - 1)
@@ -179,6 +180,7 @@ def solve_single_relax(my_net, R, Rvol, req):
                         if ii in dl_paths:
                             for rr in dl_paths[ii]:
                                 w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
+                        if ii in downloads:
                             for ld in downloads[ii]:
                                 ld.cancel_download()
                 i = i_back
@@ -198,8 +200,8 @@ def solve_single_relax(my_net, R, Rvol, req):
                 w_var[0][best_loc][N_map[cloud_node]][dl_paths[i][R_id[rr]], rr].lb = 1.0
         m.optimize()
         if m.status == GRB.INFEASIBLE:
-            m.computeIIS()
-            m.write("s_model.ilp")
+            # m.computeIIS()
+            # m.write("s_model.ilp")
             if i == 0 or gamma < Gamma:
                 print("one failed!")
                 for ii in range(len(req.vnfs)):
@@ -209,7 +211,7 @@ def solve_single_relax(my_net, R, Rvol, req):
                 for ii in downloads:
                     for ld in downloads[ii]:
                         ld.cancel_download()
-                return False, None
+                return False, None, 0
             elif gamma == Gamma:
                 print("Doing a backtack!")
                 gamma = max(gamma - Gamma - 1, gamma - i - 1)
@@ -239,6 +241,7 @@ def solve_single_relax(my_net, R, Rvol, req):
                         if ii in dl_paths:
                             for rr in dl_paths[ii]:
                                 w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
+                        if ii in downloads:
                             for ld in downloads[ii]:
                                 ld.cancel_download()
                 i = i_back
@@ -283,10 +286,10 @@ def solve_single_relax(my_net, R, Rvol, req):
         for ii in downloads:
             for ld in downloads[ii]:
                 ld.cancel_download()
-        return False, None
+        return False, 0, 0
     else:
         print("one success!")
         for ii in range(len(req.vnfs)):
             if ii in loc_of:
                 my_net.g.nodes[loc_of[ii]]["nd"].finalize_layer()
-        return True, sum(total_dl_vol.values())
+        return True, sum(total_dl_vol.values()), m.objVal

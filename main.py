@@ -18,6 +18,7 @@ def test(solver, reqs):
     solver.reset()
     accepted = 0.0
     layer_dl_vol = 0.0
+    chain_bw_total = 0.0
     sampling_rate = 1.0
     events = []
     counter = 1
@@ -31,10 +32,11 @@ def test(solver, reqs):
         if ev == "ARRIVAL":
             arrivals = arrivals + 1
             solver.pre_arrival_procedure(t)
-            status, dl_vol = solver.solve(s, t, sampling_rate)
+            status, dl_vol, chain_bw = solver.solve(s, t, sampling_rate)
             if status:
                 solver.post_arrival_procedure(status, t, s)
                 layer_dl_vol = layer_dl_vol + dl_vol
+                chain_bw_total = chain_bw_total + chain_bw
                 accepted = accepted + 1
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
@@ -46,13 +48,13 @@ def test(solver, reqs):
         # sleep(1)
     avg_rate = accepted / len(reqs)
     avg_dl = layer_dl_vol
-    return avg_rate, avg_dl, vol_consumed
+    return avg_rate, avg_dl, vol_consumed, chain_bw_total
 
 
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [5]
+    req_nums = [2, 4, 6, 8]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -61,6 +63,7 @@ def optimal_test(inter_arrival):
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
     RUNTIME = "Runtime (sec)"
+    CHAIN_BW = "Chain (mbps)"
     solvers = [
         GurobiSingleRelax(my_net, R_ids, R_vols, "popularity_learn"),
         # GurobiBatch(my_net, R_ids, R_vols),
@@ -68,6 +71,7 @@ def optimal_test(inter_arrival):
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
+             CHAIN_BW: Stat.MEAN_MODE,
              RUNTIME: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
@@ -90,14 +94,16 @@ def optimal_test(inter_arrival):
                 np.random.seed(itr * 1234)
                 t1 = process_time()
                 if solver.batch:
+                    chain_bw_total = 0
                     res, dl_vol = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
-                    res, dl_vol, _ = test(solver, reqs)
+                    res, dl_vol, _, chain_bw_total = test(solver, reqs)
                     print("Solver: {} got {} out of {}".format(solver.get_name(), res, req_num))
                 t2 = process_time()
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
                 stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2-t1)
+                stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, chain_bw_total)
 
     machine_id = "ut"
     fig_test_id = "{}_optimal".format(machine_id)
@@ -112,6 +118,10 @@ def optimal_test(inter_arrival):
     fig_3 = './result/{}_time_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_3 + '.txt', req_nums, 0, RUNTIME, algs, 'Share Percentage',
                                  RUNTIME)
+
+    fig_4 = './result/{}_chain_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_4 + '.txt', req_nums, 0, CHAIN_BW, algs, 'Chaining BW',
+                                 CHAIN_BW)
 
 
 def share_percentage_test(inter_arrival):
