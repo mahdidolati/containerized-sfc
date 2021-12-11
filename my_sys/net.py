@@ -124,6 +124,14 @@ class MyNetwork:
                 paths_nodes.append(pp2)
         return paths_link, paths_nodes
 
+    def get_path_min_bw(self, n1, n2, pth_id, T):
+        min_bw = np.infty
+        for ll in self.paths_links[n1][n2][pth_id]:
+            bw_a = self.g[ll[0]][ll[1]]["li"].bw_min_avail(T)
+            if bw_a < min_bw:
+                min_bw = bw_a
+        return min_bw
+
     def get_closest(self, n):
         bestDelay = np.infty
         bestNeighbor = None
@@ -188,11 +196,13 @@ class MyNetwork:
 
     def get_need_storage_layers(self, server, chain_req, vnf_i, t):
         R = dict()
+        d = 0
         for r in chain_req.vnfs[vnf_i].layers:
             if not self.g.nodes[server]["nd"].layer_avail(r, t) \
                     or not self.g.nodes[server]["nd"].layer_inuse(r):
                 R[r] = chain_req.vnfs[vnf_i].layers[r]
-        return R
+                d = d + R[r]
+        return R, d
 
     def do_layer_dl_test(self, server, candid_layers, volume, start_t, end_t):
         # If an ongoing download exists but can not prepare the layer before end_t+1, return False
@@ -224,7 +234,7 @@ class MyNetwork:
         for n in self.g.nodes():
             self.g.nodes[n]["nd"].evict(chain_req)
         for e in self.g.edges():
-                self.g[e[0]][e[1]]["li"].evict(chain_req)
+            self.g[e[0]][e[1]]["li"].evict(chain_req)
 
     def get_link_sets(self):
         Lw = list()
@@ -279,6 +289,14 @@ class Link:
         self.embeds = dict()
         self.dl = dict()
 
+    def bw_min_avail(self, T):
+        min_bw = np.infty
+        for t in T:
+            bw_a = self.bw_avail(t)
+            if bw_a < min_bw:
+                min_bw = bw_a
+        return min_bw
+
     def bw_avail(self, t):
         u = 0
         for r in self.embeds:
@@ -288,6 +306,10 @@ class Link:
         if t in self.dl:
             u = u + self.dl[t]
         return self.bw - u
+
+    def unembed(self, chain_req, i):
+        if chain_req in self.embeds:
+            self.embeds[chain_req].remove(i)
 
     def embed(self, chain_req, i):
         if chain_req not in self.embeds:
@@ -424,6 +446,14 @@ class Node:
         # self.q_agent = QLearn()
         # self.p_agent = PLearn()
 
+    def cpu_min_avail(self, T):
+        min_cpu = np.infty
+        for t in T:
+            cpu_a = self.cpu_avail(t)
+            if cpu_a < min_cpu:
+                min_cpu = cpu_a
+        return min_cpu
+
     def cpu_avail(self, t):
         if self.type[0] == "b":
             return 0
@@ -439,6 +469,14 @@ class Node:
     def cpu_util(self, t):
         cpu_a = self.cpu_avail(t)
         return (self.cpu - cpu_a) / self.cpu
+
+    def ram_min_avail(self, T):
+        min_ram = np.infty
+        for t in T:
+            ram_a = self.ram_avail(t)
+            if ram_a < min_ram:
+                min_ram = ram_a
+        return min_ram
 
     def ram_avail(self, t):
         if self.type[0] == "b":
@@ -470,6 +508,14 @@ class Node:
     def disk_util(self, t):
         disk_a = self.disk_avail(t)
         return (self.disk - disk_a) / self.disk
+
+    def disk_min_avail_no_cache(self, T):
+        min_disk = np.infty
+        for t in T:
+            disk_a = self.disk_avail_no_cache(t)
+            if disk_a < min_disk:
+                min_disk = disk_a
+        return min_disk
 
     def disk_avail_no_cache(self, t):
         if self.type[0] == "b":
@@ -525,6 +571,25 @@ class Node:
 
     def layer_inuse(self, r):
         return len(self.layers[r].chain_users) > 0
+
+    def unembed(self, chain_req, i):
+        if chain_req in self.embeds:
+            self.embeds[chain_req].remove(i)
+        if len(self.embeds[chain_req]) == 0:
+            self.evict(chain_req)
+        else:
+            rm_usr = set()
+            for ll in chain_req.vnf[i].layers:
+                to_be_rm = True
+                for ii in self.embeds[chain_req]:
+                    if ll in chain_req.vnf[ii].layers:
+                        to_be_rm = False
+                        break
+                if to_be_rm:
+                    rm_usr.add(ll)
+            for ll in rm_usr:
+                if ll in self.layers:
+                    self.layers[ll].remove_user(chain_req)
 
     def embed(self, chain_req, i):
         if chain_req not in self.embeds:
