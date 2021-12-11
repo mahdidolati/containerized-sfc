@@ -7,20 +7,6 @@ from opt_ilp import get_ilp
 import numpy as np
 
 
-def get_last_t(reqs):
-    t_max = 0
-    for r in reqs:
-        t_max = max(r.tau2, t_max)
-    return int(t_max)
-
-
-def get_max_sfc(reqs):
-    l_max = 0
-    for r in reqs:
-        l_max = max(l_max, len(r.vnfs))
-    return l_max
-
-
 def solve_single_relax(my_net, R, Rvol, req):
     reqs = [req]
     m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(reqs, my_net, R, Rvol)
@@ -73,37 +59,35 @@ def solve_single_relax(my_net, R, Rvol, req):
             if i == 0 or gamma < Gamma:
                 return False, None
             elif gamma == Gamma:
+                print("Doing a backtack!")
                 gamma = max(gamma-Gamma, gamma-i)
                 i_back = max(0, i-Gamma)
                 for ii in range(i_back, i+ 1):
                     total_dl_vol[ii] = 0
                     ## undo vnf placement
                     v_var[0][N_map[loc_of[ii]], ii].lb = 0.0
-                    my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, i)
+                    my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, ii)
                     ## undo chaining
                     if loc_of[ii-1] != loc_of[ii]:
                         q_var[0][N_map[loc_of[ii-1]]][N_map[loc_of[ii]]][routing_paths[ii], ii].lb = 0.0
                         for ll in my_net.paths_links[loc_of[ii-1]][loc_of[ii]][routing_paths[ii]]:
                             l_obj = my_net.g[ll[0]][ll[1]]["li"]
-                            l_obj.unembed(req, i)
+                            l_obj.unembed(req, ii)
                     ## undo download
-                    for rr in dl_paths[ii]:
-                        w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
-                    for ld in downloads[ii]:
-                        ld.cancel_download()
+                    if ii in dl_paths:
+                        for rr in dl_paths[ii]:
+                            w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
+                        for ld in downloads[ii]:
+                            ld.cancel_download()
                 i = i_back
                 continue
         # get best location
-        v_max = 0
-        best_loc = None
+        loc_id = list()
+        loc_pr = list()
         for n in Ec_id:
-            a = v_var[0][n, i].x
-            if a > tol_val:
-                if best_loc is None or v_max < a:
-                    best_loc = n
-                    v_max = a
-            if v_max >= 1.0 - tol_val:
-                break
+            loc_id.append(n)
+            loc_pr.append(v_var[0][n, i].x)
+        best_loc = np.random.choice(a=loc_id, p=loc_pr)
         v_var[0][best_loc, i].lb = 1.0
         loc_of[i] = N_map_inv[best_loc]
         my_net.g.nodes[loc_of[i]]["nd"].embed(req, i)
@@ -132,45 +116,51 @@ def solve_single_relax(my_net, R, Rvol, req):
                 for pth_id in pth_ids:
                     a = w_var[0][best_loc][N_map[cloud_node]][pth_id, rr].x
                     pth_pr.append(a)
-                dl_paths[i][rr] = np.random.choice(a=pth_ids, p=pth_pr)
+                try:
+                    dl_paths[i][rr] = np.random.choice(a=pth_ids, p=pth_pr)
+                except:
+                    print(pth_pr)
+                    return False, None
                 w_var[0][best_loc][N_map[cloud_node]][dl_paths[i][R_id[rr]], rr].lb = 1.0
         m.optimize()
         if m.status == GRB.INFEASIBLE:
             if i == 0 or gamma < Gamma:
                 return False, None
             elif gamma == Gamma:
+                print("Doing a backtack!")
                 gamma = max(gamma-Gamma, gamma-i)
                 i_back = max(0, i-Gamma)
                 for ii in range(i_back, i+ 1):
                     ## undo vnf placement
                     v_var[0][N_map[loc_of[ii]], ii].lb = 0.0
-                    my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, i)
+                    my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, ii)
                     ## undo chaining
                     if loc_of[ii-1] != loc_of[ii]:
                         q_var[0][N_map[loc_of[ii-1]]][N_map[loc_of[ii]]][routing_paths[ii], ii].lb = 0.0
                         for ll in my_net.paths_links[loc_of[ii-1]][loc_of[ii]][routing_paths[ii]]:
                             l_obj = my_net.g[ll[0]][ll[1]]["li"]
-                            l_obj.unembed(req, i)
+                            l_obj.unembed(req, ii)
                     ## undo download
-                    for rr in dl_paths[ii]:
-                        w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
-                    for ld in downloads[ii]:
-                        ld.cancel_download()
+                    if ii in dl_paths:
+                        for rr in dl_paths[ii]:
+                            w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
+                        for ld in downloads[ii]:
+                            ld.cancel_download()
                 i = i_back
                 continue
-        Rd_ei, _ = my_net.get_missing_layers(loc_of[i], req, i, req.tau1)
-        my_net.g.nodes[loc_of[i]]["nd"].add_layer(Rd_ei, req)
+        my_net.g.nodes[loc_of[i]]["nd"].add_layer(req.vnfs[i].layers, req)
         downloads[i] = set()
         total_dl_vol[i] = 0
-        for rr in dl_paths[i]:
-            total_dl_vol[i] = total_dl_vol[i] + Rvol[rr]
-            layer_download = LayerDownload()
-            downloads[i].add(layer_download)
-            pp = dl_paths[i][rr]
-            for tt in req.T1:
-                for ll in my_net.paths_links[loc_of[i]][cloud_node][pp]:
-                    l_obj = my_net.g[ll[0]][ll[1]]["li"]
-                    layer_download.add_data(tt, l_obj, Rvol[rr] / len(req.T1))
+        if i in dl_paths:
+            for rr in dl_paths[i]:
+                total_dl_vol[i] = total_dl_vol[i] + Rvol[rr]
+                layer_download = LayerDownload()
+                downloads[i].add(layer_download)
+                pp = dl_paths[i][rr]
+                for tt in req.T1:
+                    for ll in my_net.paths_links[loc_of[i]][cloud_node][pp]:
+                        l_obj = my_net.g[ll[0]][ll[1]]["li"]
+                        layer_download.add_data(tt, l_obj, Rvol[rr] / len(req.T1))
         # go to next vnf
         i = i + 1
         gamma = min(Gamma, gamma+1)
@@ -189,10 +179,16 @@ def solve_single_relax(my_net, R, Rvol, req):
 
     m.optimize()
     if m.status == GRB.INFEASIBLE:
+        for ii in range(len(req.vnfs)):
+            if ii in loc_of:
+                my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, ii)
         my_net.evict_sfc(req)
         for ii in downloads:
             for ld in downloads[ii]:
                 ld.cancel_download()
         return False, None
-
-    return True, sum(total_dl_vol.values())
+    else:
+        for ii in range(len(req.vnfs)):
+            if ii in loc_of:
+                my_net.g.nodes[loc_of[ii]]["nd"].finalize_layer()
+        return True, sum(total_dl_vol.values())

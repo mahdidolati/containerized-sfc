@@ -156,16 +156,26 @@ def get_ilp(reqs, my_net, R, Rvol):
                     else:
                         pass # may assume or not with no problem
                 else:
-                    m.addConstrs(
-                        (
-                            r_var[e, R_id[r], t]
-                            <=
-                            r_var[e, R_id[r], t-1] + w_var[req_id][e][N_map[cloud_node]][pth_id, R_id[r]]
+                    m.addConstr(
+                        r_var[e, R_id[r], t] <= r_var[e, R_id[r], t-1] + gp.quicksum(
+                            w_var[req_id][e][N_map[cloud_node]][pth_id, R_id[r]]
                             for req_id in range(len(reqs))
                             if t in reqs[req_id].T2
                             for pth_id in range(len(my_net.paths_links[N_map_inv[e]][cloud_node]))
                         ), name="layer_download,{},{},{}".format(e, r, t)
                     )
+
+    m.addConstrs(
+        (
+            gp.quicksum(
+                w_var[req_id][e][N_map[cloud_node]][pth_id, R_id[r]]
+                for pth_id in range(len(my_net.paths_links[N_map_inv[e]][cloud_node]))
+            ) <= 1
+            for req_id in range(len(reqs))
+            for e in E_id
+            for r in R
+        ), name="download_path_1"
+    )
 
     m.addConstrs(
         (

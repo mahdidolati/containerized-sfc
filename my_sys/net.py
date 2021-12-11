@@ -18,6 +18,7 @@ class MyLayer:
         self.avail_from = avail_from
         self.last_used = avail_from
         self.chain_users = set()
+        self.finalized = False
 
     def add_user(self, u):
         self.chain_users.add(u)
@@ -572,30 +573,6 @@ class Node:
     def layer_inuse(self, r):
         return len(self.layers[r].chain_users) > 0
 
-    def unembed(self, chain_req, i):
-        if chain_req in self.embeds:
-            self.embeds[chain_req].remove(i)
-        if len(self.embeds[chain_req]) == 0:
-            self.evict(chain_req)
-        else:
-            rm_usr = set()
-            for ll in chain_req.vnf[i].layers:
-                to_be_rm = True
-                for ii in self.embeds[chain_req]:
-                    if ll in chain_req.vnf[ii].layers:
-                        to_be_rm = False
-                        break
-                if to_be_rm:
-                    rm_usr.add(ll)
-            for ll in rm_usr:
-                if ll in self.layers:
-                    self.layers[ll].remove_user(chain_req)
-
-    def embed(self, chain_req, i):
-        if chain_req not in self.embeds:
-            self.embeds[chain_req] = set()
-        self.embeds[chain_req].add(i)
-
     def add_layer(self, R, chain_req):
         if self.sharing:
             for r in R:
@@ -608,6 +585,34 @@ class Node:
             for r in R:
                 self.layers[(r, chain_req)] = MyLayer(r, R[r], chain_req.arrival_time, chain_req.tau1)
                 self.layers[(r, chain_req)].add_user(chain_req)
+
+    def finalize_layer(self):
+        for ll in self.layers:
+            self.layers[ll].finalized = True
+
+    def unembed(self, chain_req, i):
+        if chain_req in self.embeds:
+            if i in self.embeds[chain_req]:
+                self.embeds[chain_req].remove(i)
+            rm_usr = set()
+            for ll in chain_req.vnf[i].layers:
+                to_be_rm = True
+                for ii in self.embeds[chain_req]:
+                    if ll in chain_req.vnf[ii].layers:
+                        to_be_rm = False
+                        break
+                if to_be_rm:
+                    rm_usr.add(ll)
+            for ll in rm_usr:
+                if ll in self.layers:
+                    self.layers[ll].remove_user(chain_req)
+                if len(self.layers[ll].chain_users) == 0 and not self.layers[ll].finalized:
+                    del self.layers[ll]
+
+    def embed(self, chain_req, i):
+        if chain_req not in self.embeds:
+            self.embeds[chain_req] = set()
+        self.embeds[chain_req].add(i)
 
     def evict(self, chain_req):
         if chain_req in self.embeds:
