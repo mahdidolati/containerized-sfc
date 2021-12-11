@@ -15,8 +15,10 @@ def get_T(reqs):
 
 
 def solve_batch_opt(reqs, my_net, R, Rvol):
+    a_reqs = list()
     for ii in range(len(reqs)):
-        m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(reqs[ii:], my_net, R,
+        a_reqs.append(reqs[ii])
+        m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(a_reqs, my_net, R,
                                                                                                     Rvol)
         m.setParam("LogToConsole", False)
         m.setParam("Threads", 6)
@@ -29,9 +31,10 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
             # m.write("s_model.ilp")
             # return False, 1, 0
             print("rejected one!")
-        else:
-            print(m.objVal)
-            return 1.0 * (len(reqs)-ii)/len(reqs), 1, 1, 1
+            a_reqs = a_reqs[:-1]
+
+    print(m.objVal)
+    return 1.0 * (len(a_reqs))/len(reqs), 1, 1, 1
 
 
 def get_ilp(reqs, my_net, R, Rvol):
