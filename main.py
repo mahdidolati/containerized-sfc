@@ -2,7 +2,8 @@ from scipy.integrate import Radau
 
 from sfc import SfcGenerator
 from my_sys.net import NetGenerator
-from solution import NoShareSolver, ShareSolver
+from solution import CloudSolver
+from solution import FfSolver
 from solution import GurobiSingle
 from solution import GurobiSingleRelax
 from solution import GurobiBatch
@@ -54,7 +55,7 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [8]
+    req_nums = [2, 4, 6]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -65,8 +66,9 @@ def optimal_test(inter_arrival):
     RUNTIME = "Runtime (sec)"
     CHAIN_BW = "Chain (mbps)"
     solvers = [
-        GurobiSingleRelax(my_net, R_ids, R_vols, "popularity_learn"),
-        GurobiBatch(my_net, R_ids, R_vols)
+        FfSolver(my_net),
+        GurobiSingleRelax(my_net, R_ids, R_vols, "popularity_learn")
+        # GurobiBatch(my_net, R_ids, R_vols)
         # GurobiSingle(my_net, R_ids, R_vols, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
@@ -129,8 +131,7 @@ def share_percentage_test(inter_arrival):
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
     solvers = [
-        NoShareSolver(my_net, 0),
-        ShareSolver(my_net, 2)
+        FfSolver(my_net, 0)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
@@ -180,8 +181,7 @@ def popularity_test(inter_arrival):
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
     solvers = [
-        NoShareSolver(my_net, 0),
-        ShareSolver(my_net, 1)
+        FfSolver(my_net, 0)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
@@ -230,9 +230,7 @@ def slack_time_test(inter_arrival):
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
     solvers = [
-        NoShareSolver(my_net, 0),
-        ShareSolver(my_net, 0),
-        ShareSolver(my_net, 6)
+        FfSolver(my_net, 0)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
@@ -281,9 +279,7 @@ def layer_num_test(inter_arrival):
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
     solvers = [
-        NoShareSolver(my_net, 0),
-        ShareSolver(my_net, 0),
-        ShareSolver(my_net, 6)
+        FfSolver(my_net, 0)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]

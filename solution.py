@@ -2,129 +2,26 @@ import heapq
 from opt_gurobi_single import solve_single
 from relax_gurobi_single import solve_single_relax
 from opt_ilp import solve_batch_opt
+from sfc import LayerDownload
+
 
 class Solver:
     def __init__(self, my_net):
         self.my_net = my_net
         self.batch = False
 
-    def sort_nodes_disk(self, all_nodes, chain_req, i):
-        h = []
-        counter = 0
-        for n in all_nodes:
-            R, d = self.my_net.get_missing_layers(n, chain_req, i, chain_req.tau1)
-            heapq.heappush(h, (d, counter, n))
-            counter = counter + 1
-        return h
+    def get_name(self):
+        pass
 
     def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
         pass
 
-    def usable_node(self, s, c, chain_req, i, t, delay_budget):
-        if c[0] == "b":
-            return False, 0
-        for tt in range(chain_req.tau1, chain_req.tau2 + 1):
-            if self.my_net.g.nodes[c]["nd"].cpu_avail(tt) < chain_req.cpu_req(i) or \
-                    self.my_net.g.nodes[c]["nd"].ram_avail(tt) < chain_req.ram_req(i):
-                return False, 0
-        R, d = self.my_net.get_missing_layers(c, chain_req, i, chain_req.tau1)
-        for tt in range(chain_req.tau1, chain_req.tau2 + 1):
-            if self.my_net.g.nodes[c]["nd"].disk_avail(tt) < d:
-                return False, 0
-        dl_result, dl_obj = self.my_net.do_layer_dl_test(c, R, d, t, chain_req.tau1-1)
-        if not dl_result:
-            return False, 0
-        dl_obj.cancel_download()
-        if s != c:
-            path_bw, path_delay, path_nodes, links = self.my_net.get_biggest_path(s, c, chain_req.tau1, delay_budget)
-            if path_bw == 0 or path_delay > delay_budget:
-                return False, 0
-            min_bw = self.my_net.get_min_bw(links, chain_req.tau1, chain_req.tau2)
-            if min_bw < chain_req.vnf_in_rate(i):
-                return False, 0
-        return True, len(R)
-
-    def cloud_embed(self, chain_req):
-        prev = chain_req.entry_point
-        delay_budge = chain_req.max_delay
-        path_bw, path_delay, path_nodes, links = self.my_net.get_biggest_path(prev, "c", chain_req.tau1, delay_budge)
-        if path_bw == 0 or path_delay > delay_budge:
-            return False
-        min_bw = self.my_net.get_min_bw(links, chain_req.tau1, chain_req.tau2)
-        if min_bw < chain_req.vnf_in_rate(0):
-            return False
-        else:
-            for l in links:
-                l.embed(chain_req, 0)
-        return True
-
     def solve(self, chain_req, t, sr):
-        if self.cloud_embed(chain_req):
-            return True, 0
-        layer_download_vol = 0
-        prev = chain_req.entry_point
-        delay_budge = chain_req.max_delay
-        active_dls = []
-        mark_del_layer = dict()
-        for i in range(len(chain_req.vnfs)):
-            cur_budge = delay_budge / (len(chain_req.vnfs) - i)
-            N1 = self.my_net.get_random_edge_nodes(sr)
-            sorted_nodes = self.sort_nodes_disk(N1, chain_req, i)
-            m = None
-            while len(sorted_nodes) > 0:
-                dl_need, cnt, c_node = heapq.heappop(sorted_nodes)
-                n_usable, r_needed = self.usable_node(prev, c_node, chain_req, i, t, cur_budge)
-                if n_usable:
-                    m = c_node
-                    break
-            if m is None:
-                self.my_net.evict_sfc(chain_req)
-                chain_req.reset()
-                for a in active_dls:
-                    a.cancel_download()
-                return False, 0
-            self.my_net.g.nodes[m]["nd"].embed(chain_req, i)
-            self.my_net.g.nodes[m]["nd"].mark_needed(chain_req, i)
-            chain_req.used_servers.add(m)
-            R, d = self.my_net.get_missing_layers(m, chain_req, i, chain_req.tau1)
-            max_del = 0
-            for tt in range(chain_req.tau1, chain_req.tau2 + 1):
-                max_del = max(max_del, abs(self.my_net.g.nodes[m]["nd"].disk_avail(tt) - d))
-            # this if can be true only in storage aware alg
-            if max_del > 0:
-                if m not in mark_del_layer:
-                    mark_del_layer[m] = set()
-                mark_del_layer[m].update(self.my_net.g.nodes[m]["nd"].get_unused_for_del(max_del))
-            layer_download_vol = layer_download_vol + d
-            if len(R) > 0:
-                dl_result, dl_obj = self.my_net.do_layer_dl_test(m, R, d, t, chain_req.tau1 - 1)
-                active_dls.append(dl_obj)
-                self.my_net.g.nodes[m]["nd"].add_layer(R, chain_req)
-            if prev != m:
-                path_bw, path_delay, path_nodes, links = self.my_net.get_biggest_path(prev, m, chain_req.tau1, cur_budge)
-                delay_budge = delay_budge - path_delay
-                for l in links:
-                    l.embed(chain_req, i)
-            prev = m
-        for m in chain_req.used_servers:
-            for l in self.my_net.g.nodes[m]["nd"].layers:
-                self.my_net.g.nodes[m]["nd"].layers[l].finalized = True
-        for m in mark_del_layer:
-            for l in mark_del_layer[m]:
-                del self.my_net.g.nodes[m]["nd"].layers[l]
-        return True, layer_download_vol
+        pass
 
     def handle_sfc_eviction(self, chain_req, t):
-        # print("-------------- handle eviction --------------------")
         self.my_net.evict_sfc(chain_req)
-        # for m in chain_req.used_servers:
-            # print("node {}: has capacity {} and availabe {} available-no-cache {}, has unused {}".format(m,
-            #         self.my_net.g.nodes[m]["nd"].disk,
-            #         self.my_net.g.nodes[m]["nd"].disk_avail(t),
-            #         self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t),
-            #         self.my_net.g.nodes[m]["nd"].has_unused_layer(t)))
         chain_req.used_servers = set()
-        # print("---------------------------------------------------")
 
     def pre_arrival_procedure(self, t):
         pass
@@ -132,33 +29,163 @@ class Solver:
     def post_arrival_procedure(self, status, t, chain_req):
         pass
 
+    def reset(self):
+        pass
 
-class NoShareSolver(Solver):
-    def __init__(self, my_net, layer_del_th):
+
+class CloudSolver(Solver):
+    def __init__(self, my_net):
         super().__init__(my_net)
-        self.layer_del_th = layer_del_th
-        self.my_net.disable_layer_sharing()
 
     def get_name(self):
-        return "NS-{}".format(self.layer_del_th)
+        return "CL"
+
+    def cloud_embed(self, chain_req):
+        prev = chain_req.entry_point
+        cloud_node = "c"
+        for pth_id_1 in range(len(self.my_net.paths_links[prev][cloud_node])):
+            for pth_id_2 in range(len(self.my_net.paths_links[cloud_node][prev])):
+                b1 = self.my_net.get_path_min_bw(prev, cloud_node, pth_id_1, chain_req.T2)
+                b2 = self.my_net.get_path_min_bw(cloud_node, prev, pth_id_2, chain_req.T2)
+                d1 = self.my_net.get_path_delay(prev, cloud_node, pth_id_1)
+                d2 = self.my_net.get_path_delay(cloud_node, prev, pth_id_1)
+                if chain_req.vnf_in_rate(0) <= b1 and chain_req.vnf_in_rate(len(chain_req.vnfs)) <= b2:
+                    if d1 + d2 <= chain_req.max_delay:
+                        chain_bw = 0
+                        for ll in self.my_net.paths_links[prev][cloud_node][pth_id_1]:
+                            l_obj = self.my_net.g[ll[0]][ll[1]]["li"]
+                            l_obj.embed(chain_req, 0)
+                            chain_bw = chain_bw + chain_req.vnf_in_rate(0)
+                        for ll in self.my_net.paths_links[cloud_node][prev][pth_id_2]:
+                            l_obj = self.my_net.g[ll[0]][ll[1]]["li"]
+                            l_obj.embed(chain_req, len(chain_req.vnfs))
+                            chain_bw = chain_bw + chain_req.vnf_in_rate(len(chain_req.vnfs))
+                        return True, chain_bw
+        return False, 0
+
+    def solve(self, chain_req, t, sr):
+        c_s, c_b = self.cloud_embed(chain_req)
+        if c_s:
+            return True, 0, c_b
+        else:
+            return False, 0, 0
+
+
+class FfSolver(CloudSolver):
+    def __init__(self, my_net):
+        super().__init__(my_net)
+
+    def get_name(self):
+        return "FF"
 
     def reset(self):
         self.my_net.reset()
-        self.my_net.disable_layer_sharing()
 
+    def solve(self, chain_req, t, sr):
+        c_s, c_b = self.cloud_embed(chain_req)
+        if c_s:
+            return True, 0, c_b
 
-class ShareSolver(Solver):
-    def __init__(self, my_net, layer_del_th):
-        super().__init__(my_net)
-        self.layer_del_th = layer_del_th
-        self.my_net.enable_layer_sharing()
+        downloads = set()
+        loc_of = dict()
+        selected_edges = set()
+        cur = chain_req.entry_point
+        chain_delay = 0
+        chain_bw = 0
+        dl_vol = 0
+        for i in range(len(chain_req.vnfs)+1):
+            st = self.place(chain_req, i, cur, chain_delay)
+            if len(st) > 0:
+                chain_delay = chain_delay + st[0]
+                chain_bw = chain_bw + st[1]
+                dl_vol = dl_vol + st[2]
+                downloads.update(st[3])
+                loc_of[i] = st[4]
+            else:
+                for ii in loc_of:
+                    if loc_of[ii][0] == "e":
+                        self.my_net.g.nodes[loc_of[ii]]["nd"].unembed(chain_req, ii)
+                self.my_net.evict_sfc(chain_req)
+                for ld in downloads:
+                    ld.cancel_download()
+                return False, 0, 0
 
-    def get_name(self):
-        return "S-{}".format(self.layer_del_th)
+        for ii in loc_of:
+            if loc_of[ii][0] == "e":
+                self.my_net.g.nodes[loc_of[ii]]["nd"].finalize_layer()
+        return True, dl_vol, chain_bw
 
-    def reset(self):
-        self.my_net.reset()
-        self.my_net.enable_layer_sharing()
+    def place(self, chain_req, i, cur, chain_delay):
+        B = self.my_net.get_all_base_stations()
+        E = self.my_net.get_all_edge_nodes()
+        all_nodes = B + E + ["c"]
+        for e in all_nodes:
+            st = self.place_e(cur, e, chain_req, i, chain_delay)
+            if len(st) > 0:
+                return st + [e]
+        return []
+
+    def place_e(self, loc_i_1, loc_i, req, i, chain_delay):
+        cloud_node = "c"
+        if i != len(req.vnfs) and loc_i != cloud_node:
+            if loc_i[0] == "b":
+                return []
+
+            if self.my_net.g.nodes[loc_i]["nd"].cpu_min_avail(req.T2) < req.cpu_req(i):
+                return []
+            if self.my_net.g.nodes[loc_i]["nd"].ram_min_avail(req.T2) < req.ram_req(i):
+                return []
+            Rd_ei, d_ei = self.my_net.get_need_storage_layers(loc_i, req, i, req.tau1)
+            if self.my_net.g.nodes[loc_i]["nd"].disk_min_avail_no_cache(req.T2) < d_ei:
+                return []
+
+        path_id_sel = None
+        if loc_i_1 != loc_i:
+            for pth_id in range(len(self.my_net.paths_links[loc_i_1][loc_i])):
+                b1 = self.my_net.get_path_min_bw(loc_i_1, loc_i, pth_id, req.T2)
+                d1 = self.my_net.get_path_delay(loc_i_1, loc_i, pth_id)
+                if req.vnf_in_rate(i) <= b1:
+                    if chain_delay + d1 <= req.max_delay:
+                        path_id_sel = pth_id
+                        break
+            if path_id_sel is None:
+                return []
+
+        downloads = set()
+        total_dl_vol = 0
+        if i != len(req.vnfs):
+            Rd_ei, _ = self.my_net.get_missing_layers(loc_i, req, i, req.tau1)
+            for rr in Rd_ei:
+                downloaded = False
+                for pth_id in range(len(self.my_net.paths_links[loc_i][cloud_node])):
+                    b1 = self.my_net.get_path_min_bw(loc_i, cloud_node, pth_id, req.T1)
+                    if Rd_ei[rr] / len(req.T1) <= b1:
+                        downloaded = True
+                        total_dl_vol = total_dl_vol + Rd_ei[rr]
+                        layer_download = LayerDownload()
+                        downloads.add(layer_download)
+                        for tt in req.T1:
+                            for ll in self.my_net.paths_links[loc_i][cloud_node][pth_id]:
+                                l_obj = self.my_net.g[ll[0]][ll[1]]["li"]
+                                layer_download.add_data(tt, l_obj, Rd_ei[rr] / len(req.T1))
+                        break
+                if not downloaded:
+                    for ld in downloads:
+                        ld.cancel_download()
+                    return []
+
+        self.my_net.g.nodes[loc_i]["nd"].embed(req, i)
+        req.used_servers.add(loc_i)
+        path_delay = 0
+        chain_bw = 0
+        if path_id_sel is not None:
+            for ll in self.my_net.paths_links[loc_i_1][loc_i][path_id_sel]:
+                l_obj = self.my_net.g[ll[0]][ll[1]]["li"]
+                l_obj.embed(req, i)
+            path_delay = self.my_net.get_path_delay(loc_i_1, loc_i, path_id_sel)
+            chain_bw = len(self.my_net.paths_links[loc_i_1][loc_i][path_id_sel]) * req.vnf_in_rate(i)
+
+        return [path_delay, chain_bw, total_dl_vol, downloads]
 
 
 class GurobiBatch(Solver):
