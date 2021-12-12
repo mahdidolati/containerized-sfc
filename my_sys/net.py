@@ -247,8 +247,8 @@ class MyNetwork:
         Lw = list()
         L_iii = dict()
         for e in self.g.edges():
-                L_iii[self.g[e[0]][e[1]]["li"]] = (e[0], e[1])
-                Lw.append((e[0], e[1]))
+            L_iii[self.g[e[0]][e[1]]["li"]] = (e[0], e[1])
+            Lw.append((e[0], e[1]))
         return Lw, L_iii
 
     def get_all_base_stations(self):

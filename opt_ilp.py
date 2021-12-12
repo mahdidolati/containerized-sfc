@@ -3,10 +3,11 @@ from gurobipy import GRB
 from constants import Const
 from itertools import chain
 from sfc import LayerDownload
+import numpy as np
 
 
 def get_T(reqs):
-    t1 = 0
+    t1 = np.infty
     t2 = 0
     for r in reqs:
         t1 = min(r.arrival_time, t1)
@@ -161,14 +162,24 @@ def get_ilp(reqs, my_net, R, Rvol):
                     else:
                         pass # may assume or not with no problem
                 else:
-                    m.addConstr(
-                        r_var[e, R_id[r], t] <= r_var[e, R_id[r], t-1] + gp.quicksum(
-                            w_var[req_id][e][N_map[cloud_node]][pth_id, R_id[r]]
-                            for req_id in range(len(reqs))
-                            if t in reqs[req_id].T2
-                            for pth_id in range(len(my_net.paths_links[N_map_inv[e]][cloud_node]))
-                        ), name="layer_download,{},{},{}".format(e, r, t)
-                    )
+                    if t-1 not in T_all:
+                        m.addConstr(
+                            r_var[e, R_id[r], t] <= gp.quicksum(
+                                w_var[req_id][e][N_map[cloud_node]][pth_id, R_id[r]]
+                                for req_id in range(len(reqs))
+                                if t in reqs[req_id].T2
+                                for pth_id in range(len(my_net.paths_links[N_map_inv[e]][cloud_node]))
+                            ), name="layer_download,{},{},{}".format(e, r, t)
+                        )
+                    else:
+                        m.addConstr(
+                            r_var[e, R_id[r], t] <= r_var[e, R_id[r], t - 1] + gp.quicksum(
+                                w_var[req_id][e][N_map[cloud_node]][pth_id, R_id[r]]
+                                for req_id in range(len(reqs))
+                                if t in reqs[req_id].T2
+                                for pth_id in range(len(my_net.paths_links[N_map_inv[e]][cloud_node]))
+                            ), name="layer_download,{},{},{}".format(e, r, t)
+                        )
 
     m.addConstrs(
         (
@@ -249,6 +260,7 @@ def get_ilp(reqs, my_net, R, Rvol):
                 for pth in my_net.link_to_path[ll]
             ) <= my_net.g[ll[0]][ll[1]]["li"].bw_avail(t)
             for ll in L
+            if ll[0] != cloud_node or ll[1] != cloud_node
             for t in T_all
         ), name="bw"
     )

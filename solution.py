@@ -264,18 +264,20 @@ class GurobiSingle(Solver):
 
 
 class GurobiSingleRelax(Solver):
-    def __init__(self, my_net, R_ids, R_vols, eviction_strategy="default"):
+    def __init__(self, my_net, R_ids, R_vols, Gamma, bs, eviction_strategy="default"):
         super().__init__(my_net)
         self.R_ids = R_ids
         self.R_vols = R_vols
         self.my_net.enable_layer_sharing()
         self.eviction_strategy = eviction_strategy
+        self.Gamma = Gamma
+        self.bw_scaler = bs
 
     def get_name(self):
-        return "GrSiRlx(" + self.eviction_strategy[0] + ")"
+        return "GrSiRlx(" + self.eviction_strategy[0] + ")" + "(" + str(self.bw_scaler) + ")"
 
     def solve(self, chain_req, t, sr):
-        return solve_single_relax(self.my_net, self.R_ids, self.R_vols, chain_req)
+        return solve_single_relax(self.my_net, self.R_ids, self.R_vols, chain_req, self.Gamma, self.bw_scaler)
 
     def pre_arrival_procedure(self, t):
         # print("-------------- pre arrival --------------------")

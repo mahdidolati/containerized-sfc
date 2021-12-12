@@ -55,7 +55,7 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [2, 4, 6]
+    req_nums = [4]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -67,7 +67,10 @@ def optimal_test(inter_arrival):
     CHAIN_BW = "Chain (mbps)"
     solvers = [
         FfSolver(my_net),
-        GurobiSingleRelax(my_net, R_ids, R_vols, "popularity_learn")
+        GurobiSingleRelax(my_net, R_ids, R_vols, 0, 1.0, "popularity_learn"),
+        GurobiSingleRelax(my_net, R_ids, R_vols, 0, 0.98, "popularity_learn"),
+        GurobiSingleRelax(my_net, R_ids, R_vols, 0, 0.95, "popularity_learn"),
+        GurobiSingleRelax(my_net, R_ids, R_vols, 0, 0.9, "popularity_learn"),
         # GurobiBatch(my_net, R_ids, R_vols)
         # GurobiSingle(my_net, R_ids, R_vols, "popularity_learn")
     ]

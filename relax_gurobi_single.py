@@ -7,7 +7,7 @@ from opt_ilp import get_ilp
 import numpy as np
 
 
-def solve_single_relax(my_net, R, Rvol, req):
+def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
     reqs = [req]
     m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(reqs, my_net, R, Rvol)
 
@@ -30,7 +30,6 @@ def solve_single_relax(my_net, R, Rvol, req):
     # else:
     #     print(m.objVal)
 
-    Gamma = 2
     gamma = Gamma
     tol_val = 1e-4
     loc_of = dict()
@@ -68,7 +67,7 @@ def solve_single_relax(my_net, R, Rvol, req):
         if m.status == GRB.INFEASIBLE:
             # m.computeIIS()
             # m.write("s_model.ilp")
-            if i == 0 or gamma < Gamma:
+            if i == 0 or gamma < Gamma or Gamma == 0:
                 print("one failed!")
                 for ii in range(len(req.vnfs)):
                     if ii in loc_of:
@@ -139,11 +138,32 @@ def solve_single_relax(my_net, R, Rvol, req):
             q_var[0][N_map[pvn]][N_map[cdn]][routing_paths[i], i].lb = 1.0
         # determine download possibility
         # solve to obtain layer download vals
+        # for cc in m.getConstrs():
+        #     if cc.ConstrName[0:2] == "bw":
+        #         print(cc.ConstrName)
+        links = set()
+        for pth_id in range(len(my_net.paths_links[N_map_inv[best_loc]][cloud_node])):
+            for ll in my_net.paths_links[N_map_inv[best_loc]][cloud_node][pth_id]:
+                if ll[0] != cloud_node or ll[1] != cloud_node:
+                    links.add(ll)
+        link_time = dict()
+        for ll in links:
+            for tt in req.T1:
+                cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
+                # cname = "bw[('b0', 'e0'),0]"
+                cc = m.getConstrByName(cname)
+                if cc is not None:
+                    link_time[(ll, tt)] = cc.getAttr(GRB.Attr.RHS)
+                    cc.setAttr(GRB.Attr.RHS, bw_scaler * cc.getAttr(GRB.Attr.RHS))
         m.optimize()
+        for ll, tt in link_time:
+            cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
+            cc = m.getConstrByName(cname)
+            cc.setAttr(GRB.Attr.RHS, link_time[(ll, tt)])
         if m.status == GRB.INFEASIBLE:
             # m.computeIIS()
             # m.write("s_model.ilp")
-            if i == 0 or gamma < Gamma:
+            if i == 0 or gamma < Gamma or Gamma == 0:
                 print("one failed!")
                 for ii in range(len(req.vnfs)):
                     if ii in loc_of:
@@ -206,7 +226,7 @@ def solve_single_relax(my_net, R, Rvol, req):
         if m.status == GRB.INFEASIBLE:
             # m.computeIIS()
             # m.write("s_model.ilp")
-            if i == 0 or gamma < Gamma:
+            if i == 0 or gamma < Gamma or Gamma == 0:
                 print("one failed!")
                 for ii in range(len(req.vnfs)):
                     if ii in loc_of:
