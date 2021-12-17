@@ -1,7 +1,7 @@
 class Const:
     VNF_NUM = 50
-    VNF_CPU = [0.5, 1.0]
-    VNF_RAM = [0.5, 1.0]
+    VNF_CPU = [0.25, 0.5]
+    VNF_RAM = [0.25, 0.5]
     VNF_LAYER = [5, 12]  # [5, 12]
     TAU1 = [5, 8]
     TAU2 = [8, 21]

@@ -64,7 +64,7 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [4]
+    req_nums = [4, 6, 8, 10, 12, 14]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -75,7 +75,7 @@ def optimal_test(inter_arrival):
     RUNTIME = "Runtime (sec)"
     CHAIN_BW = "Chain (mbps)"
     solvers = [
-        GurobiSingleRelax(1, 0.9, "popularity_learn"),
+        GurobiSingleRelax(0, 1.0, "popularity_learn"),
         GurobiBatch()
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
@@ -85,7 +85,7 @@ def optimal_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 4
+    iterations = 5
     arrival_rate = 1.0 / inter_arrival
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)

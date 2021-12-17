@@ -17,14 +17,15 @@ def get_T(reqs):
 
 
 def solve_batch_opt(reqs, my_net, R, Rvol):
+    req_len = len(reqs)
     a_reqs = list()
-    for ii in range(len(reqs)):
-        a_reqs.append(reqs[ii])
-        m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(a_reqs, my_net, R,
+    tr = TestResult()
+    for ii in range(req_len):
+        m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(a_reqs + [reqs[ii]], my_net, R,
                                                                                                     Rvol)
         m.setParam("LogToConsole", False)
         m.setParam("Threads", 6)
-        m.setParam("TIME_LIMIT", 30)
+        m.setParam("TIME_LIMIT", 200)
         m.optimize()
         # m.write("out.lp")
 
@@ -33,16 +34,12 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
             # m.write("s_model.ilp")
             # return False, 1, 0
             print("rejected one!")
-            a_reqs = a_reqs[:-1]
         else:
+            a_reqs.append(reqs[ii])
             print(m.objVal)
-            tr = TestResult()
-            tr.avg_admit = 1.0 * (len(a_reqs))/len(reqs)
+            tr.avg_admit = 1.0 * (len(a_reqs)) / req_len
             tr.chain_bw = m.objVal
 
-    tr = TestResult()
-    tr.avg_admit = 0.0
-    tr.chain_bw = 0.0
     return tr
 
 
