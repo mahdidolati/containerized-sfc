@@ -13,15 +13,7 @@ import heapq
 import numpy as np
 import sys, getopt
 from time import process_time, sleep
-
-
-class TestResult:
-    def __init__(self):
-        self.avg_admit = 1
-        self.avg_dl = 1
-        self.run_avg_dl = list()
-        self.chain_bw = 1
-        self.run_avg_admit = list()
+from test import TestResult
 
 
 def test(solver, reqs):
@@ -93,7 +85,7 @@ def optimal_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 2
+    iterations = 4
     arrival_rate = 1.0 / inter_arrival
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)
@@ -112,15 +104,15 @@ def optimal_test(inter_arrival):
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
-                    res, dl_vol, _, chain_bw_total = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
-                    res, dl_vol, _, chain_bw_total = test(solver, reqs)
-                    print("Solver: {} got {} out of {}".format(solver.get_name(), res, req_num))
+                    tr = test(solver, reqs)
+                    print("Solver: {} got {} out of {}".format(solver.get_name(), tr.avg_admit, req_num))
                 t2 = process_time()
-                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
-                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
+                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, tr.avg_admit)
+                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
                 stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2-t1)
-                stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, chain_bw_total)
+                stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
 
     machine_id = "ut"
     fig_test_id = "{}_optimal".format(machine_id)
@@ -490,7 +482,7 @@ def test_qlearning(inter_arrival):
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    test_type = "learning"
+    test_type = "optimal"
     ia = 1.0
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:

@@ -196,11 +196,16 @@ class FfSolver(CloudSolver):
 class GurobiBatch(Solver):
     def __init__(self):
         super().__init__()
-        self.my_net.enable_layer_sharing()
         self.batch = True
 
     def get_name(self):
         return "B"
+
+    def set_env(self, my_net, R_ids, R_vols):
+        self.my_net = my_net
+        self.my_net.enable_layer_sharing()
+        self.R_ids = R_ids
+        self.R_vols = R_vols
 
     def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
         return solve_batch_opt(reqs, self.my_net, self.R_ids, self.R_vols)

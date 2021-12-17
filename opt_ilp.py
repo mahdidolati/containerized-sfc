@@ -4,6 +4,7 @@ from constants import Const
 from itertools import chain
 from sfc import LayerDownload
 import numpy as np
+from test import TestResult
 
 
 def get_T(reqs):
@@ -33,9 +34,16 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
             # return False, 1, 0
             print("rejected one!")
             a_reqs = a_reqs[:-1]
+        else:
+            print(m.objVal)
+            tr = TestResult()
+            tr.avg_admit = 1.0 * (len(a_reqs))/len(reqs)
+            tr.chain_bw = m.objVal
 
-    print(m.objVal)
-    return 1.0 * (len(a_reqs))/len(reqs), 1, 1, m.objVal
+    tr = TestResult()
+    tr.avg_admit = 0.0
+    tr.chain_bw = 0.0
+    return tr
 
 
 def get_ilp(reqs, my_net, R, Rvol):
