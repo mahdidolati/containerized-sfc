@@ -6,12 +6,17 @@ from sfc import LayerDownload
 
 
 class Solver:
-    def __init__(self, my_net):
-        self.my_net = my_net
+    def __init__(self):
         self.batch = False
 
     def get_name(self):
         pass
+
+    def set_env(self, my_net, R_ids, R_vols):
+        self.my_net = my_net
+        self.my_net.enable_layer_sharing()
+        self.R_ids = R_ids
+        self.R_vols = R_vols
 
     def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
         pass
@@ -34,8 +39,8 @@ class Solver:
 
 
 class CloudSolver(Solver):
-    def __init__(self, my_net):
-        super().__init__(my_net)
+    def __init__(self):
+        super().__init__()
 
     def get_name(self):
         return "CL"
@@ -72,8 +77,8 @@ class CloudSolver(Solver):
 
 
 class FfSolver(CloudSolver):
-    def __init__(self, my_net):
-        super().__init__(my_net)
+    def __init__(self):
+        super().__init__()
 
     def get_name(self):
         return "FF"
@@ -189,15 +194,13 @@ class FfSolver(CloudSolver):
 
 
 class GurobiBatch(Solver):
-    def __init__(self, my_net, R_ids, R_vols):
-        super().__init__(my_net)
-        self.R_ids = R_ids
-        self.R_vols = R_vols
+    def __init__(self):
+        super().__init__()
         self.my_net.enable_layer_sharing()
         self.batch = True
 
     def get_name(self):
-        return "GrBt"
+        return "B"
 
     def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
         return solve_batch_opt(reqs, self.my_net, self.R_ids, self.R_vols)
@@ -208,10 +211,8 @@ class GurobiBatch(Solver):
 
 
 class GurobiSingle(Solver):
-    def __init__(self, my_net, R_ids, R_vols, eviction_strategy="default"):
-        super().__init__(my_net)
-        self.R_ids = R_ids
-        self.R_vols = R_vols
+    def __init__(self, eviction_strategy="default"):
+        super().__init__()
         self.my_net.enable_layer_sharing()
         self.eviction_strategy = eviction_strategy
 
@@ -264,17 +265,20 @@ class GurobiSingle(Solver):
 
 
 class GurobiSingleRelax(Solver):
-    def __init__(self, my_net, R_ids, R_vols, Gamma, bs, eviction_strategy="default"):
-        super().__init__(my_net)
-        self.R_ids = R_ids
-        self.R_vols = R_vols
-        self.my_net.enable_layer_sharing()
+    def __init__(self, Gamma, bs, eviction_strategy="default"):
+        super().__init__()
         self.eviction_strategy = eviction_strategy
         self.Gamma = Gamma
         self.bw_scaler = bs
 
     def get_name(self):
-        return "GrSiRlx(" + self.eviction_strategy[0] + ")" + "(" + str(self.bw_scaler) + ")"
+        return "Gr(" + self.eviction_strategy[0] + ")" + "(" + str(self.bw_scaler) + ")"
+
+    def set_env(self, my_net, R_ids, R_vols):
+        self.my_net = my_net
+        self.my_net.enable_layer_sharing()
+        self.R_ids = R_ids
+        self.R_vols = R_vols
 
     def solve(self, chain_req, t, sr):
         return solve_single_relax(self.my_net, self.R_ids, self.R_vols, chain_req, self.Gamma, self.bw_scaler)

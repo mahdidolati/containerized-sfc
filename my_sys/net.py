@@ -451,7 +451,7 @@ class Node:
         self.layers = dict()
         self.embeds = dict()
         # self.q_agent = QLearn()
-        # self.p_agent = PLearn()
+        self.p_agent = PLearn()
 
     def cpu_min_avail(self, T):
         min_cpu = np.infty

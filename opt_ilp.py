@@ -35,7 +35,7 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
             a_reqs = a_reqs[:-1]
 
     print(m.objVal)
-    return 1.0 * (len(a_reqs))/len(reqs), 1, 1, 1
+    return 1.0 * (len(a_reqs))/len(reqs), 1, 1, m.objVal
 
 
 def get_ilp(reqs, my_net, R, Rvol):
