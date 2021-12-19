@@ -16,7 +16,7 @@ class Const:
     LINK_BW = [100, 1000]
     SERVER_CPU = [16, 32]
     SERVER_RAM = [4, 32]
-    SERVER_DISK = [10000, 20000]
+    SERVER_DISK = [20000, 30000]
 
 
 # class ConstSingleQ:

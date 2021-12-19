@@ -634,7 +634,7 @@ class NetGenerator:
     def __init__(self):
         base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0), (3, 0), (6, 0)]
         base_station_loc = [(0, 6), (3, 6), (6, 6), (0, 3), (0, 0)]
-        self.e_node_num = 5
+        self.e_node_num = 7
         cloud_loc = (50, 3)
         self.g = nx.DiGraph()
         for n in range(len(base_station_loc)):
