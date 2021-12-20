@@ -25,7 +25,7 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
                                                                                                     Rvol)
         m.setParam("LogToConsole", False)
         m.setParam("Threads", 6)
-        m.setParam("TIME_LIMIT", 200)
+        m.setParam("TIME_LIMIT", 100)
         m.optimize()
         # m.write("out.lp")
 
@@ -41,17 +41,16 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
             tr.chain_bw = m.objVal
 
     dl_layer = dict()
-    for req_id in range(len(reqs)):
-        if reqs[req_id] in a_reqs:
-            for e in E_id:
-                for i in len(reqs[req_id].vnfs):
-                    if v_var[req_id][e, i] > 1 - 0.0001:
-                        if e not in dl_layer:
-                            dl_layer[e] = set()
-                        for l in reqs[req_id].vnfs[i].layers:
-                            if l not in dl_layer[e]:
-                                tr.avg_dl = tr.avg_dl + reqs[req_id].vnfs[i].layers[l]
-                                dl_layer[e].add(l)
+    for req_id in range(len(a_reqs)):
+        for e in E_id:
+            for i in range(len(a_reqs[req_id].vnfs)):
+                if v_var[req_id][e, i].x > 1 - 0.0001:
+                    if e not in dl_layer:
+                        dl_layer[e] = set()
+                    for l in a_reqs[req_id].vnfs[i].layers:
+                        if l not in dl_layer[e]:
+                            tr.avg_dl = tr.avg_dl + a_reqs[req_id].vnfs[i].layers[l]
+                            dl_layer[e].add(l)
 
     return tr
 

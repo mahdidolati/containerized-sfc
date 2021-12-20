@@ -8,7 +8,7 @@ class Const:
     LAYER_NUM = 200
     LAYER_SIZE = [50, 350]  # [2, 70]
     SFC_LEN = [2, 7]
-    SFC_DELAY = [250, 2000]
+    SFC_DELAY = [500, 2000]
     ALPHA_RANGE = [0.8, 1.05]
     LAMBDA_RANGE = [1, 5]
     #
