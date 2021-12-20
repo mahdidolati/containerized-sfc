@@ -136,7 +136,7 @@ def optimal_test(inter_arrival):
 def scaling_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [4]
+    req_nums = [15]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -160,7 +160,7 @@ def scaling_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 2
+    iterations = 5
     arrival_rate = 1.0 / inter_arrival
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)
@@ -179,33 +179,29 @@ def scaling_test(inter_arrival):
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
-                    res, dl_vol, _, chain_bw_total = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
-                    res, dl_vol, _, chain_bw_total = test(solver, reqs)
-                    print("Solver: {} got {} out of {}".format(solver.get_name(), res, req_num))
+                    tr = test(solver, reqs)
+                    print("Solver: {} got {} out of {}".format(solver.get_name(), tr.avg_admit, req_num))
                 t2 = process_time()
-                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
-                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
+                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, tr.avg_admit)
+                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
                 stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2 - t1)
-                stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, chain_bw_total)
+                stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
 
     machine_id = "ut"
     fig_test_id = "{}_optimal".format(machine_id)
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage',
-                                 ACCEPT_RATIO)
+    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
 
     fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, DOWNLOAD_LAYER, algs, 'Share Percentage',
-                                 DOWNLOAD_LAYER)
+    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, DOWNLOAD_LAYER, algs, 'Share Percentage', DOWNLOAD_LAYER)
 
     fig_3 = './result/{}_time_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_3 + '.txt', req_nums, 0, RUNTIME, algs, 'Share Percentage',
-                                 RUNTIME)
+    stat_collector.write_to_file(fig_3 + '.txt', req_nums, 0, RUNTIME, algs, 'Share Percentage', RUNTIME)
 
     fig_4 = './result/{}_chain_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_4 + '.txt', req_nums, 0, CHAIN_BW, algs, 'Chaining BW',
-                                 CHAIN_BW)
+    stat_collector.write_to_file(fig_4 + '.txt', req_nums, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
 
 
 def share_percentage_test(inter_arrival):
