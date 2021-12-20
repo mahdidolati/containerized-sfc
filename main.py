@@ -47,9 +47,9 @@ def test(solver, reqs):
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
             if arrivals % 40 == 0:
-                vol_consumed.append(layer_dl_vol / accepted)
+                vol_consumed.append(0.0 if accepted == 0 else layer_dl_vol / accepted)
                 run_avg_admit.append(accepted / arrivals)
-                print("{}, {}, {}".format(arrivals, accepted / arrivals, layer_dl_vol / accepted))
+                print("{}, {}, {}".format(arrivals, run_avg_admit[-1], vol_consumed[-1]))
         elif ev == "FINISH":
             solver.handle_sfc_eviction(s, t)
         # sleep(1)
