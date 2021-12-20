@@ -53,7 +53,7 @@ class CloudSolver(Solver):
                 b1 = self.my_net.get_path_min_bw(prev, cloud_node, pth_id_1, chain_req.T2)
                 b2 = self.my_net.get_path_min_bw(cloud_node, prev, pth_id_2, chain_req.T2)
                 d1 = self.my_net.get_path_delay(prev, cloud_node, pth_id_1)
-                d2 = self.my_net.get_path_delay(cloud_node, prev, pth_id_1)
+                d2 = self.my_net.get_path_delay(cloud_node, prev, pth_id_2)
                 if chain_req.vnf_in_rate(0) <= b1 and chain_req.vnf_in_rate(len(chain_req.vnfs)) <= b2:
                     if d1 + d2 <= chain_req.max_delay:
                         chain_bw = 0
