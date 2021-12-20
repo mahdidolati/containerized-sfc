@@ -277,7 +277,7 @@ class GurobiSingleRelax(Solver):
         self.bw_scaler = bs
 
     def get_name(self):
-        return "Gr(" + self.eviction_strategy[0] + ")" + "(" + str(self.bw_scaler) + ")"
+        return "Gr(" + self.eviction_strategy[0] + ")" + "(" + str(self.Gamma) + ")" +"(" + str(self.bw_scaler) + ")"
 
     def set_env(self, my_net, R_ids, R_vols):
         self.my_net = my_net
