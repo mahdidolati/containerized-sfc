@@ -144,7 +144,7 @@ def scaling_test(inter_arrival):
     np.random.seed(1)
     Const.LINK_BW = [800, 900]
     my_net = NetGenerator().get_g()
-    req_nums = [15]
+    req_nums = [50]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -158,8 +158,8 @@ def scaling_test(inter_arrival):
     solvers = [
         FfSolver(),
         GurobiSingleRelax(0, 1.0, "popularity_learn"),
-        GurobiSingleRelax(0, 0.95, "popularity_learn"),
         GurobiSingleRelax(0, 0.9, "popularity_learn"),
+        GurobiSingleRelax(0, 0.8, "popularity_learn"),
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -169,7 +169,7 @@ def scaling_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 5
+    iterations = 3
     arrival_rate = 1.0 / inter_arrival
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)
@@ -219,6 +219,7 @@ def scaling_test(inter_arrival):
 
 def backtrack_test(inter_arrival):
     np.random.seed(1)
+    Const.SERVER_DISK = [20000, 30000]
     my_net = NetGenerator().get_g()
     req_nums = [15]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
@@ -246,7 +247,7 @@ def backtrack_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 5
+    iterations = 3
     arrival_rate = 1.0 / inter_arrival
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)
@@ -296,6 +297,7 @@ def backtrack_test(inter_arrival):
 
 def share_percentage_test(inter_arrival):
     np.random.seed(1)
+    Const.SERVER_DISK = [20000, 30000]
     my_net = NetGenerator().get_g()
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
@@ -306,7 +308,7 @@ def share_percentage_test(inter_arrival):
     solvers = [
         CloudSolver(),
         FfSolver(),
-        GurobiSingleRelax(1, 0.9, "popularity_learn")
+        GurobiSingleRelax(1, 0.8, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -316,13 +318,10 @@ def share_percentage_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 5
+    iterations = 3
     arrival_rate = 1.0 / inter_arrival
     n_share_ps = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
     share_percentages = []
-    Const.VNF_LAYER = [5, 16]
-    Const.LAYER_SIZE = [15, 101]
-    Const.VNF_NUM = 20
     for i in range(len(n_share_ps)):
         np.random.seed(i * 100)
         n_share_p = n_share_ps[i]
@@ -337,7 +336,7 @@ def share_percentage_test(inter_arrival):
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 100
+            req_num = 50
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
