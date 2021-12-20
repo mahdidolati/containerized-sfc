@@ -169,7 +169,9 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
             for pth_id in pth_ids:
                 a = w_var[0][best_loc][N_map[cloud_node]][pth_id, rr].x
                 pth_pr.append(a)
-            if sum(pth_pr) == 1.0:
+            if sum(pth_pr) != 0.0:
+                if sum(pth_pr) < 1.0:
+                    pth_pr = [pr/sum(pth_pr) for pr in pth_pr]
                 dl_paths[i][rr] = np.random.choice(a=pth_ids, p=pth_pr)
                 w_var[0][best_loc][N_map[cloud_node]][dl_paths[i][R_id[rr]], rr].lb = 1.0
             else:
