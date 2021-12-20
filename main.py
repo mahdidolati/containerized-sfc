@@ -483,7 +483,7 @@ def test_qlearning(inter_arrival):
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    test_type = "learning"
+    test_type = "optimal"
     ia = 1.0
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
