@@ -489,9 +489,9 @@ if __name__ == "__main__":
             ia = float(arg)
         elif opt in ("--test-type",):
             test_type = arg
-    if test_type == "slack" or test_type == "all":
-        print("running slack because of {}".format(test_type))
-        slack_time_test(ia)
+    if test_type == "scaling" or test_type == "all":
+        print("running scaling because of {}".format(test_type))
+        scaling_test(ia)
     if test_type == "layer" or test_type == "all":
         print("running layer because of {}".format(test_type))
         layer_num_test(ia)
