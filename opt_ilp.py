@@ -23,8 +23,8 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
     feasEid = None
     feasM = None
     feasV = None
-    for ii in range(req_len):
-        m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(a_reqs + [reqs[ii]], my_net, R,
+    for req_id in range(req_len):
+        m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(a_reqs + [reqs[req_id]], my_net, R,
                                                                                                     Rvol)
         m.setParam("LogToConsole", False)
         m.setParam("Threads", 6)
@@ -41,7 +41,9 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
             feasEid = E_id
             feasM = m
             feasV = v_var
-            a_reqs.append(reqs[ii])
+            a_reqs.append(reqs[req_id])
+            for vnf_id in range(len(reqs[req_id].vnfs) + 1):
+                tr.revenue = tr.revenue + reqs[req_id].vnf_in_rate(vnf_id)
             print(m.objVal)
             tr.avg_admit = 1.0 * (len(a_reqs)) / req_len
             tr.chain_bw = m.objVal

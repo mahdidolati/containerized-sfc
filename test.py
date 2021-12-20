@@ -5,3 +5,4 @@ class TestResult:
         self.avg_dl = 0
         self.run_avg_dl = list()
         self.chain_bw = 0
+        self.revenue = 0

@@ -21,6 +21,7 @@ def test(solver, reqs):
     accepted = 0.0
     layer_dl_vol = 0.0
     chain_bw_total = 0.0
+    rev = 0.0
     sampling_rate = 1.0
     events = []
     counter = 1
@@ -41,6 +42,8 @@ def test(solver, reqs):
                 layer_dl_vol = layer_dl_vol + dl_vol
                 chain_bw_total = chain_bw_total + chain_bw
                 accepted = accepted + 1
+                for ii in range(len(s.vnfs)+1):
+                    rev = rev + s.vnf_in_rate(ii)
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
             if arrivals % 40 == 0:
@@ -53,6 +56,7 @@ def test(solver, reqs):
     avg_rate = accepted / len(reqs)
     avg_dl = layer_dl_vol
     tr = TestResult()
+    tr.revenue = rev
     tr.avg_admit = avg_rate
     tr.avg_dl = avg_dl
     tr.run_avg_dl = vol_consumed
