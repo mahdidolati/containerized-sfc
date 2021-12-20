@@ -30,6 +30,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
     # else:
     #     print(m.objVal)
 
+    Lw, L_iii = my_net.get_link_sets()
     gamma = Gamma
     tol_val = 1e-4
     loc_of = dict()
@@ -62,8 +63,25 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                 if my_net.get_path_min_bw(pvn, cdn, pth_id, req.T2) < req.vnf_in_rate(i):
                     q_var[0][N_map[pvn]][N_map[cdn]][pth_id, i].ub = 0
                     q_eliminations[i].add((N_map[pvn], N_map[cdn], pth_id))
+        # scale links
+        link_time = dict()
+        if bw_scaler < 1.0:
+            for tt in req.T1:
+                for ll in Lw:
+                    if ll[0] != cloud_node or ll[1] != cloud_node:
+                        if ll[0][0] != 'b' and ll[1][0] != 'b':
+                            cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
+                            cc = m.getConstrByName(cname)
+                            if cc is not None:
+                                link_time[(ll, tt)] = cc.getAttr(GRB.Attr.RHS)
+                                cc.setAttr(GRB.Attr.RHS, bw_scaler * cc.getAttr(GRB.Attr.RHS))
         # solve to obtain loc
         m.optimize()
+        if bw_scaler < 1.0:
+            for ll, tt in link_time:
+                cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
+                cc = m.getConstrByName(cname)
+                cc.setAttr(GRB.Attr.RHS, link_time[(ll, tt)])
         if m.status == GRB.INFEASIBLE:
             # m.computeIIS()
             # m.write("s_model.ilp")
@@ -141,90 +159,17 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
         # for cc in m.getConstrs():
         #     if cc.ConstrName[0:2] == "bw":
         #         print(cc.ConstrName)
-        if best_loc in E_id:
-            links = set()
-            link_time = dict()
-            if bw_scaler < 1 and len(my_net.paths_links[N_map_inv[best_loc]][cloud_node]) > 1:
-                for pth_id in range(len(my_net.paths_links[N_map_inv[best_loc]][cloud_node])):
-                    for ll in my_net.paths_links[N_map_inv[best_loc]][cloud_node][pth_id]:
-                        if ll[0] != cloud_node or ll[1] != cloud_node:
-                            links.add(ll)
-                for ll in links:
-                    for tt in req.T1:
-                        cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
-                        # cname = "bw[('b0', 'e0'),0]"
-                        cc = m.getConstrByName(cname)
-                        if cc is not None:
-                            link_time[(ll, tt)] = cc.getAttr(GRB.Attr.RHS)
-                            cc.setAttr(GRB.Attr.RHS, bw_scaler * cc.getAttr(GRB.Attr.RHS))
-            m.optimize()
-            if bw_scaler < 1 and len(my_net.paths_links[N_map_inv[best_loc]][cloud_node]) > 1:
-                for ll, tt in link_time:
-                    cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
-                    cc = m.getConstrByName(cname)
-                    cc.setAttr(GRB.Attr.RHS, link_time[(ll, tt)])
-            if m.status == GRB.INFEASIBLE:
-                # m.computeIIS()
-                # m.write("s_model.ilp")
-                if i == 0 or gamma < Gamma or Gamma == 0:
-                    print("one failed! after scaling")
-                    for ii in range(len(req.vnfs)):
-                        if ii in loc_of:
-                            my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, ii)
-                    my_net.evict_sfc(req)
-                    for ii in downloads:
-                        for ld in downloads[ii]:
-                            ld.cancel_download()
-                    return False, 0, 0
-                elif gamma == Gamma:
-                    print("Doing a backtack!")
-                    gamma = max(gamma - Gamma - 1, gamma - i - 1)
-                    i_back = max(0, i - Gamma)
-                    for ii in range(i_back, i + 1):
-                        total_dl_vol[ii] = 0
-                        ##
-                        for ee in v_eliminations[ii]:
-                            v_var[0][ee, ii].ub = 1
-                            v_var[0][ee, ii].lb = 0
-                        for n1, n2, pp in q_eliminations[ii]:
-                            q_var[0][n1][n2][pp, ii].ub = 1
-                            q_var[0][n1][n2][pp, ii].lb = 0
-                        ## undo vnf placement
-                        if ii in loc_of:
-                            v_var[0][N_map[loc_of[ii]], ii].lb = 0.0
-                            my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, ii)
-                            ## undo chaining
-                            pvn = req.entry_point if ii == 0 else loc_of[ii - 1]
-                            cdn = loc_of[ii]
-                            if pvn != cdn:
-                                q_var[0][N_map[pvn]][N_map[cdn]][routing_paths[ii], ii].lb = 0.0
-                                for ll in my_net.paths_links[pvn][cdn][routing_paths[ii]]:
-                                    l_obj = my_net.g[ll[0]][ll[1]]["li"]
-                                    l_obj.unembed(req, ii)
-                            ## undo download
-                            if ii in dl_paths:
-                                for rr in dl_paths[ii]:
-                                    w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
-                                del dl_paths[ii]
-                            if ii in downloads:
-                                for ld in downloads[ii]:
-                                    ld.cancel_download()
-                                del downloads[ii]
-                    i = i_back
-                    v_var[0][N_map[loc_of[i]], i].ub = 0.0
-                    continue
-            else:
-                Rd_ei, _ = my_net.get_missing_layers(N_map_inv[best_loc], req, i, req.tau1)
-                for rr in Rd_ei:
-                    if i not in dl_paths:
-                        dl_paths[i] = dict()
-                    pth_pr = []
-                    pth_ids = range(len(my_net.paths_links[N_map_inv[best_loc]][cloud_node]))
-                    for pth_id in pth_ids:
-                        a = w_var[0][best_loc][N_map[cloud_node]][pth_id, rr].x
-                        pth_pr.append(a)
-                    dl_paths[i][rr] = np.random.choice(a=pth_ids, p=pth_pr)
-                    w_var[0][best_loc][N_map[cloud_node]][dl_paths[i][R_id[rr]], rr].lb = 1.0
+        Rd_ei, _ = my_net.get_missing_layers(N_map_inv[best_loc], req, i, req.tau1)
+        for rr in Rd_ei:
+            if i not in dl_paths:
+                dl_paths[i] = dict()
+            pth_pr = []
+            pth_ids = range(len(my_net.paths_links[N_map_inv[best_loc]][cloud_node]))
+            for pth_id in pth_ids:
+                a = w_var[0][best_loc][N_map[cloud_node]][pth_id, rr].x
+                pth_pr.append(a)
+            dl_paths[i][rr] = np.random.choice(a=pth_ids, p=pth_pr)
+            w_var[0][best_loc][N_map[cloud_node]][dl_paths[i][R_id[rr]], rr].lb = 1.0
         m.optimize()
         if m.status == GRB.INFEASIBLE:
             # m.computeIIS()
