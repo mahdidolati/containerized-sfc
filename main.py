@@ -150,7 +150,6 @@ def scaling_test(inter_arrival):
     solvers = [
         FfSolver(),
         GurobiSingleRelax(0, 1.0, "popularity_learn"),
-        GurobiSingleRelax(0, 0.98, "popularity_learn"),
         GurobiSingleRelax(0, 0.95, "popularity_learn"),
         GurobiSingleRelax(0, 0.9, "popularity_learn"),
     ]
