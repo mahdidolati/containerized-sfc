@@ -135,9 +135,9 @@ def optimal_test(inter_arrival):
 
 def scaling_test(inter_arrival):
     np.random.seed(1)
-    Const.SERVER_DISK = [3000, 3500]
+    Const.LINK_BW = [300, 500]
     my_net = NetGenerator().get_g()
-    req_nums = [15]
+    req_nums = [10]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -208,7 +208,7 @@ def scaling_test(inter_arrival):
 def backtrack_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [15]
+    req_nums = [10]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
