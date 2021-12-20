@@ -141,7 +141,7 @@ def optimal_test(inter_arrival):
 
 def scaling_test(inter_arrival):
     np.random.seed(1)
-    Const.LINK_BW = [700, 800]
+    Const.LINK_BW = [800, 900]
     my_net = NetGenerator().get_g()
     req_nums = [15]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
