@@ -78,6 +78,7 @@ def optimal_test(inter_arrival):
     DOWNLOAD_LAYER = "Download (MB)"
     RUNTIME = "Runtime (sec)"
     CHAIN_BW = "Chain (mbps)"
+    REVENUE = "Revenue"
     solvers = [
         GurobiBatch(),
         GurobiSingleRelax(1, 1.0, "popularity_learn")
@@ -85,7 +86,8 @@ def optimal_test(inter_arrival):
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
              CHAIN_BW: Stat.MEAN_MODE,
-             RUNTIME: Stat.MEAN_MODE}
+             RUNTIME: Stat.MEAN_MODE,
+             REVENUE: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
@@ -117,24 +119,24 @@ def optimal_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
                 stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2-t1)
                 stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
+                stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
 
     machine_id = "ut"
     fig_test_id = "{}_optimal".format(machine_id)
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage',
-                                 ACCEPT_RATIO)
+    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
 
     fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, DOWNLOAD_LAYER, algs, 'Share Percentage',
-                                 DOWNLOAD_LAYER)
+    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, DOWNLOAD_LAYER, algs, 'Share Percentage', DOWNLOAD_LAYER)
 
     fig_3 = './result/{}_time_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_3 + '.txt', req_nums, 0, RUNTIME, algs, 'Share Percentage',
-                                 RUNTIME)
+    stat_collector.write_to_file(fig_3 + '.txt', req_nums, 0, RUNTIME, algs, 'Share Percentage', RUNTIME)
 
     fig_4 = './result/{}_chain_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_4 + '.txt', req_nums, 0, CHAIN_BW, algs, 'Chaining BW',
-                                 CHAIN_BW)
+    stat_collector.write_to_file(fig_4 + '.txt', req_nums, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
+
+    fig_5 = './result/{}_rev_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_5 + '.txt', req_nums, 0, REVENUE, algs, 'Revenue', REVENUE)
 
 
 def scaling_test(inter_arrival):
