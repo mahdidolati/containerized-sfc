@@ -33,7 +33,6 @@ def test(solver, reqs):
     while len(events) > 0:
         t, cnt, ev, s = heapq.heappop(events)
         if ev == "ARRIVAL":
-            sleep(2)
             arrivals = arrivals + 1
             solver.pre_arrival_procedure(t)
             status, dl_vol, chain_bw = solver.solve(s, t, sampling_rate)
@@ -44,7 +43,7 @@ def test(solver, reqs):
                 accepted = accepted + 1
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
-            if arrivals % 40 == 0:
+            if arrivals % 5 == 0:
                 vol_consumed.append(layer_dl_vol / accepted)
                 run_avg_admit.append(accepted / arrivals)
                 print("{}, {}, {}".format(arrivals, accepted / arrivals, layer_dl_vol / accepted))
@@ -417,6 +416,7 @@ def test_qlearning(inter_arrival):
     DOWNLOAD_LAYER = "Download (MB)"
     STEP_DL_LAYER = "Rung Download (MB)"
     RUN_AVG_ADMIT = "Run Admit"
+    CHAIN_BW = "Chain (mbps)"
     my_net = NetGenerator().get_g()
     sfc_gen = SfcGenerator(my_net, {
         1: 0.3,
@@ -431,7 +431,8 @@ def test_qlearning(inter_arrival):
     ]
     stats = {
         ACCEPT_RATIO: Stat.MEAN_MODE,
-        DOWNLOAD_LAYER: Stat.MEAN_MODE
+        DOWNLOAD_LAYER: Stat.MEAN_MODE,
+        CHAIN_BW: Stat.MEAN_MODE
     }
     stats2 = {
         STEP_DL_LAYER: Stat.MEAN_MODE,
@@ -442,7 +443,7 @@ def test_qlearning(inter_arrival):
     stat_collector2 = StatCollector(algs, stats2)
     arrival_rate = 1.0 / inter_arrival
     run_name = "1"
-    iterations = 5
+    iterations = 1
     x_axis = [1]
     x_axis2 = []
     for itr in range(iterations):
@@ -464,7 +465,7 @@ def test_qlearning(inter_arrival):
                 stat_collector2.add_stat(solver.get_name(), RUN_AVG_ADMIT, str(i), tr.run_avg_admit[i])
             stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, tr.avg_admit)
             stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
-
+            stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
 
     machine_id = "ut"
     fig_test_id = "{}_eviction".format(machine_id)
@@ -480,10 +481,13 @@ def test_qlearning(inter_arrival):
     fig_2 = './result/{}_ra_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector2.write_to_file(fig_2 + '.txt', x_axis2, 0, RUN_AVG_ADMIT, algs, 'Steps', RUN_AVG_ADMIT)
 
+    fig_2 = './result/{}_chain_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_2 + '.txt', x_axis, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
+
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    test_type = "optimal"
+    test_type = "learning"
     ia = 1.0
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
