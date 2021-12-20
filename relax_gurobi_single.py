@@ -144,7 +144,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
         if best_loc in E_id:
             links = set()
             link_time = dict()
-            if bw_scaler < 1:
+            if bw_scaler < 1 and len(my_net.paths_links[N_map_inv[best_loc]][cloud_node]) > 1:
                 for pth_id in range(len(my_net.paths_links[N_map_inv[best_loc]][cloud_node])):
                     for ll in my_net.paths_links[N_map_inv[best_loc]][cloud_node][pth_id]:
                         if ll[0] != cloud_node or ll[1] != cloud_node:
@@ -158,7 +158,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                             link_time[(ll, tt)] = cc.getAttr(GRB.Attr.RHS)
                             cc.setAttr(GRB.Attr.RHS, bw_scaler * cc.getAttr(GRB.Attr.RHS))
             m.optimize()
-            if bw_scaler < 1:
+            if bw_scaler < 1 and len(my_net.paths_links[N_map_inv[best_loc]][cloud_node]) > 1:
                 for ll, tt in link_time:
                     cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
                     cc = m.getConstrByName(cname)
