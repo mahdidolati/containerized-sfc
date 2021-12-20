@@ -85,6 +85,7 @@ class FfSolver(CloudSolver):
 
     def reset(self):
         self.my_net.reset()
+        self.my_net.enable_layer_sharing()
 
     def solve(self, chain_req, t, sr):
         c_s, c_b = self.cloud_embed(chain_req)
@@ -192,6 +193,13 @@ class FfSolver(CloudSolver):
 
         return [path_delay, chain_bw, total_dl_vol, downloads]
 
+    def post_arrival_procedure(self, status, t, chain_req):
+        for m in self.my_net.g.nodes():
+            if m[0] == "e":
+                if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
+                    print("From {}: delete".format(m))
+                    self.my_net.g.nodes[m]["nd"].empty_storage_random(t)
+
 
 class GurobiBatch(Solver):
     def __init__(self):
@@ -288,58 +296,18 @@ class GurobiSingleRelax(Solver):
     def solve(self, chain_req, t, sr):
         return solve_single_relax(self.my_net, self.R_ids, self.R_vols, chain_req, self.Gamma, self.bw_scaler)
 
-    def pre_arrival_procedure(self, t):
-        # print("-------------- pre arrival --------------------")
-        # pre_state = []
-        for m in self.my_net.g.nodes():
-            if m[0] == "e":
-                self.my_net.g.nodes[m]["nd"].make_s1()
-                # print("node {}: has capacity {} and availabe {} available-no-cache {}, has unused {}".format(m,
-                #                                                     self.my_net.g.nodes[m]["nd"].disk,
-                #                                                     self.my_net.g.nodes[m]["nd"].disk_avail(t),
-                #                                                     self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t),
-                #                                                     self.my_net.g.nodes[m]["nd"].has_unused_layer(t)))
-        # print("------------------------------------------------")
-
     def post_arrival_procedure(self, status, t, chain_req):
-        # print("-------------- post arrival --------------------")
         for m in self.my_net.g.nodes():
             if m[0] == "e":
-                # print("Node {}, storage: {}, {}".format(m,
-                #                                         self.my_net.g.nodes[m]["nd"].disk_avail(t),
-                #                                         self.my_net.g.nodes[m]["nd"].disk_avail_no_cache(t)))
-                # Transition of admitting the req
-                if self.eviction_strategy == "q_learning":
-                    self.my_net.g.nodes[m]["nd"].make_s2()
-                    self.my_net.g.nodes[m]["nd"].q_agent.add_transition(
-                        self.my_net.g.nodes[m]["nd"].s1,
-                        self.my_net.g.nodes[m]["nd"].get_local_kept(),
-                        self.my_net.g.nodes[m]["nd"].get_local_reused(),
-                        self.my_net.g.nodes[m]["nd"].s2
-                    )
-                elif self.eviction_strategy == "popularity_learn":
+                if self.eviction_strategy == "popularity_learn":
                     inuse = self.my_net.g.nodes[m]["nd"].get_all_inuse()
                     self.my_net.g.nodes[m]["nd"].p_agent.add_inuse(inuse)
-                # Transition of emptying disk
                 if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
                     print("From {}: delete".format(m))
-                    if self.eviction_strategy == "q_learning":
-                        self.my_net.g.nodes[m]["nd"].make_s1()
-                        self.my_net.g.nodes[m]["nd"].empty_storage(t)
-                        self.my_net.g.nodes[m]["nd"].make_s2()
-                        self.my_net.g.nodes[m]["nd"].q_agent.add_transition(
-                            self.my_net.g.nodes[m]["nd"].s1,
-                            self.my_net.g.nodes[m]["nd"].get_local_kept(),
-                            self.my_net.g.nodes[m]["nd"].get_local_reused(),
-                            self.my_net.g.nodes[m]["nd"].s2
-                        )
-                    elif self.eviction_strategy == "popularity_learn":
+                    if self.eviction_strategy == "popularity_learn":
                         self.my_net.g.nodes[m]["nd"].empty_storage_popularity(t)
                     else:
                         self.my_net.g.nodes[m]["nd"].empty_storage_random(t)
-                #
-
-        # print("------------------------------------------------")
 
     def reset(self):
         self.my_net.reset()
