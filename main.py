@@ -190,7 +190,7 @@ def scaling_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
 
     machine_id = "ut"
-    fig_test_id = "{}_optimal".format(machine_id)
+    fig_test_id = "{}_scaling".format(machine_id)
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
 
