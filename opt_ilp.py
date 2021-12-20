@@ -32,11 +32,11 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
         m.optimize()
         # m.write("out.lp")
 
-        if m.status == GRB.INFEASIBLE or m.status == GRB.INF_OR_UNBD or m.getAttr("SolCount") <= 0 or isinf(m.objVal):
+        if m.status == GRB.INFEASIBLE or m.status == GRB.INF_OR_UNBD or m.getAttr("SolCount") <= 0:
             # m.computeIIS()
             # m.write("s_model.ilp")
             # return False, 1, 0
-            print("rejected one!", m.objVal)
+            print("rejected one!")
         else:
             feasEid = E_id
             feasM = m

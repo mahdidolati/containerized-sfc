@@ -135,6 +135,7 @@ def optimal_test(inter_arrival):
 
 def scaling_test(inter_arrival):
     np.random.seed(1)
+    Const.SERVER_DISK = [3000, 3500]
     my_net = NetGenerator().get_g()
     req_nums = [15]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
