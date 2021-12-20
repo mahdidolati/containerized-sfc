@@ -154,6 +154,7 @@ def scaling_test(inter_arrival):
     DOWNLOAD_LAYER = "Download (MB)"
     RUNTIME = "Runtime (sec)"
     CHAIN_BW = "Chain (mbps)"
+    REVENUE = "Revenue"
     solvers = [
         FfSolver(),
         GurobiSingleRelax(0, 1.0, "popularity_learn"),
@@ -163,7 +164,8 @@ def scaling_test(inter_arrival):
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
              CHAIN_BW: Stat.MEAN_MODE,
-             RUNTIME: Stat.MEAN_MODE}
+             RUNTIME: Stat.MEAN_MODE,
+             REVENUE: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
@@ -195,6 +197,7 @@ def scaling_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
                 stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2 - t1)
                 stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
+                stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
 
     machine_id = "ut"
     fig_test_id = "{}_scaling".format(machine_id)
@@ -209,6 +212,9 @@ def scaling_test(inter_arrival):
 
     fig_4 = './result/{}_chain_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_4 + '.txt', req_nums, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
+
+    fig_5 = './result/{}_rev_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_5 + '.txt', req_nums, 0, REVENUE, algs, 'Revenue', REVENUE)
 
 
 def backtrack_test(inter_arrival):
@@ -224,6 +230,7 @@ def backtrack_test(inter_arrival):
     DOWNLOAD_LAYER = "Download (MB)"
     RUNTIME = "Runtime (sec)"
     CHAIN_BW = "Chain (mbps)"
+    REVENUE = "Revenue"
     solvers = [
         FfSolver(),
         GurobiSingleRelax(0, 1.0, "popularity_learn"),
@@ -234,7 +241,8 @@ def backtrack_test(inter_arrival):
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
              CHAIN_BW: Stat.MEAN_MODE,
-             RUNTIME: Stat.MEAN_MODE}
+             RUNTIME: Stat.MEAN_MODE,
+             REVENUE: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
@@ -266,6 +274,7 @@ def backtrack_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
                 stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2 - t1)
                 stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
+                stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
 
     machine_id = "ut"
     fig_test_id = "{}_scaling".format(machine_id)
@@ -281,24 +290,33 @@ def backtrack_test(inter_arrival):
     fig_4 = './result/{}_chain_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_4 + '.txt', req_nums, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
 
+    fig_5 = './result/{}_rev_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_5 + '.txt', req_nums, 0, REVENUE, algs, 'Revenue', REVENUE)
+
 
 def share_percentage_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
+    # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
+    RUNTIME = "Runtime (sec)"
+    CHAIN_BW = "Chain (mbps)"
+    REVENUE = "Revenue"
     solvers = [
+        CloudSolver(),
         FfSolver(),
-        GurobiSingleRelax(0, 1.0, "popularity_learn"),
-        GurobiSingleRelax(0, 0.98, "popularity_learn"),
-        GurobiSingleRelax(0, 0.95, "popularity_learn"),
-        GurobiSingleRelax(0, 0.9, "popularity_learn"),
+        GurobiSingleRelax(1, 0.9, "popularity_learn")
     ]
-    stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
+    stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
+             DOWNLOAD_LAYER: Stat.MEAN_MODE,
+             CHAIN_BW: Stat.MEAN_MODE,
+             RUNTIME: Stat.MEAN_MODE,
+             REVENUE: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 3
+    iterations = 5
     arrival_rate = 1.0 / inter_arrival
     n_share_ps = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
     share_percentages = []
@@ -310,12 +328,16 @@ def share_percentage_test(inter_arrival):
         n_share_p = n_share_ps[i]
         x = n_share_p
         share_percentages.append(x)
-        sfc_gen = SfcGenerator(my_net, n_share_p)
+
+        sfc_gen = SfcGenerator(my_net, {1: 1.0}, n_share_p)
+        R_ids = [i for i in sfc_gen.layers]
+        R_vols = [sfc_gen.layers[i] for i in R_ids]
+
         run_name = "{:.2f}".format(x)
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 350
+            req_num = 100
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -323,9 +345,19 @@ def share_percentage_test(inter_arrival):
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
             for solver in solvers:
                 np.random.seed(itr * 1234)
-                res, dl_vol = test(solver, reqs)
-                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
-                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
+                solver.set_env(my_net, R_ids, R_vols)
+                t1 = process_time()
+                if solver.batch:
+                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                else:
+                    tr = test(solver, reqs)
+                    print("Solver: {} got {} out of {}".format(solver.get_name(), tr.avg_admit, req_num))
+                t2 = process_time()
+                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, tr.avg_admit)
+                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
+                stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2 - t1)
+                stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
+                stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
 
     machine_id = "ut"
     fig_test_id = "{}_share".format(machine_id)
@@ -334,6 +366,15 @@ def share_percentage_test(inter_arrival):
 
     fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, DOWNLOAD_LAYER, algs, 'Share Percentage', DOWNLOAD_LAYER)
+
+    fig_3 = './result/{}_time_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_3 + '.txt', share_percentages, 0, RUNTIME, algs, 'Share Percentage', RUNTIME)
+
+    fig_4 = './result/{}_chain_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_4 + '.txt', share_percentages, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
+
+    fig_5 = './result/{}_rev_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_5 + '.txt', share_percentages, 0, REVENUE, algs, 'Revenue', REVENUE)
 
 
 def popularity_test(inter_arrival):
