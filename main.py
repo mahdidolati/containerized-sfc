@@ -67,6 +67,7 @@ def test(solver, reqs):
 
 def optimal_test(inter_arrival):
     np.random.seed(1)
+    Const.SERVER_DISK = [20000, 30000]
     my_net = NetGenerator().get_g()
     req_nums = [6, 8, 10, 12]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
@@ -80,8 +81,8 @@ def optimal_test(inter_arrival):
     CHAIN_BW = "Chain (mbps)"
     REVENUE = "Revenue"
     solvers = [
-        GurobiBatch(),
-        GurobiSingleRelax(1, 1.0, "popularity_learn")
+        GurobiSingleRelax(1, 1.0, "popularity_learn"),
+        GurobiBatch()
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
