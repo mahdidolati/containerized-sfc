@@ -182,7 +182,8 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
             # m.computeIIS()
             # m.write("s_model.ilp")
             if i == 0 or gamma < Gamma or Gamma == 0:
-                print("one failed after rounding!")
+                if not rounding_failed:
+                    print("one failed after rounding!")
                 for ii in range(len(req.vnfs)):
                     if ii in loc_of:
                         my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, ii)
