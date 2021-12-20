@@ -159,6 +159,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
         # for cc in m.getConstrs():
         #     if cc.ConstrName[0:2] == "bw":
         #         print(cc.ConstrName)
+        rounding_failed = False
         Rd_ei, _ = my_net.get_missing_layers(N_map_inv[best_loc], req, i, req.tau1)
         for rr in Rd_ei:
             if i not in dl_paths:
@@ -168,10 +169,16 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
             for pth_id in pth_ids:
                 a = w_var[0][best_loc][N_map[cloud_node]][pth_id, rr].x
                 pth_pr.append(a)
-            dl_paths[i][rr] = np.random.choice(a=pth_ids, p=pth_pr)
-            w_var[0][best_loc][N_map[cloud_node]][dl_paths[i][R_id[rr]], rr].lb = 1.0
-        m.optimize()
-        if m.status == GRB.INFEASIBLE:
+            if sum(pth_pr) == 1.0:
+                dl_paths[i][rr] = np.random.choice(a=pth_ids, p=pth_pr)
+                w_var[0][best_loc][N_map[cloud_node]][dl_paths[i][R_id[rr]], rr].lb = 1.0
+            else:
+                print("one failed, no candidate path!")
+                rounding_failed = True
+                break
+        if not rounding_failed:
+            m.optimize()
+        if rounding_failed or m.status == GRB.INFEASIBLE:
             # m.computeIIS()
             # m.write("s_model.ilp")
             if i == 0 or gamma < Gamma or Gamma == 0:
