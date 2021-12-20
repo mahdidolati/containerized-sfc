@@ -283,6 +283,7 @@ def get_ilp(reqs, my_net, R, Rvol):
                 for pth in my_net.link_to_path[ll]
             ) <= my_net.g[ll[0]][ll[1]]["li"].bw_avail(t)
             for ll in L
+            if ll in my_net.link_to_path
             if ll[0] != cloud_node or ll[1] != cloud_node
             for t in T_all
         ), name="bw"
