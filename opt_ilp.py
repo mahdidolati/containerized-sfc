@@ -5,7 +5,7 @@ from itertools import chain
 from sfc import LayerDownload
 import numpy as np
 from test import TestResult
-
+from math import isinf
 
 def get_T(reqs):
     t1 = np.infty
@@ -20,6 +20,9 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
     req_len = len(reqs)
     a_reqs = list()
     tr = TestResult()
+    feasEid = None
+    feasM = None
+    feasV = None
     for ii in range(req_len):
         m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(a_reqs + [reqs[ii]], my_net, R,
                                                                                                     Rvol)
@@ -29,12 +32,15 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
         m.optimize()
         # m.write("out.lp")
 
-        if m.status == GRB.INFEASIBLE:
+        if m.status == GRB.INFEASIBLE or m.status == GRB.INF_OR_UNBD or m.getAttr("SolCount") <= 0 or isinf(m.objVal):
             # m.computeIIS()
             # m.write("s_model.ilp")
             # return False, 1, 0
-            print("rejected one!")
+            print("rejected one!", m.objVal)
         else:
+            feasEid = E_id
+            feasM = m
+            feasV = v_var
             a_reqs.append(reqs[ii])
             print(m.objVal)
             tr.avg_admit = 1.0 * (len(a_reqs)) / req_len
@@ -42,9 +48,9 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
 
     dl_layer = dict()
     for req_id in range(len(a_reqs)):
-        for e in E_id:
+        for e in feasEid:
             for i in range(len(a_reqs[req_id].vnfs)):
-                if v_var[req_id][e, i].x > 1 - 0.0001:
+                if feasV[req_id][e, i].x > 1 - 0.0001:
                     if e not in dl_layer:
                         dl_layer[e] = set()
                     for l in a_reqs[req_id].vnfs[i].layers:

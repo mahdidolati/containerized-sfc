@@ -43,7 +43,7 @@ def test(solver, reqs):
                 accepted = accepted + 1
                 heapq.heappush(events, (s.tau2+1, counter, "FINISH", s))
                 counter += 1
-            if arrivals % 5 == 0:
+            if arrivals % 40 == 0:
                 vol_consumed.append(layer_dl_vol / accepted)
                 run_avg_admit.append(accepted / arrivals)
                 print("{}, {}, {}".format(arrivals, accepted / arrivals, layer_dl_vol / accepted))
@@ -64,7 +64,7 @@ def test(solver, reqs):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [7, 9, 11, 13]
+    req_nums = [6, 8, 10, 12]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -75,8 +75,8 @@ def optimal_test(inter_arrival):
     RUNTIME = "Runtime (sec)"
     CHAIN_BW = "Chain (mbps)"
     solvers = [
-        GurobiSingleRelax(1, 1.0, "popularity_learn"),
-        GurobiBatch()
+        GurobiBatch(),
+        GurobiSingleRelax(1, 1.0, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -85,7 +85,7 @@ def optimal_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 5
+    iterations = 3
     arrival_rate = 1.0 / inter_arrival
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)
@@ -487,8 +487,6 @@ def test_qlearning(inter_arrival):
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    test_type = "learning"
-    ia = 1.0
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
     for opt, arg in opts:
         if opt in ("--inter-arrival",):
