@@ -1,0 +1,6 @@
+ys_err;[[[100], [100]], [[100], [100]]]
+x;[1]
+ys;[[0.811], [0.793]]
+ls;['Gr(p)(1.0)', 'Gr(d)(1.0)']
+xtitle;No. of Layers
+ytitle;Accept Ratio
