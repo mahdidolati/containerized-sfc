@@ -82,7 +82,7 @@ def optimal_test(inter_arrival):
     CHAIN_BW = "Chain (mbps)"
     REVENUE = "Revenue"
     solvers = [
-        GurobiSingleRelax(1, 1.0, "popularity_learn"),
+        GurobiSingleRelax(2, 0.9, "popularity_learn"),
         GurobiBatch()
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
@@ -547,16 +547,12 @@ def test_qlearning(inter_arrival):
     RUN_AVG_ADMIT = "Run Admit"
     CHAIN_BW = "Chain (mbps)"
     my_net = NetGenerator().get_g()
-    sfc_gen = SfcGenerator(my_net, {
-        1: 0.3,
-        2: 0.3,
-        3: 0.4
-    }, 1.0)
+    sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     R_ids = [i for i in sfc_gen.layers]
     R_vols = [sfc_gen.layers[i] for i in R_ids]
     solvers = [
-        GurobiSingleRelax(0, 1.0, "popularity_learn"),
-        GurobiSingleRelax(0, 1.0, "default"),
+        GurobiSingleRelax(2, 0.9, "popularity_learn"),
+        GurobiSingleRelax(2, 0.9, "default"),
     ]
     stats = {
         ACCEPT_RATIO: Stat.MEAN_MODE,
