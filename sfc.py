@@ -21,7 +21,7 @@ class LayerDownload:
 
 
 class Vnf:
-    def __init__(self, v_id, sharable_list, nonsharable_list, layers, sharable_pr):
+    def __init__(self, v_id, sharable_list, layer_cnt, layers, sharable_pr):
         self.vnf_id = v_id
         self.cpu = np.random.uniform(*Const.VNF_CPU)
         self.ram = np.random.uniform(*Const.VNF_RAM)
@@ -29,17 +29,13 @@ class Vnf:
         self.layers = dict()
         v_layer = np.random.randint(*Const.VNF_LAYER)
         s_layer = int(np.ceil(v_layer * sharable_pr))
-        n_layer = int(np.floor(v_layer * (1.0 - sharable_pr)))
         s_layer_pr = [(s_lid+1.0)/(sum(sharable_list) + len(sharable_list)) for s_lid in sharable_list]
         s_layer_list = np.random.choice(a=sharable_list, size=s_layer, p=s_layer_pr)
-        if len(nonsharable_list) > 0:
-            n_layer_list = np.random.choice(a=nonsharable_list, size=n_layer)
-        else:
-            n_layer_list = list()
         for l_id in s_layer_list:
             self.layers[l_id] = layers[l_id]
-        for l_id in n_layer_list:
-            self.layers[l_id] = layers[l_id]
+        n_layer = int(np.floor(v_layer * (1.0 - sharable_pr)))
+        for n_id in range(layer_cnt, layer_cnt+n_layer):
+            self.layers[n_id] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
 
 
 class Sfc:
@@ -97,28 +93,23 @@ class SfcGenerator:
         self.vnfs_list = list()
         self.vnf_num = Const.VNF_NUM
         for org in orgs:
-            sharable_num = int(np.ceil(orgs[org] * Const.LAYER_NUM * sharable_pr))
-            nonsharable_num = int(np.ceil(orgs[org] * Const.LAYER_NUM * (1.0 - sharable_pr)))
+            sharable_num = int(np.ceil(orgs[org] * Const.LAYER_NUM))
             sharable_list = list()
-            nonsharable_list = list()
             for _ in range(sharable_num):
                 sharable_list.append(layer_cnt)
-                self.layers[layer_cnt] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
-                layer_cnt += 1
-            for _ in range(nonsharable_num):
-                nonsharable_list.append(layer_cnt)
                 self.layers[layer_cnt] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
                 layer_cnt += 1
             self.org_vnfs[org] = list()
             org_vnf_num = int(np.ceil(orgs[org] * Const.VNF_NUM))
             for i in range(org_vnf_num):
-                a_vnf = Vnf(vnf_cnt, sharable_list, nonsharable_list, self.layers, sharable_pr)
+                a_vnf = Vnf(vnf_cnt, sharable_list, layer_cnt, self.layers, sharable_pr)
                 vnf_cnt += 1
                 self.org_vnfs[org].append(a_vnf)
                 self.vnfs_list.append(a_vnf)
                 for l_id in a_vnf.layers:
-                    if l_id in nonsharable_list:
-                        nonsharable_list.remove(l_id)
+                    if l_id not in self.layers:
+                        self.layers[l_id] = a_vnf.layers[l_id]
+                        layer_cnt = layer_cnt + 1
 
     def get_chain(self, t):
         org_list = [oo for oo in self.orgs]
