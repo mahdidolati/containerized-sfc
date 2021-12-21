@@ -301,7 +301,7 @@ def backtrack_test(inter_arrival):
 def share_percentage_test(inter_arrival):
     np.random.seed(1)
     Const.LINK_BW = [100, 1000]
-    SERVER_DISK = [2000, 3000]
+    SERVER_DISK = [500, 1500]
     my_net = NetGenerator().get_g()
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
