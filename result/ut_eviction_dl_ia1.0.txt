@@ -1,6 +1,6 @@
-ys_err;[[[100], [100]], [[100], [100]]]
-x;[1]
-ys;[[865960.0], [954804.0]]
-ls;['Gr(p)(1.0)', 'Gr(d)(1.0)']
-xtitle;No. of Layers
+ys_err;[[0, 0], [0, 0]]
+x;['Popular', 'Random']
+ys;[[865960.0, 954804.0]]
+ls;['Popular']
+xtitle;Eviction Strategy
 ytitle;Download (MB)
