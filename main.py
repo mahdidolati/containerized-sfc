@@ -124,6 +124,7 @@ def optimal_test(inter_arrival):
 
     machine_id = "ut"
     fig_test_id = "{}_optimal".format(machine_id)
+    inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
 
@@ -201,6 +202,7 @@ def scaling_test(inter_arrival):
 
     machine_id = "ut"
     fig_test_id = "{}_scaling".format(machine_id)
+    inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
 
@@ -279,6 +281,7 @@ def backtrack_test(inter_arrival):
 
     machine_id = "ut"
     fig_test_id = "{}_backtrack".format(machine_id)
+    inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
 
@@ -360,6 +363,7 @@ def share_percentage_test(inter_arrival):
 
     machine_id = "ut"
     fig_test_id = "{}_share".format(machine_id)
+    inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
 
@@ -418,6 +422,7 @@ def popularity_test(inter_arrival):
 
     machine_id = "ut"
     fig_test_id = "{}_popularity".format(machine_id)
+    inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
 
@@ -467,6 +472,7 @@ def slack_time_test(inter_arrival):
 
     machine_id = "ut"
     fig_test_id = "{}_slack".format(machine_id)
+    inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', tau1_avg, 0, ACCEPT_RATIO, algs, 'Avg. Slack', ACCEPT_RATIO)
 
@@ -517,6 +523,7 @@ def layer_num_test(inter_arrival):
 
     machine_id = "ut"
     fig_test_id = "{}_layer_num".format(machine_id)
+    inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
 
@@ -583,6 +590,7 @@ def test_qlearning(inter_arrival):
 
     machine_id = "ut"
     fig_test_id = "{}_eviction".format(machine_id)
+    inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', x_axis, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
 
