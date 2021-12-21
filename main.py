@@ -325,7 +325,7 @@ def share_percentage_test(inter_arrival):
     #
     iterations = 3
     arrival_rate = 1.0 / inter_arrival
-    n_share_ps = [0.1, 0.9]
+    n_share_ps = [1.0, 0.9]
     share_percentages = []
     for i in range(len(n_share_ps)):
         np.random.seed(i * 100)
