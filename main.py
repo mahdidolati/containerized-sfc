@@ -82,7 +82,7 @@ def optimal_test(inter_arrival):
     CHAIN_BW = "Chain (mbps)"
     REVENUE = "Revenue"
     solvers = [
-        GurobiSingleRelax(2, 0.9, "popularity_learn"),
+        GurobiSingleRelax(2, 1.0, "popularity_learn"),
         GurobiBatch()
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
@@ -144,7 +144,7 @@ def optimal_test(inter_arrival):
 
 def scaling_test(inter_arrival):
     np.random.seed(1)
-    Const.LINK_BW = [200, 300]
+    Const.LINK_BW = [100, 1000]
     my_net = NetGenerator().get_g()
     req_nums = [50]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
@@ -160,8 +160,8 @@ def scaling_test(inter_arrival):
     solvers = [
         FfSolver(),
         GurobiSingleRelax(0, 1.0, "popularity_learn"),
+        GurobiSingleRelax(0, 0.95, "popularity_learn"),
         GurobiSingleRelax(0, 0.9, "popularity_learn"),
-        GurobiSingleRelax(0, 0.8, "popularity_learn"),
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -311,7 +311,6 @@ def share_percentage_test(inter_arrival):
     REVENUE = "Revenue"
     DL_ACC = "DL_ACC"
     solvers = [
-        CloudSolver(),
         FfSolver(),
         GurobiSingleRelax(2, 0.9, "popularity_learn")
     ]

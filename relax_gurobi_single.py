@@ -5,23 +5,29 @@ from itertools import chain
 from sfc import LayerDownload
 from opt_ilp import get_ilp
 import numpy as np
+from time import process_time
 
 
 def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
+    t1 = process_time()
     reqs = [req]
     m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(reqs, my_net, R, Rvol)
+    t2 = process_time()
 
     m.update()
     for v in m.getVars():
         v.setAttr('vtype', 'C')
         v.lb = 0.0
         v.ub = 1.0
+    t3 = process_time()
 
     m.setParam("LogToConsole", False)
     m.setParam("Threads" , 6)
     # m.setParam("TIME_LIMIT", 500)
-    # m.optimize()
+    m.optimize()
     # m.write("out.lp")
+    t4 = process_time()
+    print("tt: {}, {}, {}".format(t2-t1, t3-t2, t4-t3))
 
     if m.status == GRB.INFEASIBLE:
         # m.computeIIS()
