@@ -144,7 +144,7 @@ def optimal_test(inter_arrival):
 
 def scaling_test(inter_arrival):
     np.random.seed(1)
-    Const.LINK_BW = [100, 1000]
+    Const.LINK_BW = [200, 300]
     my_net = NetGenerator().get_g()
     req_nums = [50]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
@@ -302,7 +302,6 @@ def backtrack_test(inter_arrival):
 def share_percentage_test(inter_arrival):
     np.random.seed(1)
     Const.LINK_BW = [100, 1000]
-    # Const.SERVER_DISK = [1500, 2500]
     my_net = NetGenerator().get_g()
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
@@ -313,8 +312,8 @@ def share_percentage_test(inter_arrival):
     DL_ACC = "DL_ACC"
     solvers = [
         CloudSolver(),
-        FfSolver()
-        # GurobiSingleRelax(1, 0.8, "popularity_learn")
+        FfSolver(),
+        GurobiSingleRelax(2, 0.9, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
