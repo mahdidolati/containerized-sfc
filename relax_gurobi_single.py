@@ -36,6 +36,8 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
     # else:
     #     print(m.objVal)
 
+    first_bt = Gamma
+    do_scale = True
     Lw, L_iii = my_net.get_link_sets()
     gamma = Gamma
     tol_val = 1e-4
@@ -71,7 +73,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                     q_eliminations[i].add((N_map[pvn], N_map[cdn], pth_id))
         # scale links
         link_time = dict()
-        if bw_scaler < 1.0:
+        if bw_scaler < 1.0 and do_scale:
             for tt in req.T1:
                 for ll in Lw:
                     if ll[0] != cloud_node or ll[1] != cloud_node:
@@ -91,7 +93,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
         if m.status == GRB.INFEASIBLE:
             # m.computeIIS()
             # m.write("s_model.ilp")
-            if i == 0 or gamma < Gamma or Gamma == 0:
+            if (i == 0 and first_bt == 0) or (gamma < Gamma) or (Gamma == 0):
                 print("one failed after elimination!")
                 for ii in range(len(req.vnfs)):
                     if ii in loc_of:
@@ -101,6 +103,11 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                     for ld in downloads[ii]:
                         ld.cancel_download()
                 return False, 0, 0
+            elif i == 0 and first_bt > 0:
+                print("Doing a backtack!")
+                do_scale = False
+                first_bt = first_bt - 1
+                continue
             elif gamma == Gamma:
                 print("Doing a backtack!")
                 gamma = max(gamma-Gamma-1, gamma-i-1)
@@ -138,6 +145,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                 i = i_back
                 v_var[0][N_map[loc_of[i]], i].ub = 0.0
                 continue
+        do_scale = True
         # get best location
         loc_pr = list()
         for n in Ec_id:
@@ -189,7 +197,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
         if rounding_failed or m.status == GRB.INFEASIBLE:
             # m.computeIIS()
             # m.write("s_model.ilp")
-            if i == 0 or gamma < Gamma or Gamma == 0:
+            if (i == 0 and first_bt == 0) or (gamma < Gamma) or (Gamma == 0):
                 if not rounding_failed:
                     print("one failed after rounding!")
                 for ii in range(len(req.vnfs)):
@@ -200,6 +208,11 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                     for ld in downloads[ii]:
                         ld.cancel_download()
                 return False, None, 0
+            elif i == 0 and first_bt > 0:
+                print("Doing a backtack!")
+                v_var[0][N_map[loc_of[i]], i].ub = 0.0
+                first_bt = first_bt - 1
+                continue
             elif gamma == Gamma:
                 print("Doing a backtack!")
                 gamma = max(gamma - Gamma - 1, gamma - i - 1)
