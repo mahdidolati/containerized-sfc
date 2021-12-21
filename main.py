@@ -62,6 +62,7 @@ def test(solver, reqs):
     tr.run_avg_dl = vol_consumed
     tr.run_avg_admit = run_avg_admit
     tr.chain_bw = chain_bw_total
+    tr.avg_dl_per_acc = 0.0 if accepted == 0 else avg_dl / accepted
     return tr
 
 
@@ -301,7 +302,7 @@ def backtrack_test(inter_arrival):
 def share_percentage_test(inter_arrival):
     np.random.seed(1)
     Const.LINK_BW = [100, 1000]
-    SERVER_DISK = [500, 1500]
+    # Const.SERVER_DISK = [1500, 2500]
     my_net = NetGenerator().get_g()
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
@@ -309,6 +310,7 @@ def share_percentage_test(inter_arrival):
     RUNTIME = "Runtime (sec)"
     CHAIN_BW = "Chain (mbps)"
     REVENUE = "Revenue"
+    DL_ACC = "DL_ACC"
     solvers = [
         CloudSolver(),
         FfSolver()
@@ -318,13 +320,14 @@ def share_percentage_test(inter_arrival):
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
              CHAIN_BW: Stat.MEAN_MODE,
              RUNTIME: Stat.MEAN_MODE,
-             REVENUE: Stat.MEAN_MODE}
+             REVENUE: Stat.MEAN_MODE,
+             DL_ACC: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
     iterations = 3
     arrival_rate = 1.0 / inter_arrival
-    n_share_ps = [0.2, 0.4, 0.6, 0.8]
+    n_share_ps = [0.1, 0.9]
     share_percentages = []
     for i in range(len(n_share_ps)):
         np.random.seed(i * 100)
@@ -340,7 +343,7 @@ def share_percentage_test(inter_arrival):
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 200
+            req_num = 50
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -361,6 +364,7 @@ def share_percentage_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2 - t1)
                 stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
                 stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
+                stat_collector.add_stat(solver.get_name(), DL_ACC, run_name, tr.avg_dl_per_acc)
 
     machine_id = "ut"
     fig_test_id = "{}_share".format(machine_id)
@@ -379,6 +383,9 @@ def share_percentage_test(inter_arrival):
 
     fig_5 = './result/{}_rev_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_5 + '.txt', share_percentages, 0, REVENUE, algs, 'Revenue', REVENUE)
+
+    fig_6 = './result/{}_dla_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_6 + '.txt', share_percentages, 0, DL_ACC, algs, 'Revenue', DL_ACC)
 
 
 def popularity_test(inter_arrival):
@@ -612,7 +619,7 @@ def test_qlearning(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
-    test_type = "layer"
+    test_type = "share"
     ia = 1.0
     for opt, arg in opts:
         if opt in ("--inter-arrival",):

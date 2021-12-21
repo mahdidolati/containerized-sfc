@@ -6,3 +6,4 @@ class TestResult:
         self.run_avg_dl = list()
         self.chain_bw = 0
         self.revenue = 0
+        self.avg_dl_per_acc = 0
