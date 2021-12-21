@@ -602,6 +602,8 @@ def test_qlearning(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
+    test_type = "layer"
+    ia = 1.0
     for opt, arg in opts:
         if opt in ("--inter-arrival",):
             ia = float(arg)
