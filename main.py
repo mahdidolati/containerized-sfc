@@ -310,8 +310,8 @@ def share_percentage_test(inter_arrival):
     REVENUE = "Revenue"
     solvers = [
         CloudSolver(),
-        FfSolver(),
-        GurobiSingleRelax(1, 0.8, "popularity_learn")
+        FfSolver()
+        # GurobiSingleRelax(1, 0.8, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -323,7 +323,7 @@ def share_percentage_test(inter_arrival):
     #
     iterations = 3
     arrival_rate = 1.0 / inter_arrival
-    n_share_ps = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+    n_share_ps = [0.2, 0.4, 0.6, 0.8]
     share_percentages = []
     for i in range(len(n_share_ps)):
         np.random.seed(i * 100)
