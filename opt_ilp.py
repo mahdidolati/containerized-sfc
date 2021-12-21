@@ -6,6 +6,8 @@ from sfc import LayerDownload
 import numpy as np
 from test import TestResult
 from math import isinf
+from time import process_time
+
 
 def get_T(reqs):
     t1 = np.infty
@@ -64,6 +66,7 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
 
 
 def get_ilp(reqs, my_net, R, Rvol):
+    # t1 = process_time()
     T_all = get_T(reqs)
     B = my_net.get_all_base_stations()
     E = my_net.get_all_edge_nodes()
@@ -119,6 +122,10 @@ def get_ilp(reqs, my_net, R, Rvol):
                                                       vtype=GRB.BINARY, name="w,{},{},{},".format(req_id,n1,n2))
     r_var = m.addVars(E_id, len(R), T_all, vtype=GRB.BINARY, name="r")
 
+    # t2 = process_time()
+    # print("Vars done {}".format(t2-t1))
+    # t1 = t2
+
     m.addConstrs(
         (
             gp.quicksum(
@@ -129,6 +136,10 @@ def get_ilp(reqs, my_net, R, Rvol):
             for i in range(len(reqs[req_id].vnfs))
         ), name="placement_all"
     )
+
+    # t2 = process_time()
+    # print("placement_all done {}".format(t2 - t1))
+    # t1 = t2
 
     m.addConstrs(
         (
@@ -143,6 +154,10 @@ def get_ilp(reqs, my_net, R, Rvol):
         ), name="cpu_limit"
     )
 
+    # t2 = process_time()
+    # print("cpu_limit done {}".format(t2 - t1))
+    # t1 = t2
+
     m.addConstrs(
         (
             gp.quicksum(
@@ -156,6 +171,10 @@ def get_ilp(reqs, my_net, R, Rvol):
         ), name="ram_limit"
     )
 
+    # t2 = process_time()
+    # print("ram_limit done {}".format(t2 - t1))
+    # t1 = t2
+
     m.addConstrs(
         (
             v_var[req_id][e, i] <= r_var[e, R_id[r], t]
@@ -167,6 +186,10 @@ def get_ilp(reqs, my_net, R, Rvol):
         ), name="layer_prereq"
     )
 
+    # t2 = process_time()
+    # print("layer_prereq done {}".format(t2 - t1))
+    # t1 = t2
+
     if 0 in T_all:
         m.addConstrs(
             (
@@ -175,6 +198,9 @@ def get_ilp(reqs, my_net, R, Rvol):
                 for r in R
             ), name="layer_0"
         )
+        # t2 = process_time()
+        # print("layer_0 done {}".format(t2 - t1))
+        # t1 = t2
 
     for e in E_id:
         for r in R:
@@ -205,6 +231,9 @@ def get_ilp(reqs, my_net, R, Rvol):
                                 for pth_id in range(len(my_net.paths_links[N_map_inv[e]][cloud_node]))
                             ), name="layer_download,{},{},{}".format(e, r, t)
                         )
+    # t2 = process_time()
+    # print("layer_download done {}".format(t2 - t1))
+    # t1 = t2
 
     m.addConstrs(
         (
@@ -218,6 +247,10 @@ def get_ilp(reqs, my_net, R, Rvol):
         ), name="download_path_1"
     )
 
+    # t2 = process_time()
+    # print("download_path_1 done {}".format(t2 - t1))
+    # t1 = t2
+
     m.addConstrs(
         (
             gp.quicksum(
@@ -229,6 +262,10 @@ def get_ilp(reqs, my_net, R, Rvol):
         ), name="disk"
     )
 
+    # t2 = process_time()
+    # print("disk done {}".format(t2 - t1))
+    # t1 = t2
+
     m.addConstrs(
         (
             gp.quicksum(
@@ -239,6 +276,10 @@ def get_ilp(reqs, my_net, R, Rvol):
             for n in Ec_id
         ), name="entry_in"
     )
+
+    # t2 = process_time()
+    # print("entry_in done {}".format(t2 - t1))
+    # t1 = t2
 
     # for req_id in range(len(reqs)):
     #     for n in Ec_id:
@@ -255,6 +296,10 @@ def get_ilp(reqs, my_net, R, Rvol):
         ), name="entry_out"
     )
 
+    # t2 = process_time()
+    # print("entry_out done {}".format(t2 - t1))
+    # t1 = t2
+
     m.addConstrs(
         (
             v_var[req_id][n1, i] + v_var[req_id][n2, i+1] - 1 <= gp.quicksum(
@@ -269,13 +314,19 @@ def get_ilp(reqs, my_net, R, Rvol):
         ), name="chain"
     )
 
+    # t2 = process_time()
+    # print("chain done {}".format(t2 - t1))
+    # t1 = t2
+    #
+    # print("L: {}, T: {}, Rq: {}, R: {}".format(len(L), len(T_all), len(reqs), len(R)))
+
     m.addConstrs(
         (
             gp.quicksum(
                 w_var[req_id][N_map[pth[0]]][N_map[pth[1]]][pth[2], R_id[r]] * Rvol[R_id[r]] / len(reqs[req_id].T1)
                 for req_id in range(len(reqs))
                 if t in reqs[req_id].T1
-                for r in R
+                for r in reqs[req_id].layers
                 for pth in my_net.link_to_path[ll]
             ) + gp.quicksum(
                 q_var[req_id][N_map[pth[0]]][N_map[pth[1]]][pth[2], i] * reqs[req_id].vnf_in_rate(i)
@@ -290,6 +341,10 @@ def get_ilp(reqs, my_net, R, Rvol):
             for t in T_all
         ), name="bw"
     )
+
+    # t2 = process_time()
+    # print("bw done {}".format(t2 - t1))
+    # t1 = t2
 
     m.addConstrs(
         (
@@ -306,6 +361,10 @@ def get_ilp(reqs, my_net, R, Rvol):
         ), name="delay"
     )
 
+    # t2 = process_time()
+    # print("delay done {}".format(t2 - t1))
+    # t1 = t2
+
     m.setObjective(
         gp.quicksum(
             q_var[req_id][n1][n2][pth_id, i] * len(my_net.paths_links[N_map_inv[n1]][N_map_inv[n2]][pth_id]) * reqs[req_id].vnf_in_rate(i)
@@ -318,6 +377,10 @@ def get_ilp(reqs, my_net, R, Rvol):
             for pth_id in range(len(my_net.paths_links[N_map_inv[n1]][N_map_inv[n2]]))
         ), GRB.MINIMIZE
     )
+
+    # t2 = process_time()
+    # print("setObjective done {}".format(t2 - t1))
+    # t1 = t2
 
     return m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node
 

@@ -51,6 +51,11 @@ class Sfc:
         self.used_servers = set()
         self.T1 = range(self.arrival_time, self.tau1)
         self.T2 = range(self.tau1, self.tau2 + 1)
+        self.layers = dict()
+        for i in range(len(self.vnfs)):
+            for r in self.vnfs[i].layers:
+                if r not in self.layers:
+                    self.layers[r] = self.vnfs[i].layers[r]
 
     def vnf_in_rate(self, i):
         a = 1.0
