@@ -67,7 +67,7 @@ def test(solver, reqs):
 
 def optimal_test(inter_arrival):
     np.random.seed(1)
-    Const.SERVER_DISK = [20000, 30000]
+    Const.LINK_BW = [100, 1000]
     my_net = NetGenerator().get_g()
     req_nums = [6, 8, 10, 12]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
@@ -143,7 +143,7 @@ def optimal_test(inter_arrival):
 
 def scaling_test(inter_arrival):
     np.random.seed(1)
-    Const.LINK_BW = [800, 900]
+    Const.LINK_BW = [100, 1000]
     my_net = NetGenerator().get_g()
     req_nums = [50]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
@@ -221,7 +221,7 @@ def scaling_test(inter_arrival):
 
 def backtrack_test(inter_arrival):
     np.random.seed(1)
-    Const.SERVER_DISK = [20000, 30000]
+    Const.LINK_BW = [100, 1000]
     my_net = NetGenerator().get_g()
     req_nums = [50]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
@@ -300,7 +300,7 @@ def backtrack_test(inter_arrival):
 
 def share_percentage_test(inter_arrival):
     np.random.seed(1)
-    Const.SERVER_DISK = [20000, 30000]
+    Const.LINK_BW = [100, 1000]
     my_net = NetGenerator().get_g()
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
@@ -533,6 +533,7 @@ def layer_num_test(inter_arrival):
 
 def test_qlearning(inter_arrival):
     np.random.seed(1)
+    Const.LINK_BW = [100, 1000]
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
     STEP_DL_LAYER = "Rung Download (MB)"
