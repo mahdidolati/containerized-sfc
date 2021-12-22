@@ -238,10 +238,10 @@ def backtrack_test(inter_arrival):
     REVENUE = "Revenue"
     solvers = [
         FfSolver(),
-        GurobiSingleRelax(0, 1.0, "popularity_learn"),
+        # GurobiSingleRelax(0, 1.0, "popularity_learn"),
         GurobiSingleRelax(1, 1.0, "popularity_learn"),
-        GurobiSingleRelax(2, 1.0, "popularity_learn"),
-        GurobiSingleRelax(3, 1.0, "popularity_learn"),
+        GurobiSingleRelax(1, 0.8, "popularity_learn"),
+        # GurobiSingleRelax(3, 1.0, "popularity_learn"),
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
