@@ -11,3 +11,9 @@ class TestResult:
         self.chain_bw = 0
         self.revenue = 0
         self.avg_dl_per_acc = 0
+
+    def __str__(self):
+        return "Res: {}".format(str(self.res_groups, ))
+
+    def __repr__(self):
+        return self.__str__()
