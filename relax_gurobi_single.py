@@ -298,4 +298,4 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
         for ii in range(len(req.vnfs)):
             if ii in loc_of:
                 my_net.g.nodes[loc_of[ii]]["nd"].finalize_layer()
-        return True, sum(total_dl_vol.values()), m.objVal
+        return tr.SU, sum(total_dl_vol.values()), m.objVal
