@@ -105,10 +105,14 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                     for ld in downloads[ii]:
                         ld.cancel_download()
                 return tr.SF, 0, 0
-            elif i == 0 and first_bt > 0:
+            elif i == 0 and first_bt > 0 and do_scale:
                 print("Doing a backtack!")
                 do_scale = False
                 first_bt = first_bt - 1
+                continue
+            elif do_scale:
+                print("Doing a backtack!")
+                do_scale = False
                 continue
             elif gamma == Gamma:
                 print("Doing a backtack!")
@@ -146,6 +150,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                             del downloads[ii]
                 i = i_back
                 v_var[0][N_map[loc_of[i]], i].ub = 0.0
+                do_scale = True
                 continue
         do_scale = True
         # get best location
@@ -212,7 +217,26 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                 return tr.RF, None, 0
             elif i == 0 and first_bt > 0:
                 print("Doing a backtack!")
+                v_var[0][N_map[loc_of[i]], i].lb = 0.0
                 v_var[0][N_map[loc_of[i]], i].ub = 0.0
+                my_net.g.nodes[loc_of[i]]["nd"].unembed(req, i)
+                ## undo chaining
+                pvn = req.entry_point if i == 0 else loc_of[i - 1]
+                cdn = loc_of[i]
+                if pvn != cdn:
+                    q_var[0][N_map[pvn]][N_map[cdn]][routing_paths[i], i].lb = 0.0
+                    for ll in my_net.paths_links[pvn][cdn][routing_paths[i]]:
+                        l_obj = my_net.g[ll[0]][ll[1]]["li"]
+                        l_obj.unembed(req, i)
+                ## undo download
+                if i in dl_paths:
+                    for rr in dl_paths[i]:
+                        w_var[0][N_map[loc_of[i]]][N_map[cloud_node]][dl_paths[i][R_id[rr]], rr].lb = 0.0
+                    del dl_paths[i]
+                if i in downloads:
+                    for ld in downloads[i]:
+                        ld.cancel_download()
+                    del downloads[i]
                 first_bt = first_bt - 1
                 continue
             elif gamma == Gamma:
