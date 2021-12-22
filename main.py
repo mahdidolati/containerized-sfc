@@ -325,19 +325,19 @@ def share_percentage_test(inter_arrival):
     #
     iterations = 3
     arrival_rate = 1.0 / inter_arrival
-    n_share_ps = [1.0, 0.9]
-    share_percentages = []
-    for i in range(len(n_share_ps)):
+    layer_magnitude = [5, 10, 15, 20]
+    vnf_num = 10
+    for i in range(len(layer_magnitude)):
         np.random.seed(i * 100)
-        n_share_p = n_share_ps[i]
-        x = n_share_p
-        share_percentages.append(x)
 
-        sfc_gen = SfcGenerator(my_net, {1: 1.0}, n_share_p)
+        Const.VNF_NUM = vnf_num
+        Const.LAYER_NUM = vnf_num * layer_magnitude[i]
+
+        sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
         R_ids = [i for i in sfc_gen.layers]
         R_vols = [sfc_gen.layers[i] for i in R_ids]
 
-        run_name = "{:.2f}".format(x)
+        run_name = "{}".format(layer_magnitude[i])
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
@@ -368,22 +368,22 @@ def share_percentage_test(inter_arrival):
     fig_test_id = "{}_share".format(machine_id)
     inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
+    stat_collector.write_to_file(fig_2 + '.txt', layer_magnitude, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
 
     fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', share_percentages, 0, DOWNLOAD_LAYER, algs, 'Share Percentage', DOWNLOAD_LAYER)
+    stat_collector.write_to_file(fig_2 + '.txt', layer_magnitude, 0, DOWNLOAD_LAYER, algs, 'Share Percentage', DOWNLOAD_LAYER)
 
     fig_3 = './result/{}_time_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_3 + '.txt', share_percentages, 0, RUNTIME, algs, 'Share Percentage', RUNTIME)
+    stat_collector.write_to_file(fig_3 + '.txt', layer_magnitude, 0, RUNTIME, algs, 'Share Percentage', RUNTIME)
 
     fig_4 = './result/{}_chain_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_4 + '.txt', share_percentages, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
+    stat_collector.write_to_file(fig_4 + '.txt', layer_magnitude, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
 
     fig_5 = './result/{}_rev_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_5 + '.txt', share_percentages, 0, REVENUE, algs, 'Revenue', REVENUE)
+    stat_collector.write_to_file(fig_5 + '.txt', layer_magnitude, 0, REVENUE, algs, 'Revenue', REVENUE)
 
     fig_6 = './result/{}_dla_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_6 + '.txt', share_percentages, 0, DL_ACC, algs, 'Revenue', DL_ACC)
+    stat_collector.write_to_file(fig_6 + '.txt', layer_magnitude, 0, DL_ACC, algs, 'Revenue', DL_ACC)
 
 
 def popularity_test(inter_arrival):
