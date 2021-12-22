@@ -3,6 +3,7 @@ from opt_gurobi_single import solve_single
 from relax_gurobi_single import solve_single_relax
 from opt_ilp import solve_batch_opt
 from sfc import LayerDownload
+from test import TestResult
 
 
 class Solver:
@@ -70,10 +71,11 @@ class CloudSolver(Solver):
 
     def solve(self, chain_req, t, sr):
         c_s, c_b = self.cloud_embed(chain_req)
+        tr = TestResult()
         if c_s:
-            return True, 0, c_b
+            return tr.SU, 0, c_b
         else:
-            return False, 0, 0
+            return tr.SF, 0, 0
 
 
 class FfSolver(CloudSolver):
@@ -89,8 +91,9 @@ class FfSolver(CloudSolver):
 
     def solve(self, chain_req, t, sr):
         c_s, c_b = self.cloud_embed(chain_req)
+        tr = TestResult()
         if c_s:
-            return True, 0, c_b
+            return tr.SU, 0, c_b
 
         downloads = set()
         loc_of = dict()
@@ -114,12 +117,12 @@ class FfSolver(CloudSolver):
                 self.my_net.evict_sfc(chain_req)
                 for ld in downloads:
                     ld.cancel_download()
-                return False, 0, 0
+                return tr.SF, 0, 0
 
         for ii in loc_of:
             if loc_of[ii][0] == "e":
                 self.my_net.g.nodes[loc_of[ii]]["nd"].finalize_layer()
-        return True, dl_vol, chain_bw
+        return tr.SU, dl_vol, chain_bw
 
     def place(self, chain_req, i, cur, chain_delay):
         B = self.my_net.get_all_base_stations()

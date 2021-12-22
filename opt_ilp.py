@@ -39,6 +39,7 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
             # m.write("s_model.ilp")
             # return False, 1, 0
             print("rejected one!")
+            tr.res_groups[tr.SF] = tr.res_groups[tr.SF] + 1
         else:
             feasEid = E_id
             feasM = m
@@ -49,6 +50,7 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
             print(m.objVal)
             tr.avg_admit = 1.0 * (len(a_reqs)) / req_len
             tr.chain_bw = m.objVal
+            tr.res_groups[tr.SU] = tr.res_groups[tr.SU] + 1
 
     dl_layer = dict()
     for req_id in range(len(a_reqs)):

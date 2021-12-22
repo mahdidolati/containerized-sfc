@@ -6,9 +6,11 @@ from sfc import LayerDownload
 from opt_ilp import get_ilp
 import numpy as np
 from time import process_time
+from test import TestResult
 
 
 def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
+    tr = TestResult()
     # t1 = process_time()
     reqs = [req]
     m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(reqs, my_net, R, Rvol)
@@ -32,7 +34,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
     if m.status == GRB.INFEASIBLE:
         # m.computeIIS()
         # m.write("s_model.ilp")
-        return False, 0, 0
+        return tr.SF, 0, 0
     # else:
     #     print(m.objVal)
 
@@ -102,7 +104,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                 for ii in downloads:
                     for ld in downloads[ii]:
                         ld.cancel_download()
-                return False, 0, 0
+                return tr.SF, 0, 0
             elif i == 0 and first_bt > 0:
                 print("Doing a backtack!")
                 do_scale = False
@@ -207,7 +209,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                 for ii in downloads:
                     for ld in downloads[ii]:
                         ld.cancel_download()
-                return False, None, 0
+                return tr.RF, None, 0
             elif i == 0 and first_bt > 0:
                 print("Doing a backtack!")
                 v_var[0][N_map[loc_of[i]], i].ub = 0.0
@@ -290,7 +292,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
         for ii in downloads:
             for ld in downloads[ii]:
                 ld.cancel_download()
-        return False, 0, 0
+        return tr.SF, 0, 0
     else:
         print("one success!")
         for ii in range(len(req.vnfs)):

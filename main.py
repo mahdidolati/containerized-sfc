@@ -18,6 +18,7 @@ from test import TestResult
 
 def test(solver, reqs):
     solver.reset()
+    tr = TestResult()
     accepted = 0.0
     layer_dl_vol = 0.0
     chain_bw_total = 0.0
@@ -37,7 +38,8 @@ def test(solver, reqs):
             arrivals = arrivals + 1
             solver.pre_arrival_procedure(t)
             status, dl_vol, chain_bw = solver.solve(s, t, sampling_rate)
-            if status:
+            tr.res_groups[status] = tr.res_groups[status] + 1
+            if status == tr.SU:
                 solver.post_arrival_procedure(status, t, s)
                 layer_dl_vol = layer_dl_vol + dl_vol
                 chain_bw_total = chain_bw_total + chain_bw
@@ -55,7 +57,6 @@ def test(solver, reqs):
         # sleep(1)
     avg_rate = accepted / len(reqs)
     avg_dl = layer_dl_vol
-    tr = TestResult()
     tr.revenue = rev
     tr.avg_admit = avg_rate
     tr.avg_dl = avg_dl
