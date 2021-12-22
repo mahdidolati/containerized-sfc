@@ -144,6 +144,8 @@ def optimal_test(inter_arrival):
 
 def scaling_test(inter_arrival):
     np.random.seed(1)
+    Const.VNF_LAYER = [5, 12]
+    Const.LAYER_SIZE = [50, 350] 
     my_net = NetGenerator().get_g()
     req_nums = [50]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
