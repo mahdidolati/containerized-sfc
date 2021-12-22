@@ -273,7 +273,7 @@ def backtrack_test(inter_arrival):
                     tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
                     tr = test(solver, reqs)
-                    print("Solver: {} got {} out of {}".format(solver.get_name(), tr.avg_admit, req_num))
+                    print("Solver: {} got {}".format(solver.get_name(), tr))
                 t2 = process_time()
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, tr.avg_admit)
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
@@ -355,7 +355,7 @@ def share_percentage_test(inter_arrival):
                     tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
                     tr = test(solver, reqs)
-                    print("Solver: {} got {} out of {}".format(solver.get_name(), tr.avg_admit, req_num))
+                    print("Solver: {} got {}".format(solver.get_name(), tr))
                 t2 = process_time()
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, tr.avg_admit)
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
@@ -498,7 +498,8 @@ def layer_num_test(inter_arrival):
     DL_ACC = "DL_ACC"
     solvers = [
         FfSolver(),
-        GurobiSingleRelax(2, 0.97, "popularity_learn")
+        GurobiSingleRelax(2, 0.8, "popularity_learn"),
+        GurobiSingleRelax(2, 1.0, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -540,7 +541,7 @@ def layer_num_test(inter_arrival):
                     tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
                     tr = test(solver, reqs)
-                    print("Solver: {} got {} out of {}".format(solver.get_name(), tr.avg_admit, req_num))
+                    print("Solver: {} got {}".format(solver.get_name(), tr))
                 t2 = process_time()
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, tr.avg_admit)
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
