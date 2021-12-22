@@ -85,7 +85,7 @@ def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
                                 cc.setAttr(GRB.Attr.RHS, bw_scaler * cc.getAttr(GRB.Attr.RHS))
         # solve to obtain loc
         m.optimize()
-        if bw_scaler < 1.0:
+        if bw_scaler < 1.0 and do_scale:
             for ll, tt in link_time:
                 cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
                 cc = m.getConstrByName(cname)

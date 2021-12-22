@@ -68,7 +68,6 @@ def test(solver, reqs):
 
 def optimal_test(inter_arrival):
     np.random.seed(1)
-    Const.LINK_BW = [100, 1000]
     my_net = NetGenerator().get_g()
     req_nums = [6, 8, 10, 12]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
@@ -82,7 +81,7 @@ def optimal_test(inter_arrival):
     CHAIN_BW = "Chain (mbps)"
     REVENUE = "Revenue"
     solvers = [
-        GurobiSingleRelax(2, 0.9, "popularity_learn"),
+        GurobiSingleRelax(2, 0.95, "popularity_learn"),
         GurobiBatch()
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
@@ -144,7 +143,6 @@ def optimal_test(inter_arrival):
 
 def scaling_test(inter_arrival):
     np.random.seed(1)
-    Const.LINK_BW = [100, 1000]
     my_net = NetGenerator().get_g()
     req_nums = [50]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
@@ -223,7 +221,6 @@ def scaling_test(inter_arrival):
 
 def backtrack_test(inter_arrival):
     np.random.seed(1)
-    Const.LINK_BW = [100, 1000]
     my_net = NetGenerator().get_g()
     req_nums = [50]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
@@ -302,7 +299,6 @@ def backtrack_test(inter_arrival):
 
 def share_percentage_test(inter_arrival):
     np.random.seed(1)
-    Const.LINK_BW = [100, 1000]
     my_net = NetGenerator().get_g()
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
@@ -313,7 +309,7 @@ def share_percentage_test(inter_arrival):
     DL_ACC = "DL_ACC"
     solvers = [
         FfSolver(),
-        GurobiSingleRelax(2, 0.9, "popularity_learn")
+        GurobiSingleRelax(2, 0.97, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
