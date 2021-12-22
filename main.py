@@ -508,10 +508,13 @@ def layer_num_test(inter_arrival):
     #
     iterations = 3
     arrival_rate = 1.0 / inter_arrival
-    layer_num = [50, 100, 150, 200]
+    layer_num = [2, 6, 10, 14]
+    vnf_size = 420
     for i in range(len(layer_num)):
         np.random.seed(i * 100)
 
+        Const.VNF_LAYER = [layer_num[i], layer_num[i]+1]
+        Const.LAYER_SIZE = [vnf_size/layer_num[i], (vnf_size/layer_num[i])+1]
         sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
         R_ids = [i for i in sfc_gen.layers]
         R_vols = [sfc_gen.layers[i] for i in R_ids]
