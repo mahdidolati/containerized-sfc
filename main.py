@@ -486,33 +486,41 @@ def slack_time_test(inter_arrival):
 def layer_num_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
+    # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
+    RUNTIME = "Runtime (sec)"
+    CHAIN_BW = "Chain (mbps)"
+    REVENUE = "Revenue"
+    DL_ACC = "DL_ACC"
     solvers = [
-        FfSolver(my_net, 0)
+        FfSolver(),
+        GurobiSingleRelax(2, 0.97, "popularity_learn")
     ]
-    stats = {ACCEPT_RATIO: Stat.MEAN_MODE, DOWNLOAD_LAYER: Stat.MEAN_MODE}
+    stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
+             DOWNLOAD_LAYER: Stat.MEAN_MODE,
+             CHAIN_BW: Stat.MEAN_MODE,
+             RUNTIME: Stat.MEAN_MODE,
+             REVENUE: Stat.MEAN_MODE,
+             DL_ACC: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 5
+    iterations = 3
     arrival_rate = 1.0 / inter_arrival
-    layer_num = [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]
-    layer_sizes = [[600, 601], [300, 301], [200, 201], [150, 151], [120, 121]]
-    layer_num_avg = []
-    for l in layer_num:
-        layer_num_avg.append(int((l[1] - 1 + l[0]) / 2.0))
+    layer_num = [50, 100, 150, 200]
     for i in range(len(layer_num)):
         np.random.seed(i * 100)
-        Const.VNF_LAYER = layer_num[i]
-        Const.LAYER_SIZE = layer_sizes[i]
-        x = int((layer_num[i][1] - 1 + layer_num[i][0]) / 2.0)
-        sfc_gen = SfcGenerator(my_net)
-        run_name = "{}".format(x)
+
+        sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
+        R_ids = [i for i in sfc_gen.layers]
+        R_vols = [sfc_gen.layers[i] for i in R_ids]
+
+        run_name = "{}".format(layer_num[i])
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 350
+            req_num = 50
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -520,18 +528,41 @@ def layer_num_test(inter_arrival):
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
             for solver in solvers:
                 np.random.seed(itr * 1234)
-                res, dl_vol = test(solver, reqs)
-                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, res)
-                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, dl_vol)
+                solver.set_env(my_net, R_ids, R_vols)
+                t1 = process_time()
+                if solver.batch:
+                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                else:
+                    tr = test(solver, reqs)
+                    print("Solver: {} got {} out of {}".format(solver.get_name(), tr.avg_admit, req_num))
+                t2 = process_time()
+                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, tr.avg_admit)
+                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
+                stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2 - t1)
+                stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
+                stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
+                stat_collector.add_stat(solver.get_name(), DL_ACC, run_name, tr.avg_dl_per_acc)
 
     machine_id = "ut"
     fig_test_id = "{}_layer_num".format(machine_id)
     inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, ACCEPT_RATIO, algs, 'No. of Layers', ACCEPT_RATIO)
+    stat_collector.write_to_file(fig_2 + '.txt', layer_num, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
 
     fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', layer_num_avg, 0, DOWNLOAD_LAYER, algs, 'No. of Layers', DOWNLOAD_LAYER)
+    stat_collector.write_to_file(fig_2 + '.txt', layer_num, 0, DOWNLOAD_LAYER, algs, 'Share Percentage', DOWNLOAD_LAYER)
+
+    fig_3 = './result/{}_time_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_3 + '.txt', layer_num, 0, RUNTIME, algs, 'Share Percentage', RUNTIME)
+
+    fig_4 = './result/{}_chain_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_4 + '.txt', layer_num, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
+
+    fig_5 = './result/{}_rev_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_5 + '.txt', layer_num, 0, REVENUE, algs, 'Revenue', REVENUE)
+
+    fig_6 = './result/{}_dla_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector.write_to_file(fig_6 + '.txt', layer_num, 0, DL_ACC, algs, 'Revenue', DL_ACC)
 
 
 def test_qlearning(inter_arrival):
