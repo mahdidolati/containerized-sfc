@@ -161,6 +161,7 @@ def scaling_test(inter_arrival):
     solvers = [
         FfSolver(),
         GurobiSingleRelax(0, 1.0, "popularity_learn"),
+        GurobiSingleRelax(0, 0.9, "popularity_learn"),
         GurobiSingleRelax(0, 0.8, "popularity_learn"),
         GurobiSingleRelax(0, 0.7, "popularity_learn"),
         GurobiSingleRelax(0, 0.6, "popularity_learn"),
@@ -238,7 +239,7 @@ def scaling_test(inter_arrival):
 def backtrack_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [50]
+    req_nums = [10]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -251,10 +252,10 @@ def backtrack_test(inter_arrival):
     REVENUE = "Revenue"
     solvers = [
         FfSolver(),
-        # GurobiSingleRelax(0, 1.0, "popularity_learn"),
-        GurobiSingleRelax(1, 1.0, "popularity_learn"),
-        GurobiSingleRelax(1, 0.8, "popularity_learn"),
-        # GurobiSingleRelax(3, 1.0, "popularity_learn"),
+        GurobiSingleRelax(0, 1.0, "popularity_learn"),
+        # GurobiSingleRelax(1, 1.0, "popularity_learn"),
+        # GurobiSingleRelax(2, 1.0, "popularity_learn"),
+        GurobiSingleRelax(3, 1.0, "popularity_learn"),
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -268,7 +269,7 @@ def backtrack_test(inter_arrival):
     tr2 = TestResult()
     algs2 = [tr2.SU, tr2.SF, tr2.RF]
     stat_collector2 = StatCollector(algs2, stats2)
-    stat2_x = ["1.0", "0.8", "0.7", "0.6"]
+    stat2_x = ["0", "3"]
     #
     iterations = 3
     arrival_rate = 1.0 / inter_arrival
@@ -301,7 +302,7 @@ def backtrack_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
                 if solver.get_name()[0:2] == "Gr":
                     for rg in tr.res_groups:
-                        rgx = "{:.1f}".format(solver.bw_scaler)
+                        rgx = "{}".format(solver.Gamma)
                         stat_collector2.add_stat(rg, GROUP, rgx, tr.res_groups[rg])
 
     machine_id = "ut"
