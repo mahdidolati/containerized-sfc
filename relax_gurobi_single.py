@@ -128,7 +128,7 @@ class RelaxSingle:
                 del self.loc_of[i]
                 return True, i, first_bt-1, gamma, True
 
-        if i > 0 and self.Gamma > 1 and gamma == self.Gamma:
+        if i > 0 and self.Gamma > 0 and gamma == self.Gamma:
             gamma = max(gamma - self.Gamma - 1, gamma - i - 1)
             i_back = max(0, i - self.Gamma)
             if i == len(req.vnfs):

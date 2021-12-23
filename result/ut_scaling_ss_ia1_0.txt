@@ -1,0 +1,6 @@
+ys_err;[[[100], [100]], [[100], [100]], [[100], [100]]]
+x;[1.0]
+ys;[[2], [0], [3]]
+ls;['Success', 'S-Failure', 'R-Failure']
+xtitle;GROUP
+ytitle;GROUP
