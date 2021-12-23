@@ -269,7 +269,7 @@ def backtrack_test(inter_arrival):
     tr2 = TestResult()
     algs2 = [tr2.SU, tr2.SF, tr2.RF]
     stat_collector2 = StatCollector(algs2, stats2)
-    stat2_x = ["0", "3"]
+    stat2_x = [0, 3]
     #
     iterations = 1
     arrival_rate = 1.0 / inter_arrival
