@@ -263,6 +263,12 @@ def backtrack_test(inter_arrival):
              REVENUE: Stat.MEAN_MODE}
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
+    GROUP = "GROUP"
+    stats2 = {GROUP: Stat.SUM_MODE}
+    tr2 = TestResult()
+    algs2 = [tr2.SU, tr2.SF, tr2.RF]
+    stat_collector2 = StatCollector(algs2, stats2)
+    stat2_x = ["1.0", "0.8", "0.7", "0.6"]
     #
     iterations = 3
     arrival_rate = 1.0 / inter_arrival
@@ -293,6 +299,10 @@ def backtrack_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2 - t1)
                 stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
                 stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
+                if solver.get_name()[0:2] == "Gr":
+                    for rg in tr.res_groups:
+                        rgx = "{:.1f}".format(solver.bw_scaler)
+                        stat_collector2.add_stat(rg, GROUP, rgx, tr.res_groups[rg])
 
     machine_id = "ut"
     fig_test_id = "{}_backtrack".format(machine_id)
@@ -311,6 +321,9 @@ def backtrack_test(inter_arrival):
 
     fig_5 = './result/{}_rev_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_5 + '.txt', req_nums, 0, REVENUE, algs, 'Revenue', REVENUE)
+
+    fig_6 = './result/{}_ss_ia{}'.format(fig_test_id, inter_arrival)
+    stat_collector2.write_to_file(fig_6 + '.txt', stat2_x, 0, GROUP, algs2, 'GROUP', GROUP)
 
 
 def share_percentage_test(inter_arrival):
