@@ -1,6 +1,6 @@
 import heapq
 from opt_gurobi_single import solve_single
-from relax_gurobi_single import solve_single_relax
+from relax_gurobi_single import RelaxSingle
 from opt_ilp import solve_batch_opt
 from sfc import LayerDownload
 from test import TestResult
@@ -297,7 +297,8 @@ class GurobiSingleRelax(Solver):
         self.R_vols = R_vols
 
     def solve(self, chain_req, t, sr):
-        return solve_single_relax(self.my_net, self.R_ids, self.R_vols, chain_req, self.Gamma, self.bw_scaler)
+        rs = RelaxSingle(self.my_net, self.R_ids, self.R_vols, self.Gamma, self.bw_scaler)
+        return rs.solve_single_relax(chain_req)
 
     def post_arrival_procedure(self, status, t, chain_req):
         for m in self.my_net.g.nodes():
