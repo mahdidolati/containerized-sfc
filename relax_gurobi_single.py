@@ -177,7 +177,7 @@ class RelaxSingle:
                 if sum(pth_pr) < 1.0:
                     pth_pr = [pr / sum(pth_pr) for pr in pth_pr]
                 self.dl_paths[i][rr] = np.random.choice(a=pth_ids, p=pth_pr)
-                self.ilp_model.w_var[0][self.ilp_model.N_map[self.loc_of[i]]][self.ilp_model.N_map[self.ilp_model.cloud_node]][self.ilp_model.dl_paths[i][self.ilp_model.R_id[rr]], rr].lb = 1.0
+                self.ilp_model.w_var[0][self.ilp_model.N_map[self.loc_of[i]]][self.ilp_model.N_map[self.ilp_model.cloud_node]][self.dl_paths[i][self.ilp_model.R_id[rr]], rr].lb = 1.0
             else:
                 print("one failed, no candidate path!")
                 rounding_failed = True
@@ -190,14 +190,14 @@ class RelaxSingle:
         self.total_dl_vol[i] = 0
         if i in self.dl_paths:
             for rr in self.dl_paths[i]:
-                self.total_dl_vol[i] = self.total_dl_vol[i] + self.ilp_model.Rvol[rr]
+                self.total_dl_vol[i] = self.total_dl_vol[i] + self.Rvol[rr]
                 layer_download = LayerDownload()
                 self.downloads[i].add(layer_download)
                 pp = self.dl_paths[i][rr]
                 for tt in req.T1:
                     for ll in self.my_net.paths_links[self.loc_of[i]][self.ilp_model.cloud_node][pp]:
                         l_obj = self.my_net.g[ll[0]][ll[1]]["li"]
-                        layer_download.add_data(tt, l_obj, self.ilp_model.Rvol[rr] / len(req.T1))
+                        layer_download.add_data(tt, l_obj, self.Rvol[rr] / len(req.T1))
 
     def solve_single_relax(self, req):
         tr = TestResult()
@@ -224,7 +224,7 @@ class RelaxSingle:
         do_scale = True
         first_bt = self.Gamma
         gamma = self.Gamma
-        while i <= len(req.vnfs):
+        while i < len(req.vnfs):
             self.eliminate(req, i)
             link_time = dict()
             if self.bw_scaler < 1.0 and do_scale:
