@@ -208,9 +208,10 @@ def scaling_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2 - t1)
                 stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
                 stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
-                for rg in tr.res_groups:
-                    rgx = "{:.1f}".format(solver.bw_scaler)
-                    stat_collector2.add_stat(rg, GROUP, rgx, tr.res_groups[rg])
+                if solver.get_name()[0:2] == "Gr":
+                    for rg in tr.res_groups:
+                        rgx = "{:.1f}".format(solver.bw_scaler)
+                        stat_collector2.add_stat(rg, GROUP, rgx, tr.res_groups[rg])
 
     machine_id = "ut"
     fig_test_id = "{}_scaling".format(machine_id)
