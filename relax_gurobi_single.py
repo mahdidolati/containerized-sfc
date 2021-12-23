@@ -116,9 +116,9 @@ class RelaxSingle:
                 del self.downloads[i]
 
     def handle_backtrack(self, req, i, first_bt, gamma, scaled):
-        if i != len(req.vnfs) and scaled and self.bw_scaler < 1.0:
-            self.undo(req, i)
-            return True, i, first_bt, gamma, not scaled
+        # if i != len(req.vnfs) and scaled and self.bw_scaler < 1.0:
+        #     self.undo(req, i)
+        #     return True, i, first_bt, gamma, not scaled
 
         if i == 0 and first_bt > 0:
             if i in self.loc_of:
