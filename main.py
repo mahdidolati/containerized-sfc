@@ -239,7 +239,7 @@ def scaling_test(inter_arrival):
 def backtrack_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [5]
+    req_nums = [50]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -253,8 +253,8 @@ def backtrack_test(inter_arrival):
     solvers = [
         FfSolver(),
         GurobiSingleRelax(0, 1.0, "popularity_learn"),
-        # GurobiSingleRelax(1, 1.0, "popularity_learn"),
-        # GurobiSingleRelax(2, 1.0, "popularity_learn"),
+        GurobiSingleRelax(1, 1.0, "popularity_learn"),
+        GurobiSingleRelax(2, 1.0, "popularity_learn"),
         GurobiSingleRelax(3, 1.0, "popularity_learn"),
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
@@ -269,9 +269,9 @@ def backtrack_test(inter_arrival):
     tr2 = TestResult()
     algs2 = [tr2.SU, tr2.SF, tr2.RF]
     stat_collector2 = StatCollector(algs2, stats2)
-    stat2_x = [0, 3]
+    stat2_x = [0, 1, 2, 3]
     #
-    iterations = 1
+    iterations = 3
     arrival_rate = 1.0 / inter_arrival
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)
