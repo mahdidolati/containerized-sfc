@@ -239,7 +239,7 @@ def scaling_test(inter_arrival):
 def backtrack_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [10]
+    req_nums = [5]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -271,7 +271,7 @@ def backtrack_test(inter_arrival):
     stat_collector2 = StatCollector(algs2, stats2)
     stat2_x = ["0", "3"]
     #
-    iterations = 3
+    iterations = 1
     arrival_rate = 1.0 / inter_arrival
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)
@@ -302,7 +302,7 @@ def backtrack_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
                 if solver.get_name()[0:2] == "Gr":
                     for rg in tr.res_groups:
-                        rgx = "{}".format(solver.Gamma)
+                        rgx = "{:d}".format(solver.Gamma)
                         stat_collector2.add_stat(rg, GROUP, rgx, tr.res_groups[rg])
 
     machine_id = "ut"
