@@ -116,7 +116,7 @@ class RelaxSingle:
                 del self.downloads[i]
 
     def handle_backtrack(self, req, i, first_bt, gamma, scaled):
-        if i != len(req.vnfs) and scaled:
+        if i != len(req.vnfs) and scaled and self.bw_scaler < 1.0:
             self.undo(req, i)
             return True, i, first_bt, gamma, not scaled
 
@@ -128,7 +128,7 @@ class RelaxSingle:
                 del self.loc_of[i]
                 return True, i, first_bt-1, gamma, scaled
 
-        if i > 0 and gamma == self.Gamma:
+        if i > 0 and self.Gamma > 1 and gamma == self.Gamma:
             gamma = max(gamma - self.Gamma - 1, gamma - i - 1)
             i_back = max(0, i - self.Gamma)
             if i == len(req.vnfs):
