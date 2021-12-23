@@ -9,6 +9,22 @@ from math import isinf
 from time import process_time
 
 
+class IlpModel:
+    def __init__(self):
+        self.m = None
+        self.v_var = None
+        self.q_var = None
+        self.w_var = None
+        self.r_var = None
+        self.T_all = None
+        self.R_id = None
+        self.E_id = None
+        self.Ec_id = None
+        self.N_map = None
+        self.N_map_inv = None
+        self.cloud_node = None
+
+
 def get_T(reqs):
     t1 = np.infty
     t2 = 0
@@ -26,24 +42,23 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
     feasM = None
     feasV = None
     for req_id in range(req_len):
-        m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(a_reqs + [reqs[req_id]], my_net, R,
-                                                                                                    Rvol)
-        m.setParam("LogToConsole", False)
-        m.setParam("Threads", 6)
-        m.setParam("TIME_LIMIT", 100)
-        m.optimize()
+        ilp_model = get_ilp(a_reqs + [reqs[req_id]], my_net, R, Rvol)
+        ilp_model.m.setParam("LogToConsole", False)
+        ilp_model.m.setParam("Threads", 6)
+        ilp_model.m.setParam("TIME_LIMIT", 100)
+        ilp_model.m.optimize()
         # m.write("out.lp")
 
-        if m.status == GRB.INFEASIBLE or m.status == GRB.INF_OR_UNBD or m.getAttr("SolCount") <= 0:
+        if ilp_model.m.status == GRB.INFEASIBLE or ilp_model.m.status == GRB.INF_OR_UNBD or ilp_model.m.getAttr("SolCount") <= 0:
             # m.computeIIS()
             # m.write("s_model.ilp")
             # return False, 1, 0
             print("rejected one!")
             tr.res_groups[tr.SF] = tr.res_groups[tr.SF] + 1
         else:
-            feasEid = E_id
-            feasM = m
-            feasV = v_var
+            feasEid = ilp_model.E_id
+            feasM = ilp_model.m
+            feasV = ilp_model.v_var
             a_reqs.append(reqs[req_id])
             for vnf_id in range(len(reqs[req_id].vnfs) + 1):
                 tr.revenue = tr.revenue + reqs[req_id].vnf_in_rate(vnf_id)
@@ -386,8 +401,21 @@ def get_ilp(reqs, my_net, R, Rvol):
     # t2 = process_time()
     # print("setObjective done {}".format(t2 - t1))
     # t1 = t2
+    ilp_model = IlpModel()
+    ilp_model.m = m
+    ilp_model.v_var = v_var
+    ilp_model.q_var = q_var
+    ilp_model.w_var = w_var
+    ilp_model.r_var = r_var
+    ilp_model.T_all = T_all
+    ilp_model.R_id = R_id
+    ilp_model.E_id = E_id
+    ilp_model.Ec_id = Ec_id
+    ilp_model.N_map = N_map
+    ilp_model.N_map_inv = N_map_inv
+    ilp_model.cloud_node = cloud_node
 
-    return m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node
+    return ilp_model
 
     # m.setParam("LogToConsole", False)
     # m.setParam("Threads", 6)

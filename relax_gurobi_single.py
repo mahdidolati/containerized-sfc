@@ -9,317 +9,262 @@ from time import process_time
 from test import TestResult
 
 
-def solve_single_relax(my_net, R, Rvol, req, Gamma, bw_scaler):
-    tr = TestResult()
-    # t1 = process_time()
-    reqs = [req]
-    m, v_var, q_var, w_var, r_var, T_all, R_id, E_id, Ec_id, N_map, N_map_inv, cloud_node = get_ilp(reqs, my_net, R, Rvol)
-    # t2 = process_time()
+class RelaxSingle:
+    FAILED = "FAILED"
+    SOL_NO_SCALE = "SOL_NO_SCALE"
 
-    m.update()
-    for v in m.getVars():
-        v.setAttr('vtype', 'C')
-        v.lb = 0.0
-        v.ub = 1.0
-    # t3 = process_time()
+    def __init__(self, my_net, R, Rvol, Gamma, bw_scaler):
+        self.my_net = my_net
+        self.R = R
+        self.Rvol = Rvol
+        self.Gamma = Gamma
+        self.bw_scaler = bw_scaler
+        self.ilp_model = None
+        self.Lw, self.L_iii = self.my_net.get_link_sets()
+        self.tol_val = 1e-4
+        self.loc_of = dict()
+        self.routing_paths = dict()
+        self.dl_paths = dict()
+        self.total_dl_vol = dict()
+        self.downloads = dict()
+        self.v_eliminations = dict()
+        self.q_eliminations = dict()
 
-    m.setParam("LogToConsole", False)
-    m.setParam("Threads" , 6)
-    # m.setParam("TIME_LIMIT", 500)
-    m.optimize()
-    # m.write("out.lp")
-    # t4 = process_time()
-    # print("tt: {}, {}, {}".format(t2-t1, t3-t2, t4-t3))
-
-    if m.status == GRB.INFEASIBLE:
-        # m.computeIIS()
-        # m.write("s_model.ilp")
-        return tr.SF, 0, 0
-    # else:
-    #     print(m.objVal)
-
-    first_bt = Gamma
-    do_scale = True
-    Lw, L_iii = my_net.get_link_sets()
-    gamma = Gamma
-    tol_val = 1e-4
-    loc_of = dict()
-    routing_paths = dict()
-    dl_paths = dict()
-    total_dl_vol = dict()
-    downloads = dict()
-    v_eliminations = dict()
-    q_eliminations = dict()
-    i = 0
-    while i < len(req.vnfs):
-        v_eliminations[i] = set()
-        q_eliminations[i] = set()
+    def eliminate(self, req, i):
+        self.v_eliminations[i] = set()
+        self.q_eliminations[i] = set()
         # remove edge servers with insufficient resources
-        for e in E_id:
-            if my_net.g.nodes[N_map_inv[e]]["nd"].cpu_min_avail(req.T2) < req.cpu_req(i):
-                v_var[0][e, i].ub = 0
-                v_eliminations[i].add(e)
-            if my_net.g.nodes[N_map_inv[e]]["nd"].ram_min_avail(req.T2) < req.ram_req(i):
-                v_var[0][e, i].ub = 0
-                v_eliminations[i].add(e)
-            Rd_ei, d_ei = my_net.get_need_storage_layers(N_map_inv[e], req, i, req.tau1)
-            if my_net.g.nodes[N_map_inv[e]]["nd"].disk_min_avail_no_cache(req.T2) < d_ei:
-                v_var[0][e, i].ub = 0
-                v_eliminations[i].add(e)
+        for e in self.ilp_model.E_id:
+            if self.my_net.g.nodes[self.ilp_model.N_map_inv[e]]["nd"].cpu_min_avail(req.T2) < req.cpu_req(i):
+                self.ilp_model.v_var[0][e, i].ub = 0
+                self.v_eliminations[i].add(e)
+            if self.my_net.g.nodes[self.ilp_model.N_map_inv[e]]["nd"].ram_min_avail(req.T2) < req.ram_req(i):
+                self.ilp_model.v_var[0][e, i].ub = 0
+                self.v_eliminations[i].add(e)
+            Rd_ei, d_ei = self.my_net.get_need_storage_layers(self.ilp_model.N_map_inv[e], req, i, req.tau1)
+            if self.my_net.g.nodes[self.ilp_model.N_map_inv[e]]["nd"].disk_min_avail_no_cache(req.T2) < d_ei:
+                self.ilp_model.v_var[0][e, i].ub = 0
+                self.v_eliminations[i].add(e)
         # remove paths with insufficient bandwidth
-        pvn = req.entry_point if i == 0 else loc_of[i-1]
-        for cdn in my_net.paths_links[pvn]:
-            for pth_id in range(len(my_net.paths_links[pvn][cdn])):
-                if my_net.get_path_min_bw(pvn, cdn, pth_id, req.T2) < req.vnf_in_rate(i):
-                    q_var[0][N_map[pvn]][N_map[cdn]][pth_id, i].ub = 0
-                    q_eliminations[i].add((N_map[pvn], N_map[cdn], pth_id))
-        # scale links
+        pvn = req.entry_point if i == 0 else self.loc_of[i - 1]
+        for cdn in self.my_net.paths_links[pvn]:
+            for pth_id in range(len(self.my_net.paths_links[pvn][cdn])):
+                if self.my_net.get_path_min_bw(pvn, cdn, pth_id, req.T2) < req.vnf_in_rate(i):
+                    self.ilp_model.q_var[0][self.ilp_model.N_map[pvn]][self.ilp_model.N_map[cdn]][pth_id, i].ub = 0
+                    self.q_eliminations[i].add((self.ilp_model.N_map[pvn], self.ilp_model.N_map[cdn], pth_id))
+
+    def scale_links(self, req):
         link_time = dict()
-        if bw_scaler < 1.0 and do_scale:
-            for tt in req.T1:
-                for ll in Lw:
-                    if ll[0] != cloud_node or ll[1] != cloud_node:
-                        if ll[0][0] != 'b' and ll[1][0] != 'b':
-                            cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
-                            cc = m.getConstrByName(cname)
-                            if cc is not None:
-                                link_time[(ll, tt)] = cc.getAttr(GRB.Attr.RHS)
-                                cc.setAttr(GRB.Attr.RHS, bw_scaler * cc.getAttr(GRB.Attr.RHS))
-        # solve to obtain loc
-        m.optimize()
-        if bw_scaler < 1.0 and do_scale:
-            for ll, tt in link_time:
-                cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
-                cc = m.getConstrByName(cname)
-                cc.setAttr(GRB.Attr.RHS, link_time[(ll, tt)])
-        if m.status == GRB.INFEASIBLE:
-            # m.computeIIS()
-            # m.write("s_model.ilp")
-            if (i == 0 and first_bt == 0) or (gamma < Gamma) or (Gamma == 0):
-                print("one failed after elimination!")
-                for ii in range(len(req.vnfs)):
-                    if ii in loc_of:
-                        my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, ii)
-                my_net.evict_sfc(req)
-                for ii in downloads:
-                    for ld in downloads[ii]:
-                        ld.cancel_download()
-                return tr.SF, 0, 0
-            elif i == 0 and first_bt > 0 and do_scale:
-                print("Doing a backtack!")
-                do_scale = False
-                first_bt = first_bt - 1
-                continue
-            elif do_scale:
-                print("Doing a backtack!")
-                do_scale = False
-                continue
-            elif gamma == Gamma:
-                print("Doing a backtack!")
-                gamma = max(gamma-Gamma-1, gamma-i-1)
-                i_back = max(0, i-Gamma)
-                for ii in range(i_back, i+1):
-                    total_dl_vol[ii] = 0
-                    ##
-                    for ee in v_eliminations[ii]:
-                        v_var[0][ee, ii].ub = 1
-                        v_var[0][ee, ii].lb = 0
-                    for n1, n2, pp in q_eliminations[ii]:
-                        q_var[0][n1][n2][pp, ii].ub = 1
-                        q_var[0][n1][n2][pp, ii].lb = 0
-                    ## undo vnf placement
-                    if ii in loc_of:
-                        v_var[0][N_map[loc_of[ii]], ii].lb = 0.0
-                        my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, ii)
-                        ## undo chaining
-                        pvn = req.entry_point if ii == 0 else loc_of[ii - 1]
-                        cdn = loc_of[ii]
-                        if pvn != cdn:
-                            q_var[0][N_map[pvn]][N_map[cdn]][routing_paths[ii], ii].lb = 0.0
-                            for ll in my_net.paths_links[pvn][cdn][routing_paths[ii]]:
-                                l_obj = my_net.g[ll[0]][ll[1]]["li"]
-                                l_obj.unembed(req, ii)
-                        ## undo download
-                        if ii in dl_paths:
-                            for rr in dl_paths[ii]:
-                                w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
-                            del dl_paths[ii]
-                        if ii in downloads:
-                            for ld in downloads[ii]:
-                                ld.cancel_download()
-                            del downloads[ii]
-                i = i_back
-                v_var[0][N_map[loc_of[i]], i].ub = 0.0
-                do_scale = True
-                continue
-        do_scale = True
-        # get best location
+        for tt in req.T1:
+            for ll in self.Lw:
+                if ll[0] != self.ilp_model.cloud_node or ll[1] != self.ilp_model.cloud_node:
+                    if ll[0][0] != 'b' and ll[1][0] != 'b':
+                        cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
+                        cc = self.ilp_model.m.getConstrByName(cname)
+                        if cc is not None:
+                            link_time[(ll, tt)] = cc.getAttr(GRB.Attr.RHS)
+                            cc.setAttr(GRB.Attr.RHS, self.bw_scaler * cc.getAttr(GRB.Attr.RHS))
+        return link_time
+
+    def rescale_links(self, req, link_time):
+        for ll, tt in link_time:
+            cname = "bw[('{}', '{}'),{}]".format(ll[0], ll[1], tt)
+            cc = self.ilp_model.m.getConstrByName(cname)
+            cc.setAttr(GRB.Attr.RHS, link_time[(ll, tt)])
+
+    def cleanup(self, req):
+        for ii in range(len(req.vnfs)):
+            if ii in self.loc_of:
+                self.my_net.g.nodes[self.loc_of[ii]]["nd"].unembed(req, ii)
+        self.my_net.evict_sfc(req)
+        for ii in self.downloads:
+            for ld in self.downloads[ii]:
+                ld.cancel_download()
+
+    def undo(self, req, i):
+        self.total_dl_vol[i] = 0
+        for ee in self.v_eliminations[i]:
+            self.ilp_model.v_var[0][ee, i].ub = 1
+            self.ilp_model.v_var[0][ee, i].lb = 0
+        for n1, n2, pp in self.q_eliminations[i]:
+            self.ilp_model.q_var[0][n1][n2][pp, i].ub = 1
+            self.ilp_model.q_var[0][n1][n2][pp, i].lb = 0
+        ## undo vnf placement
+        if i in self.loc_of:
+            self.ilp_model.v_var[0][self.ilp_model.N_map[self.loc_of[i]], i].lb = 0.0
+            self.my_net.g.nodes[self.loc_of[i]]["nd"].unembed(req, i)
+            ## undo chaining
+            pvn = req.entry_point if i == 0 else self.loc_of[i - 1]
+            cdn = self.loc_of[i]
+            if pvn != cdn:
+                self.ilp_model.q_var[0][self.ilp_model.N_map[pvn]][self.ilp_model.N_map[cdn]][self.routing_paths[i], i].lb = 0.0
+                for ll in self.my_net.paths_links[pvn][cdn][self.routing_paths[i]]:
+                    l_obj = self.my_net.g[ll[0]][ll[1]]["li"]
+                    l_obj.unembed(req, i)
+            ## undo download
+            if i in self.dl_paths:
+                for rr in self.dl_paths[i]:
+                    self.ilp_model.w_var[0][self.ilp_model.N_map[self.loc_of[i]]][self.ilp_model.N_map[self.ilp_model.cloud_node]][self.dl_paths[i][self.ilp_model.R_id[rr]], rr].lb = 0.0
+                del self.dl_paths[i]
+            if i in self.downloads:
+                for ld in self.downloads[i]:
+                    ld.cancel_download()
+                del self.downloads[i]
+
+    def handle_backtrack(self, req, i, first_bt, gamma, scaled):
+        if scaled:
+            self.undo(req, i)
+            return True, i, first_bt, gamma, not scaled
+
+        if i == 0 and first_bt > 0:
+            if i in self.loc_of:
+                self.undo(req, i)
+                self.ilp_model.v_var[0][self.ilp_model.N_map[self.loc_of[i]], i].lb = 0.0
+                self.ilp_model.v_var[0][self.ilp_model.N_map[self.loc_of[i]], i].ub = 0.0
+                del self.loc_of[i]
+                return True, i, first_bt-1, gamma, scaled
+
+        if i > 0 and gamma == self.Gamma:
+            gamma = max(gamma - self.Gamma - 1, gamma - i - 1)
+            i_back = max(0, i - self.Gamma)
+            for j in range(i_back, i + 1):
+                self.undo(req, j)
+            self.ilp_model.v_var[0][self.ilp_model.N_map[self.loc_of[i_back]], i_back].lb = 0.0
+            self.ilp_model.v_var[0][self.ilp_model.N_map[self.loc_of[i_back]], i_back].ub = 0.0
+            for j in range(i_back, i + 1):
+                del self.loc_of[j]
+            return True, i_back, first_bt, gamma, scaled
+
+        self.cleanup(req)
+        return False, i, first_bt, gamma, scaled
+
+    def place(self, req, i):
         loc_pr = list()
-        for n in Ec_id:
-            loc_pr.append(v_var[0][n, i].x)
-        best_loc = Ec_id[loc_pr.index(max(loc_pr))]
-        v_var[0][best_loc, i].lb = 1.0
-        loc_of[i] = N_map_inv[best_loc]
-        my_net.g.nodes[loc_of[i]]["nd"].embed(req, i)
-        req.used_servers.add(loc_of[i])
-        # fix chain path
-        pvn = req.entry_point if i == 0 else loc_of[i - 1]
-        cdn = loc_of[i]
+        for n in self.ilp_model.Ec_id:
+            loc_pr.append(self.ilp_model.v_var[0][n, i].x)
+        best_loc = self.ilp_model.Ec_id[loc_pr.index(max(loc_pr))]
+        self.ilp_model.v_var[0][best_loc, i].lb = 1.0
+        self.loc_of[i] = self.ilp_model.N_map_inv[best_loc]
+        self.my_net.g.nodes[self.loc_of[i]]["nd"].embed(req, i)
+        req.used_servers.add(self.loc_of[i])
+
+    def chain(self, req, i):
+        pvn = req.entry_point if i == 0 else self.loc_of[i - 1]
+        cdn = self.loc_of[i]
         if pvn != cdn:
             path_vals = list()
-            for pth_id in range(len(my_net.paths_links[pvn][cdn])):
-                a = q_var[0][N_map[pvn]][N_map[cdn]][pth_id, i].x
+            for pth_id in range(len(self.my_net.paths_links[pvn][cdn])):
+                a = self.ilp_model.q_var[0][self.ilp_model.N_map[pvn]][self.ilp_model.N_map[cdn]][pth_id, i].x
                 path_vals.append(a)
-            routing_paths[i] = path_vals.index(max(path_vals))
-            for ll in my_net.paths_links[pvn][cdn][routing_paths[i]]:
-                l_obj = my_net.g[ll[0]][ll[1]]["li"]
+            self.routing_paths[i] = path_vals.index(max(path_vals))
+            for ll in self.my_net.paths_links[pvn][cdn][self.routing_paths[i]]:
+                l_obj = self.my_net.g[ll[0]][ll[1]]["li"]
                 l_obj.embed(req, i)
-            q_var[0][N_map[pvn]][N_map[cdn]][routing_paths[i], i].lb = 1.0
-        # determine download possibility
-        # solve to obtain layer download vals
-        # for cc in m.getConstrs():
-        #     if cc.ConstrName[0:2] == "bw":
-        #         print(cc.ConstrName)
+            self.ilp_model.q_var[0][self.ilp_model.N_map[pvn]][self.ilp_model.N_map[cdn]][self.routing_paths[i], i].lb = 1.0
+
+    def round_dl(self, req, i):
         rounding_failed = False
-        Rd_ei, _ = my_net.get_missing_layers(N_map_inv[best_loc], req, i, req.tau1)
+        Rd_ei, _ = self.my_net.get_missing_layers(self.loc_of[i], req, i, req.tau1)
         for rr in Rd_ei:
-            if i not in dl_paths:
-                dl_paths[i] = dict()
+            if i not in self.dl_paths:
+                self.dl_paths[i] = dict()
             pth_pr = []
-            pth_ids = range(len(my_net.paths_links[N_map_inv[best_loc]][cloud_node]))
+            pth_ids = range(len(self.my_net.paths_links[self.loc_of[i]][self.ilp_model.cloud_node]))
             for pth_id in pth_ids:
-                a = w_var[0][best_loc][N_map[cloud_node]][pth_id, rr].x
+                a = self.ilp_model.w_var[0][self.ilp_model.N_map[self.loc_of[i]]][self.ilp_model.N_map[self.ilp_model.cloud_node]][pth_id, rr].x
                 pth_pr.append(a)
             if sum(pth_pr) != 0.0:
                 if sum(pth_pr) < 1.0:
-                    pth_pr = [pr/sum(pth_pr) for pr in pth_pr]
-                dl_paths[i][rr] = np.random.choice(a=pth_ids, p=pth_pr)
-                w_var[0][best_loc][N_map[cloud_node]][dl_paths[i][R_id[rr]], rr].lb = 1.0
+                    pth_pr = [pr / sum(pth_pr) for pr in pth_pr]
+                self.dl_paths[i][rr] = np.random.choice(a=pth_ids, p=pth_pr)
+                self.ilp_model.w_var[0][self.ilp_model.N_map[self.loc_of[i]]][self.ilp_model.N_map[self.ilp_model.cloud_node]][self.ilp_model.dl_paths[i][self.ilp_model.R_id[rr]], rr].lb = 1.0
             else:
                 print("one failed, no candidate path!")
                 rounding_failed = True
                 break
-        if not rounding_failed:
-            m.optimize()
-        if rounding_failed or m.status == GRB.INFEASIBLE:
+        return rounding_failed
+
+    def do_download(self, req, i):
+        self.my_net.g.nodes[self.loc_of[i]]["nd"].add_layer(req.vnfs[i].layers, req)
+        self.downloads[i] = set()
+        self.total_dl_vol[i] = 0
+        if i in self.dl_paths:
+            for rr in self.dl_paths[i]:
+                self.total_dl_vol[i] = self.total_dl_vol[i] + self.ilp_model.Rvol[rr]
+                layer_download = LayerDownload()
+                self.downloads[i].add(layer_download)
+                pp = self.dl_paths[i][rr]
+                for tt in req.T1:
+                    for ll in self.my_net.paths_links[self.loc_of[i]][self.ilp_model.cloud_node][pp]:
+                        l_obj = self.my_net.g[ll[0]][ll[1]]["li"]
+                        layer_download.add_data(tt, l_obj, self.ilp_model.Rvol[rr] / len(req.T1))
+
+    def solve_single_relax(self, req):
+        tr = TestResult()
+        self.ilp_model = get_ilp([req], self.my_net, self.R, self.Rvol)
+
+        self.ilp_model.m.update()
+        for v in self.ilp_model.m.getVars():
+            v.setAttr('vtype', 'C')
+            v.lb = 0.0
+            v.ub = 1.0
+
+        self.ilp_model.m.setParam("LogToConsole", False)
+        self.ilp_model.m.setParam("Threads" , 6)
+        # m.setParam("TIME_LIMIT", 500)
+        self.ilp_model.m.optimize()
+        # m.write("out.lp")
+
+        if self.ilp_model.m.status == GRB.INFEASIBLE:
             # m.computeIIS()
             # m.write("s_model.ilp")
-            if (i == 0 and first_bt == 0) or (gamma < Gamma) or (Gamma == 0):
-                if not rounding_failed:
-                    print("one failed after rounding!")
-                for ii in range(len(req.vnfs)):
-                    if ii in loc_of:
-                        my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, ii)
-                my_net.evict_sfc(req)
-                for ii in downloads:
-                    for ld in downloads[ii]:
-                        ld.cancel_download()
-                return tr.RF, None, 0
-            elif i == 0 and first_bt > 0:
-                print("Doing a backtack!")
-                v_var[0][N_map[loc_of[i]], i].lb = 0.0
-                v_var[0][N_map[loc_of[i]], i].ub = 0.0
-                my_net.g.nodes[loc_of[i]]["nd"].unembed(req, i)
-                ## undo chaining
-                pvn = req.entry_point if i == 0 else loc_of[i - 1]
-                cdn = loc_of[i]
-                if pvn != cdn:
-                    q_var[0][N_map[pvn]][N_map[cdn]][routing_paths[i], i].lb = 0.0
-                    for ll in my_net.paths_links[pvn][cdn][routing_paths[i]]:
-                        l_obj = my_net.g[ll[0]][ll[1]]["li"]
-                        l_obj.unembed(req, i)
-                ## undo download
-                if i in dl_paths:
-                    for rr in dl_paths[i]:
-                        w_var[0][N_map[loc_of[i]]][N_map[cloud_node]][dl_paths[i][R_id[rr]], rr].lb = 0.0
-                    del dl_paths[i]
-                if i in downloads:
-                    for ld in downloads[i]:
-                        ld.cancel_download()
-                    del downloads[i]
-                first_bt = first_bt - 1
-                continue
-            elif gamma == Gamma:
-                print("Doing a backtack!")
-                gamma = max(gamma - Gamma - 1, gamma - i - 1)
-                i_back = max(0, i - Gamma)
-                for ii in range(i_back, i + 1):
-                    total_dl_vol[ii] = 0
-                    ##
-                    for ee in v_eliminations[ii]:
-                        v_var[0][ee, ii].ub = 1
-                        v_var[0][ee, ii].lb = 0
-                    for n1, n2, pp in q_eliminations[ii]:
-                        q_var[0][n1][n2][pp, ii].ub = 1
-                        q_var[0][n1][n2][pp, ii].lb = 0
-                    ## undo vnf placement
-                    if ii in loc_of:
-                        v_var[0][N_map[loc_of[ii]], ii].lb = 0.0
-                        my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, ii)
-                        ## undo chaining
-                        pvn = req.entry_point if ii == 0 else loc_of[ii - 1]
-                        cdn = loc_of[ii]
-                        if pvn != cdn:
-                            q_var[0][N_map[pvn]][N_map[cdn]][routing_paths[ii], ii].lb = 0.0
-                            for ll in my_net.paths_links[pvn][cdn][routing_paths[ii]]:
-                                l_obj = my_net.g[ll[0]][ll[1]]["li"]
-                                l_obj.unembed(req, ii)
-                        ## undo download
-                        if ii in dl_paths:
-                            for rr in dl_paths[ii]:
-                                w_var[0][N_map[loc_of[ii]]][N_map[cloud_node]][dl_paths[ii][R_id[rr]], rr].lb = 0.0
-                            del dl_paths[ii]
-                        if ii in downloads:
-                            for ld in downloads[ii]:
-                                ld.cancel_download()
-                            del downloads[ii]
-                i = i_back
-                v_var[0][N_map[loc_of[i]], i].ub = 0.0
-                continue
-        ##
-        my_net.g.nodes[loc_of[i]]["nd"].add_layer(req.vnfs[i].layers, req)
-        downloads[i] = set()
-        total_dl_vol[i] = 0
-        if i in dl_paths:
-            for rr in dl_paths[i]:
-                total_dl_vol[i] = total_dl_vol[i] + Rvol[rr]
-                layer_download = LayerDownload()
-                downloads[i].add(layer_download)
-                pp = dl_paths[i][rr]
-                for tt in req.T1:
-                    for ll in my_net.paths_links[loc_of[i]][cloud_node][pp]:
-                        l_obj = my_net.g[ll[0]][ll[1]]["li"]
-                        layer_download.add_data(tt, l_obj, Rvol[rr] / len(req.T1))
-        # go to next vnf
-        i = i + 1
-        gamma = min(Gamma, gamma+1)
+            return tr.SF, 0, 0
 
-    path_vals = list()
-    pvn = loc_of[len(req.vnfs)-1]
-    cdn = req.entry_point
-    for pth_id in range(len(my_net.paths_links[pvn][cdn])):
-        a = q_var[0][N_map[pvn]][N_map[cdn]][pth_id, i].x
-        path_vals.append(a)
-    routing_paths[i] = path_vals.index(max(path_vals))
-    for ll in my_net.paths_links[pvn][cdn][routing_paths[i]]:
-        l_obj = my_net.g[ll[0]][ll[1]]["li"]
-        l_obj.embed(req, i)
-    q_var[0][N_map[pvn]][N_map[cdn]][routing_paths[i], i].lb = 1.0
+        i = 0
+        do_scale = True
+        first_bt = self.Gamma
+        gamma = self.Gamma
+        while i <= len(req.vnfs):
+            self.eliminate(req, i)
+            link_time = dict()
+            if self.bw_scaler < 1.0 and do_scale:
+                link_time = self.scale_links(req)
+            self.ilp_model.m.optimize()
+            if self.bw_scaler < 1.0 and do_scale:
+                self.rescale_links(req, link_time)
+            if self.ilp_model.m.status == GRB.INFEASIBLE:
+                st, i, first_bt, gamma, do_scale = self.handle_backtrack(req, i, first_bt, gamma, do_scale)
+                if not st:
+                    return tr.SF
+                else:
+                    continue
+            do_scale = True
+            self.place(req, i)
+            self.chain(req, i)
+            rounding_failed = self.round_dl(req, i)
+            if not rounding_failed:
+                self.ilp_model.m.optimize()
+            if rounding_failed or self.ilp_model.m.status == GRB.INFEASIBLE:
+                st, i, first_bt, gamma, do_scale = self.handle_backtrack(req, i, first_bt, gamma, do_scale)
+                if not st:
+                    return tr.RF
+                else:
+                    continue
+            self.do_download(req, i)
+            i = i + 1
+            gamma = min(self.Gamma, gamma+1)
 
-    m.optimize()
-    if m.status == GRB.INFEASIBLE:
-        print("one failed at last!")
-        for ii in range(len(req.vnfs)):
-            if ii in loc_of:
-                my_net.g.nodes[loc_of[ii]]["nd"].unembed(req, ii)
-        my_net.evict_sfc(req)
-        for ii in downloads:
-            for ld in downloads[ii]:
-                ld.cancel_download()
-        return tr.SF, 0, 0
-    else:
-        print("one success!")
-        for ii in range(len(req.vnfs)):
-            if ii in loc_of:
-                my_net.g.nodes[loc_of[ii]]["nd"].finalize_layer()
-        return tr.SU, sum(total_dl_vol.values()), m.objVal
+        self.loc_of[len(req.vnfs)] = req.entry_point
+        self.chain(req, len(req.vnfs))
+
+        self.ilp_model.m.optimize()
+        if self.ilp_model.m.status == GRB.INFEASIBLE:
+            print("failed at last!")
+            self.cleanup(req)
+            return tr.SF, 0, 0
+        else:
+            print("one success!")
+            for ii in range(len(req.vnfs)):
+                if ii in self.loc_of:
+                    self.my_net.g.nodes[self.loc_of[ii]]["nd"].finalize_layer()
+            return tr.SU, sum(self.total_dl_vol.values()), self.ilp_model.m.objVal
