@@ -313,7 +313,7 @@ def backtrack_test(inter_arrival):
     stat_collector.write_to_file(fig_5 + '.txt', req_nums, 0, REVENUE, algs, 'Revenue', REVENUE)
 
     fig_6 = './result/{}_ss_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector2.write_to_file(fig_6 + '.txt', stat2_x, 0, GROUP, algs2, 'GROUP', GROUP)
+    stat_collector2.write_to_file(fig_6 + '.txt', backtrack_vals, 0, GROUP, algs2, 'GROUP', GROUP)
 
 
 def share_percentage_test(inter_arrival):
