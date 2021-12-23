@@ -126,7 +126,7 @@ class RelaxSingle:
                 self.ilp_model.v_var[0][self.ilp_model.N_map[self.loc_of[i]], i].lb = 0.0
                 self.ilp_model.v_var[0][self.ilp_model.N_map[self.loc_of[i]], i].ub = 0.0
                 del self.loc_of[i]
-                return True, i, first_bt-1, gamma, scaled
+                return True, i, first_bt-1, gamma, True
 
         if i > 0 and self.Gamma > 1 and gamma == self.Gamma:
             gamma = max(gamma - self.Gamma - 1, gamma - i - 1)
@@ -141,7 +141,7 @@ class RelaxSingle:
             for j in range(i_back, i + 1):
                 if j in self.loc_of:
                     del self.loc_of[j]
-            return True, i_back, first_bt, gamma, scaled
+            return True, i_back, first_bt, gamma, True
 
         self.cleanup(req)
         return False, i, first_bt, gamma, scaled
