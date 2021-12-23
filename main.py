@@ -82,8 +82,8 @@ def optimal_test(inter_arrival):
     CHAIN_BW = "Chain (mbps)"
     REVENUE = "Revenue"
     solvers = [
-        GurobiSingleRelax(2, 0.8, "popularity_learn")
-        # GurobiBatch()
+        GurobiSingleRelax(2, 0.8, "popularity_learn"),
+        GurobiBatch()
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
