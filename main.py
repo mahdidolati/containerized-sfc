@@ -145,7 +145,7 @@ def optimal_test(inter_arrival):
 def scaling_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [5]
+    req_nums = [50]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -156,7 +156,7 @@ def scaling_test(inter_arrival):
     RUNTIME = "Runtime (sec)"
     CHAIN_BW = "Chain (mbps)"
     REVENUE = "Revenue"
-    scaling_factors = [1.0]
+    scaling_factors = [1.0, 0.9, 0.8, 0.7]
     solvers = [ FfSolver() ]
     for sf in scaling_factors:
         solvers.append(GurobiSingleRelax(0, sf, "popularity_learn"))
@@ -173,7 +173,7 @@ def scaling_test(inter_arrival):
     algs2 = [tr2.SU, tr2.SF, tr2.RF]
     stat_collector2 = StatCollector(algs2, stats2)
     #
-    iterations = 1
+    iterations = 3
     arrival_rate = 1.0 / inter_arrival
     for req_num in req_nums:
         run_name = "{:d}".format(req_num)
