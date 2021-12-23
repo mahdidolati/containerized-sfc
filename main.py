@@ -498,8 +498,7 @@ def layer_num_test(inter_arrival):
     DL_ACC = "DL_ACC"
     solvers = [
         FfSolver(),
-        GurobiSingleRelax(2, 0.8, "popularity_learn"),
-        GurobiSingleRelax(2, 1.0, "popularity_learn")
+        GurobiSingleRelax(2, 0.8, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
