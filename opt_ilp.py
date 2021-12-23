@@ -62,9 +62,9 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
             a_reqs.append(reqs[req_id])
             for vnf_id in range(len(reqs[req_id].vnfs) + 1):
                 tr.revenue = tr.revenue + reqs[req_id].vnf_in_rate(vnf_id)
-            print(m.objVal)
+            print(ilp_model.m.objVal)
             tr.avg_admit = 1.0 * (len(a_reqs)) / req_len
-            tr.chain_bw = m.objVal
+            tr.chain_bw = ilp_model.m.objVal
             tr.res_groups[tr.SU] = tr.res_groups[tr.SU] + 1
 
     dl_layer = dict()

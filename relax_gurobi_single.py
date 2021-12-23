@@ -81,6 +81,16 @@ class RelaxSingle:
             for ld in self.downloads[ii]:
                 ld.cancel_download()
 
+    def undo_chaining(self, req, i):
+        pvn = req.entry_point if i == 0 else self.loc_of[i - 1]
+        cdn = self.loc_of[i]
+        if pvn != cdn:
+            self.ilp_model.q_var[0][self.ilp_model.N_map[pvn]][self.ilp_model.N_map[cdn]][
+                self.routing_paths[i], i].lb = 0.0
+            for ll in self.my_net.paths_links[pvn][cdn][self.routing_paths[i]]:
+                l_obj = self.my_net.g[ll[0]][ll[1]]["li"]
+                l_obj.unembed(req, i)
+
     def undo(self, req, i):
         self.total_dl_vol[i] = 0
         for ee in self.v_eliminations[i]:
@@ -94,13 +104,7 @@ class RelaxSingle:
             self.ilp_model.v_var[0][self.ilp_model.N_map[self.loc_of[i]], i].lb = 0.0
             self.my_net.g.nodes[self.loc_of[i]]["nd"].unembed(req, i)
             ## undo chaining
-            pvn = req.entry_point if i == 0 else self.loc_of[i - 1]
-            cdn = self.loc_of[i]
-            if pvn != cdn:
-                self.ilp_model.q_var[0][self.ilp_model.N_map[pvn]][self.ilp_model.N_map[cdn]][self.routing_paths[i], i].lb = 0.0
-                for ll in self.my_net.paths_links[pvn][cdn][self.routing_paths[i]]:
-                    l_obj = self.my_net.g[ll[0]][ll[1]]["li"]
-                    l_obj.unembed(req, i)
+            self.undo_chaining(req, i)
             ## undo download
             if i in self.dl_paths:
                 for rr in self.dl_paths[i]:
@@ -112,7 +116,7 @@ class RelaxSingle:
                 del self.downloads[i]
 
     def handle_backtrack(self, req, i, first_bt, gamma, scaled):
-        if scaled:
+        if i != len(req.vnfs) and scaled:
             self.undo(req, i)
             return True, i, first_bt, gamma, not scaled
 
@@ -127,6 +131,9 @@ class RelaxSingle:
         if i > 0 and gamma == self.Gamma:
             gamma = max(gamma - self.Gamma - 1, gamma - i - 1)
             i_back = max(0, i - self.Gamma)
+            if i == len(req.vnfs):
+                self.undo_chaining(req, i)
+                i = i - 1
             for j in range(i_back, i + 1):
                 self.undo(req, j)
             self.ilp_model.v_var[0][self.ilp_model.N_map[self.loc_of[i_back]], i_back].lb = 0.0
@@ -224,47 +231,52 @@ class RelaxSingle:
         do_scale = True
         first_bt = self.Gamma
         gamma = self.Gamma
-        while i < len(req.vnfs):
-            self.eliminate(req, i)
-            link_time = dict()
-            if self.bw_scaler < 1.0 and do_scale:
-                link_time = self.scale_links(req)
-            self.ilp_model.m.optimize()
-            if self.bw_scaler < 1.0 and do_scale:
-                self.rescale_links(req, link_time)
-            if self.ilp_model.m.status == GRB.INFEASIBLE:
-                st, i, first_bt, gamma, do_scale = self.handle_backtrack(req, i, first_bt, gamma, do_scale)
-                if not st:
-                    return tr.SF
-                else:
-                    continue
-            do_scale = True
-            self.place(req, i)
-            self.chain(req, i)
-            rounding_failed = self.round_dl(req, i)
-            if not rounding_failed:
+        self.loc_of[len(req.vnfs)] = req.entry_point
+        while i <= len(req.vnfs):
+            if i < len(req.vnfs):
+                self.eliminate(req, i)
+                link_time = dict()
+                if self.bw_scaler < 1.0 and do_scale:
+                    link_time = self.scale_links(req)
                 self.ilp_model.m.optimize()
-            if rounding_failed or self.ilp_model.m.status == GRB.INFEASIBLE:
-                st, i, first_bt, gamma, do_scale = self.handle_backtrack(req, i, first_bt, gamma, do_scale)
-                if not st:
-                    return tr.RF
-                else:
-                    continue
-            self.do_download(req, i)
+                if self.bw_scaler < 1.0 and do_scale:
+                    self.rescale_links(req, link_time)
+                if self.ilp_model.m.status == GRB.INFEASIBLE:
+                    st, i, first_bt, gamma, do_scale = self.handle_backtrack(req, i, first_bt, gamma, do_scale)
+                    if not st:
+                        print("failed SF!")
+                        return tr.SF, 0, 0
+                    else:
+                        continue
+                self.place(req, i)
+                self.chain(req, i)
+                rounding_failed = self.round_dl(req, i)
+                if not rounding_failed:
+                    self.ilp_model.m.optimize()
+                if rounding_failed or self.ilp_model.m.status == GRB.INFEASIBLE:
+                    st, i, first_bt, gamma, do_scale = self.handle_backtrack(req, i, first_bt, gamma, do_scale)
+                    if not st:
+                        print("failed RF!")
+                        return tr.RF, 0, 0
+                    else:
+                        continue
+                self.do_download(req, i)
+            else:
+                self.chain(req, len(req.vnfs))
+                self.ilp_model.m.optimize()
+                if self.ilp_model.m.status == GRB.INFEASIBLE:
+                    st, i, first_bt, gamma, do_scale = self.handle_backtrack(req, i, first_bt, gamma, do_scale)
+                    if not st:
+                        print("failed at last!")
+                        return tr.SF, 0, 0
+                    else:
+                        continue
+            do_scale = True
             i = i + 1
             gamma = min(self.Gamma, gamma+1)
 
-        self.loc_of[len(req.vnfs)] = req.entry_point
-        self.chain(req, len(req.vnfs))
-
-        self.ilp_model.m.optimize()
-        if self.ilp_model.m.status == GRB.INFEASIBLE:
-            print("failed at last!")
-            self.cleanup(req)
-            return tr.SF, 0, 0
-        else:
-            print("one success!")
-            for ii in range(len(req.vnfs)):
-                if ii in self.loc_of:
-                    self.my_net.g.nodes[self.loc_of[ii]]["nd"].finalize_layer()
-            return tr.SU, sum(self.total_dl_vol.values()), self.ilp_model.m.objVal
+        print("success!")
+        for ii in range(len(req.vnfs)):
+            if ii in self.loc_of:
+                self.my_net.g.nodes[self.loc_of[ii]]["nd"].finalize_layer()
+        return tr.SU, sum(self.total_dl_vol.values()), self.ilp_model.m.objVal
