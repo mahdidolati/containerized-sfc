@@ -139,7 +139,8 @@ class RelaxSingle:
             self.ilp_model.v_var[0][self.ilp_model.N_map[self.loc_of[i_back]], i_back].lb = 0.0
             self.ilp_model.v_var[0][self.ilp_model.N_map[self.loc_of[i_back]], i_back].ub = 0.0
             for j in range(i_back, i + 1):
-                del self.loc_of[j]
+                if j in self.loc_of:
+                    del self.loc_of[j]
             return True, i_back, first_bt, gamma, scaled
 
         self.cleanup(req)
