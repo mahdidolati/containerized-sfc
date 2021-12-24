@@ -145,7 +145,7 @@ def optimal_test(inter_arrival):
 def scaling_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_num = 5
+    req_num = 50
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -170,7 +170,7 @@ def scaling_test(inter_arrival):
     algs2 = [tr2.SU, tr2.SF, tr2.RF]
     stat_collector2 = StatCollector(algs2, stats2)
     #
-    iterations = 1
+    iterations = 3
     arrival_rate = 1.0 / inter_arrival
     for sf in scaling_factors:
         np.random.seed(1)
