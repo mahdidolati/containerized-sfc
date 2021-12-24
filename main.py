@@ -145,7 +145,7 @@ def optimal_test(inter_arrival):
 def scaling_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [50]
+    req_num = 5
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -157,15 +157,12 @@ def scaling_test(inter_arrival):
     CHAIN_BW = "Chain (mbps)"
     REVENUE = "Revenue"
     scaling_factors = [1.0, 0.9, 0.8, 0.7]
-    solvers = [ FfSolver() ]
-    for sf in scaling_factors:
-        solvers.append(GurobiSingleRelax(0, sf, "popularity_learn"))
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
              CHAIN_BW: Stat.MEAN_MODE,
              RUNTIME: Stat.MEAN_MODE,
              REVENUE: Stat.MEAN_MODE}
-    algs = [s.get_name() for s in solvers]
+    algs = list()
     stat_collector = StatCollector(algs, stats)
     GROUP = "GROUP"
     stats2 = {GROUP: Stat.SUM_MODE}
@@ -173,57 +170,58 @@ def scaling_test(inter_arrival):
     algs2 = [tr2.SU, tr2.SF, tr2.RF]
     stat_collector2 = StatCollector(algs2, stats2)
     #
-    iterations = 3
+    iterations = 1
     arrival_rate = 1.0 / inter_arrival
-    for req_num in req_nums:
-        run_name = "{:d}".format(req_num)
+    for sf in scaling_factors:
+        np.random.seed(1)
+        solver = GurobiSingleRelax(0, sf, "popularity_learn")
+        if solver.get_name() not in algs:
+            algs.append(solver.get_name())
+        run_name = "{:.1f}".format(sf)
         print("run-name:", run_name)
         for itr in range(iterations):
+            np.random.seed(itr * 4321)
             reqs = []
             t = 0
-            np.random.seed(itr * 4321)
             for _ in range(req_num):
                 reqs.append(sfc_gen.get_chain(t))
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
                 print(reqs[-1])
             #
-            for solver in solvers:
-                np.random.seed(itr * 1234)
-                solver.set_env(my_net, R_ids, R_vols)
-                t1 = process_time()
-                if solver.batch:
-                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
-                else:
-                    tr = test(solver, reqs)
-                    print("Solver: {} got {}".format(solver.get_name(), tr))
-                t2 = process_time()
-                stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, tr.avg_admit)
-                stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
-                stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2 - t1)
-                stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
-                stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
-                if solver.get_name()[0:2] == "Gr":
-                    for rg in tr.res_groups:
-                        rgx = "{:.1f}".format(solver.bw_scaler)
-                        stat_collector2.add_stat(rg, GROUP, rgx, tr.res_groups[rg])
+            solver.set_env(my_net, R_ids, R_vols)
+            t1 = process_time()
+            if solver.batch:
+                tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+            else:
+                tr = test(solver, reqs)
+                print("Solver: {} got {}".format(solver.get_name(), tr))
+            t2 = process_time()
+            stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, tr.avg_admit)
+            stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
+            stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2 - t1)
+            stat_collector.add_stat(solver.get_name(), CHAIN_BW, run_name, tr.chain_bw)
+            stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
+            for rg in tr.res_groups:
+                rgx = "{:.1f}".format(solver.bw_scaler)
+                stat_collector2.add_stat(rg, GROUP, rgx, tr.res_groups[rg])
 
     machine_id = "ut"
     fig_test_id = "{}_scaling".format(machine_id)
     inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
+    stat_collector.write_to_file(fig_2 + '.txt', scaling_factors, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
 
     fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, DOWNLOAD_LAYER, algs, 'Share Percentage', DOWNLOAD_LAYER)
+    stat_collector.write_to_file(fig_2 + '.txt', scaling_factors, 0, DOWNLOAD_LAYER, algs, 'Share Percentage', DOWNLOAD_LAYER)
 
     fig_3 = './result/{}_time_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_3 + '.txt', req_nums, 0, RUNTIME, algs, 'Share Percentage', RUNTIME)
+    stat_collector.write_to_file(fig_3 + '.txt', scaling_factors, 0, RUNTIME, algs, 'Share Percentage', RUNTIME)
 
     fig_4 = './result/{}_chain_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_4 + '.txt', req_nums, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
+    stat_collector.write_to_file(fig_4 + '.txt', scaling_factors, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
 
     fig_5 = './result/{}_rev_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_5 + '.txt', req_nums, 0, REVENUE, algs, 'Revenue', REVENUE)
+    stat_collector.write_to_file(fig_5 + '.txt', scaling_factors, 0, REVENUE, algs, 'Revenue', REVENUE)
 
     fig_6 = './result/{}_ss_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector2.write_to_file(fig_6 + '.txt', scaling_factors, 0, GROUP, algs2, 'GROUP', GROUP)
