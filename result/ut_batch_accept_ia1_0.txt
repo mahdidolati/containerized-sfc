@@ -1,0 +1,6 @@
+ys_err;[[[100], [100]], [[100], [100]]]
+x;[6]
+ys;[[0.8333333333333334], [1.0]]
+ls;['SCCO', 'B']
+xtitle;Share Percentage
+ytitle;Accept Ratio

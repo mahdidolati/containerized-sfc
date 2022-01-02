@@ -288,7 +288,7 @@ class GurobiSingleRelax(Solver):
         self.bw_scaler = bs
 
     def get_name(self):
-        return "SCCO"
+        return "RCCO"
 
     def set_env(self, my_net, R_ids, R_vols):
         self.my_net = my_net
