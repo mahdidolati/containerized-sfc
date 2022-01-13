@@ -71,7 +71,7 @@ def test(solver, reqs):
 def batch_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [6, 8, 10, 12]
+    req_nums = [6, 8, 10, 12, 14]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
@@ -147,7 +147,7 @@ def batch_test(inter_arrival):
 def optimal_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [6, 8, 10, 12]
+    req_nums = [6, 8, 10, 12, 14]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
     R_ids = [i for i in sfc_gen.layers]
