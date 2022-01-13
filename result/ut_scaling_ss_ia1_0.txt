@@ -2,5 +2,5 @@ ys_err;[[[4.666666666666664, 4.0, 0.3333333333333357, 1.3333333333333357], [7.91
 x;[1.0, 0.9, 0.8, 0.7]
 ys;[[98, 102, 118, 109], [0, 3, 2, 1], [52, 45, 30, 40]]
 ls;['Success', 'S-Failure', 'R-Failure']
-xtitle;GROUP
-ytitle;GROUP
+xtitle;Link Scaler
+ytitle;Freq. Termination Status

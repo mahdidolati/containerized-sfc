@@ -2,5 +2,5 @@ ys_err;[[[3.0, 1.6666666666666643, 2.6666666666666643, 3.0], [6.32942862086829, 
 x;[0, 1, 2, 3]
 ys;[[99, 128, 131, 129], [1, 4, 5, 6], [50, 18, 14, 15]]
 ls;['Success', 'S-Failure', 'R-Failure']
-xtitle;GROUP
-ytitle;GROUP
+xtitle;Backtrack limit
+ytitle;Freq. Termination Status
