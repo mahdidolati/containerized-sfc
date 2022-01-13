@@ -41,8 +41,9 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
     feasEid = None
     feasM = None
     feasV = None
+    ilp_model = None
     for req_id in range(req_len):
-        ilp_model = get_ilp(a_reqs + [reqs[req_id]], my_net, R, Rvol)
+        ilp_model = get_ilp(a_reqs + [reqs[req_id]], my_net, R, Rvol, ilp_model)
         ilp_model.m.setParam("LogToConsole", False)
         ilp_model.m.setParam("Threads", 6)
         ilp_model.m.setParam("TIME_LIMIT", 100)
@@ -82,7 +83,7 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
     return tr
 
 
-def get_ilp(reqs, my_net, R, Rvol):
+def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
     # t1 = process_time()
     T_all = get_T(reqs)
     B = my_net.get_all_base_stations()
@@ -138,6 +139,24 @@ def get_ilp(reqs, my_net, R, Rvol):
                     w_var[req_id][N_map[n1]][N_map[n2]] = m.addVars(len(my_net.paths_links[n1][n2]), len(R),
                                                       vtype=GRB.BINARY, name="w,{},{},{},".format(req_id,n1,n2))
     r_var = m.addVars(E_id, len(R), T_all, vtype=GRB.BINARY, name="r")
+
+    if ilp_model is not None:
+        for req_id in range(len(reqs)-1):
+            for n in Ec_id:
+                for i in range(len(reqs[req_id].vnfs)):
+                    if ilp_model.v_var[req_id][n, i].x > 1.0 - 0.0001:
+                        v_var[req_id][n, i].lb = 1.0
+                        break
+            for n1 in my_net.paths_links:
+                for n2 in my_net.paths_links[n1]:
+                    for j in range(len(my_net.paths_links[n1][n2])):
+                        for i in range(len(reqs[req_id].vnfs)+1):
+                            if ilp_model.q_var[req_id][N_map[n1]][N_map[n2]][j, i].x > 1.0 - 0.0001:
+                                q_var[req_id][N_map[n1]][N_map[n2]][j, i].lb = 1.0
+                        # for r in range(len(R)):
+                        #     if ilp_model.w_var[req_id][N_map[n1]][N_map[n2]][j, R_id[r]].x > 1.0 - 0.0001:
+                        #         w_var[req_id][N_map[n1]][N_map[n2]][j, R_id[r]].lb = 1.0
+
 
     # t2 = process_time()
     # print("Vars done {}".format(t2-t1))
