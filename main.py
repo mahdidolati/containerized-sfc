@@ -12,7 +12,7 @@ from statistic_collector import StatCollector, Stat
 import heapq
 import numpy as np
 import sys, getopt
-from time import process_time, sleep
+from time import process_time, sleep, time
 from test import TestResult
 
 
@@ -111,14 +111,14 @@ def batch_test(inter_arrival):
             for solver in solvers:
                 np.random.seed(itr * 1234)
                 solver.set_env(my_net, R_ids, R_vols)
-                t1 = process_time()
+                t1 = time()
                 if solver.batch:
                     tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
                 else:
                     tr = test(solver, reqs)
                     reqs = tr.accepted_reqs
                     print("Solver: {} got {} out of {}".format(solver.get_name(), tr.avg_admit, req_num))
-                t2 = process_time()
+                t2 = time()
                 stat_collector.add_stat(solver.get_name(), ACCEPT_RATIO, run_name, tr.avg_admit)
                 stat_collector.add_stat(solver.get_name(), DOWNLOAD_LAYER, run_name, tr.avg_dl)
                 stat_collector.add_stat(solver.get_name(), RUNTIME, run_name, t2-t1)
