@@ -110,6 +110,7 @@ class FfSolver(CloudSolver):
                 dl_vol = dl_vol + st[2]
                 downloads.update(st[3])
                 loc_of[i] = st[4]
+                cur = loc_of[i]
             else:
                 for ii in loc_of:
                     if loc_of[ii][0] == "e":
@@ -127,7 +128,7 @@ class FfSolver(CloudSolver):
     def place(self, chain_req, i, cur, chain_delay):
         B = self.my_net.get_all_base_stations()
         E = self.my_net.get_all_edge_nodes()
-        all_nodes = B + E + ["c"]
+        all_nodes = [cur] + B + E + ["c"]
         for e in all_nodes:
             st = self.place_e(cur, e, chain_req, i, chain_delay)
             if len(st) > 0:
@@ -136,7 +137,7 @@ class FfSolver(CloudSolver):
 
     def place_e(self, loc_i_1, loc_i, req, i, chain_delay):
         cloud_node = "c"
-        if i != len(req.vnfs) and loc_i != cloud_node:
+        if i < len(req.vnfs) and loc_i != cloud_node:
             if loc_i[0] == "b":
                 return []
 
@@ -162,7 +163,7 @@ class FfSolver(CloudSolver):
 
         downloads = set()
         total_dl_vol = 0
-        if i != len(req.vnfs):
+        if i < len(req.vnfs):
             Rd_ei, _ = self.my_net.get_missing_layers(loc_i, req, i, req.tau1)
             for rr in Rd_ei:
                 downloaded = False
@@ -182,9 +183,9 @@ class FfSolver(CloudSolver):
                     for ld in downloads:
                         ld.cancel_download()
                     return []
+            self.my_net.g.nodes[loc_i]["nd"].embed(req, i)
+            req.used_servers.add(loc_i)
 
-        self.my_net.g.nodes[loc_i]["nd"].embed(req, i)
-        req.used_servers.add(loc_i)
         path_delay = 0
         chain_bw = 0
         if path_id_sel is not None:
