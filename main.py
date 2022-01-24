@@ -700,8 +700,8 @@ def test_qlearning(inter_arrival):
     CHAIN_BW = "Chain (mbps)"
     my_net = NetGenerator().get_g()
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
-    R_ids = [i for i in sfc_gen.layers]
-    R_vols = [sfc_gen.layers[i] for i in R_ids]
+    # R_ids = [i for i in sfc_gen.layers]
+    # R_vols = [sfc_gen.layers[i] for i in R_ids]
     solvers = [
         GurobiSingleRelax(2, 0.9, "popularity_learn"),
         GurobiSingleRelax(2, 0.9, "default"),
@@ -733,6 +733,10 @@ def test_qlearning(inter_arrival):
             t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
         for solver in solvers:
             np.random.seed(itr * 1234)
+            if solver.convert_layer:
+                R_ids, R_vols = solver.do_convert_no_share(reqs)
+            else:
+                R_ids, R_vols = solver.get_Rid_vol(reqs)
             solver.set_env(my_net, R_ids, R_vols)
             tr = test(solver, reqs)
             print("{}-Solver: {} got {} out of {}, dl_vol {}".format(itr, solver.get_name(), tr.avg_admit, req_num, tr.avg_dl))
