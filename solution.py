@@ -346,7 +346,7 @@ class GurobiSingleRelax(Solver):
         self.convert_layer = convert_layer
 
     def get_name(self):
-        return "RCCO"
+        return "RCCO" + str(self.convert_layer)
 
     def set_env(self, my_net, R_ids, R_vols):
         self.my_net = my_net
