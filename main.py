@@ -149,8 +149,10 @@ def batch_test(inter_arrival):
     stat_collector.write_to_file(fig_5 + '.txt', req_nums, 0, REVENUE, algs, 'Revenue', REVENUE)
 
 
-def optimal_test(inter_arrival):
+def optimal_test(inter_arrival, scale_bw=False):
     np.random.seed(1)
+    if scale_bw:
+        Const.LINK_BW = [10000, 20000]
     my_net = NetGenerator().get_g()
     req_nums = [6, 8, 10, 12, 14]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
@@ -194,11 +196,12 @@ def optimal_test(inter_arrival):
                 if solver.convert_layer:
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
                 else:
-                    R_ids, R_vols = solver.get_Rid_vol(reqs)
+                    R_ids = [i for i in sfc_gen.layers]
+                    R_vols = sfc_gen.layers
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
-                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, reqs)
                 else:
                     tr = test(solver, reqs)
                     print("Solver: {} got {} out of {}".format(solver.get_name(), tr.avg_admit, req_num))
@@ -210,7 +213,7 @@ def optimal_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
 
     machine_id = "ut"
-    fig_test_id = "{}_optimal".format(machine_id)
+    fig_test_id = "{}_optimal_bw{}".format(machine_id, scale_bw)
     inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
@@ -436,7 +439,7 @@ def share_percentage_test(inter_arrival):
     iterations = 3
     arrival_rate = 1.0 / inter_arrival
     layer_magnitude = [5, 10, 15, 20]
-    layer_magnitude = [5]
+    # layer_magnitude = [5]
     vnf_num = 10
     for i in range(len(layer_magnitude)):
         np.random.seed(i * 100)
@@ -451,7 +454,7 @@ def share_percentage_test(inter_arrival):
         for itr in range(iterations):
             reqs = []
             req_num = 50
-            req_num = 15
+            # req_num = 15
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -554,12 +557,12 @@ def layer_num_test(inter_arrival):
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
                 else:
                     R_ids = [i for i in sfc_gen.layers]
-                    R_vols = [sfc_gen.layers[i] for i in R_ids]
+                    R_vols = sfc_gen.layers
                     # R_ids, R_vols = solver.get_Rid_vol(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
-                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, reqs)
                 else:
                     tr = test(solver, reqs)
                     print("Solver: {} got {}".format(solver.get_name(), tr))
@@ -768,14 +771,17 @@ def test_qlearning(inter_arrival):
 
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
-    opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
+    opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type=", "scale-bw="])
     test_type = "share"
     ia = 1.0
+    scale_bw = False
     for opt, arg in opts:
         if opt in ("--inter-arrival",):
             ia = float(arg)
         elif opt in ("--test-type",):
             test_type = arg
+        elif opt in ("--scale-bw",):
+            scale_bw = bool(arg)
     if test_type == "scaling" or test_type == "all":
         print("running scaling because of {}".format(test_type))
         scaling_test(ia)
@@ -790,7 +796,7 @@ if __name__ == "__main__":
         share_percentage_test(ia)
     if test_type == "optimal" or test_type == "all":
         print("running optimal because of {}".format(test_type))
-        optimal_test(ia)
+        optimal_test(ia, scale_bw)
     if test_type == "learning" or test_type == "all":
         print("running qlearn because of {}".format(test_type))
         test_qlearning(ia)
