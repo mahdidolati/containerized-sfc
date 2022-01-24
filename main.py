@@ -468,7 +468,7 @@ def share_percentage_test(inter_arrival):
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
-                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, reqs)
                 else:
                     tr = test(solver, reqs)
                     print("Solver: {} got {}".format(solver.get_name(), tr))
@@ -595,22 +595,14 @@ def layer_num_test(inter_arrival):
 
 def no_share_test(inter_arrival):
     np.random.seed(1)
-    #Const.VNF_NUM = 10
-    #Const.LAYER_NUM = 20
-    #Const.LINK_BW = [100000, 1000000]
-    #Const.SERVER_DISK = [2000000, 3000000]
-    #Const.TAU1 = [150, 171]
-    #Const.TAU2 = [8, 21]
-    #Const.SFC_LEN = [1, 2]
-    # Const.SFC_DELAY = [1000, 2000]
     my_net = NetGenerator().get_g()
     # my_net.print()
-    ACCEPT_RATIO = "Accept Ratio"
-    DOWNLOAD_LAYER = "Download (MB)"
+    ACCEPT_RATIO = "Accept Rate"
+    DOWNLOAD_LAYER = "Download (Mb)"
     RUNTIME = "Runtime (sec)"
     CHAIN_BW = "Chain (mbps)"
-    REVENUE = "Revenue"
-    DL_ACC = "DL_ACC"
+    REVENUE = "Revenue (mbps)"
+    DL_ACC = "Download (Mb)"
     solvers = [
         FfSolver(),
         GreedySolver(),
@@ -626,22 +618,25 @@ def no_share_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 2
+    iterations = 3
     arrival_rate = 1.0 / inter_arrival
-    layer_num = [2, 6, 10, 14]
-    vnf_size = 42
-    for i in range(len(layer_num)):
+    layer_magnitude = [20, 15, 10, 5]
+    # layer_magnitude = [5]
+    vnf_num = 10
+    for i in range(len(layer_magnitude)):
         np.random.seed(i * 100)
 
-        Const.VNF_LAYER = [layer_num[i], layer_num[i]+1]
-        Const.LAYER_SIZE = [vnf_size/layer_num[i], (vnf_size/layer_num[i])+1]
+        Const.VNF_NUM = vnf_num
+        Const.LAYER_NUM = vnf_num * layer_magnitude[i]
+
         sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
 
-        run_name = "{}".format(layer_num[i])
+        run_name = "{}".format(layer_magnitude[i])
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 5
+            req_num = 50
+            # req_num = 15
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -652,13 +647,13 @@ def no_share_test(inter_arrival):
                 if solver.convert_layer:
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
                 else:
-                    R_ids, R_vols = solver.get_Rid_vol(reqs)
-                    # R_ids = [i for i in sfc_gen.layers]
-                    # R_vols = [sfc_gen.layers[i] for i in R_ids]
+                    R_ids = [i for i in sfc_gen.layers]
+                    R_vols = sfc_gen.layers
+                    # R_ids, R_vols = solver.get_Rid_vol(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
-                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, reqs)
                 else:
                     tr = test(solver, reqs)
                     print("Solver: {} got {}".format(solver.get_name(), tr))
@@ -674,22 +669,24 @@ def no_share_test(inter_arrival):
     fig_test_id = "{}_no_share".format(machine_id)
     inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', layer_num, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)
+    stat_collector.write_to_file(fig_2 + '.txt', layer_magnitude, 0, ACCEPT_RATIO, algs, 'Share Percentage',
+                                 ACCEPT_RATIO)
 
     fig_2 = './result/{}_dl_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_2 + '.txt', layer_num, 0, DOWNLOAD_LAYER, algs, 'Share Percentage', DOWNLOAD_LAYER)
+    stat_collector.write_to_file(fig_2 + '.txt', layer_magnitude, 0, DOWNLOAD_LAYER, algs, 'Share Percentage',
+                                 DOWNLOAD_LAYER)
 
     fig_3 = './result/{}_time_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_3 + '.txt', layer_num, 0, RUNTIME, algs, 'Share Percentage', RUNTIME)
+    stat_collector.write_to_file(fig_3 + '.txt', layer_magnitude, 0, RUNTIME, algs, 'Share Percentage', RUNTIME)
 
     fig_4 = './result/{}_chain_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_4 + '.txt', layer_num, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
+    stat_collector.write_to_file(fig_4 + '.txt', layer_magnitude, 0, CHAIN_BW, algs, 'Chaining BW', CHAIN_BW)
 
     fig_5 = './result/{}_rev_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_5 + '.txt', layer_num, 0, REVENUE, algs, 'Revenue', REVENUE)
+    stat_collector.write_to_file(fig_5 + '.txt', layer_magnitude, 0, REVENUE, algs, 'Revenue', REVENUE)
 
     fig_6 = './result/{}_dla_ia{}'.format(fig_test_id, inter_arrival)
-    stat_collector.write_to_file(fig_6 + '.txt', layer_num, 0, DL_ACC, algs, 'Revenue', DL_ACC)
+    stat_collector.write_to_file(fig_6 + '.txt', layer_magnitude, 0, DL_ACC, algs, 'Revenue', DL_ACC)
 
 
 def test_qlearning(inter_arrival):

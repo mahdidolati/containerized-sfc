@@ -21,7 +21,7 @@ class Solver:
         self.R_ids = R_ids
         self.R_vols = R_vols
 
-    def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
+    def solve_batch(self, my_net, vnfs_list, reqs):
         pass
 
     def solve(self, chain_req, t, sr):
@@ -288,7 +288,7 @@ class GurobiBatch(Solver):
         self.R_ids = R_ids
         self.R_vols = R_vols
 
-    def solve_batch(self, my_net, vnfs_list, R_ids, R_vols, reqs):
+    def solve_batch(self, my_net, vnfs_list, reqs):
         return solve_batch_opt(reqs, self.my_net, self.R_ids, self.R_vols)
 
     def reset(self):
@@ -372,8 +372,7 @@ class GurobiSingleRelax(Solver):
 
     def do_convert_no_share(self, reqs):
         cnt = 0
-        R_ids = list()
-        R_vols = list()
+        R_vols = dict()
         for req in reqs:
             lll = dict()
             vnfs = list()
@@ -381,18 +380,18 @@ class GurobiSingleRelax(Solver):
                 new_layers = dict()
                 for l in vnf.layers:
                     new_layers[cnt] = vnf.layers[l]
-                    R_ids.append(cnt)
-                    R_vols.append(new_layers[cnt])
-                    if cnt not in lll:
-                        lll[cnt] = new_layers[cnt]
+                    R_vols[cnt] = new_layers[cnt]
+                    lll[cnt] = new_layers[cnt]
                     cnt = cnt + 1
                 vnfs.append(vnf.get_copy(new_layers))
             req.vnfs = vnfs
             req.layers = lll
-        return R_ids, R_vols
+        return list(range(cnt)), R_vols
 
     def solve(self, chain_req, t, sr):
-        rs = RelaxSingle(self.my_net, self.R_ids, self.R_vols, self.Gamma, self.bw_scaler)
+        all_l = self.my_net.get_all_existing_layers()
+        all_l.update(chain_req.layers)
+        rs = RelaxSingle(self.my_net, all_l, self.R_vols, self.Gamma, self.bw_scaler)
         return rs.solve_single_relax(chain_req)
 
     def post_arrival_procedure(self, status, t, chain_req):

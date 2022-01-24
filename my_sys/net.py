@@ -272,6 +272,13 @@ class MyNetwork:
                 t_bw = t_bw + self.g[e[0]][e[1]]["li"].bw_min_avail(T)
         return t_bw
 
+    def get_all_existing_layers(self):
+        all_l = set()
+        for n in self.get_all_edge_nodes():
+            kk = self.g.nodes[n]["nd"].layers.keys()
+            all_l.update(kk)
+        return all_l
+
     def reset(self):
         for n in self.g.nodes():
             self.g.nodes[n]["nd"].reset()
