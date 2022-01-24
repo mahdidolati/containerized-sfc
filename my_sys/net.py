@@ -298,7 +298,7 @@ class Link:
         self.e2 = d
         if self.e1.id[0] == "c" or self.e2.id[0] == "c":
             self.bw = np.infty
-            self.delay = 100 * np.linalg.norm(self.e1.loc - self.e2.loc)
+            self.delay = 2000 * np.linalg.norm(self.e1.loc - self.e2.loc)
         else:
             self.delay = 10 * np.linalg.norm(self.e1.loc - self.e2.loc)
             self.bw = np.random.randint(*Const.LINK_BW)

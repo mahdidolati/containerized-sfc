@@ -224,8 +224,9 @@ class RelaxSingle:
         # m.write("out.lp")
 
         if self.ilp_model.m.status == GRB.INFEASIBLE:
-            # m.computeIIS()
-            # m.write("s_model.ilp")
+            self.ilp_model.m.computeIIS()
+            self.ilp_model.m.write("s_model.ilp")
+            print("failed SF-1!")
             return tr.SF, 0, 0
 
         i = 0

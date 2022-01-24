@@ -358,6 +358,9 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
     # t1 = t2
     #
     # print("L: {}, T: {}, Rq: {}, R: {}".format(len(L), len(T_all), len(reqs), len(R)))
+    # print("L: {}".format(L))
+    # print("R_id: {}".format(R_id))
+    # print("R_vol: {}".format(Rvol))
 
     m.addConstrs(
         (
@@ -375,8 +378,8 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
                 for pth in my_net.link_to_path[ll]
             ) <= my_net.g[ll[0]][ll[1]]["li"].bw_avail(t)
             for ll in L
-            if ll in my_net.link_to_path
             if ll[0] != cloud_node or ll[1] != cloud_node
+            if ll in my_net.link_to_path
             for t in T_all
         ), name="bw"
     )

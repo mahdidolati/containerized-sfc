@@ -359,14 +359,18 @@ class GurobiSingleRelax(Solver):
         R_ids = list()
         R_vols = list()
         for req in reqs:
+            lll = dict()
             for vnf in req.vnfs:
                 new_layers = dict()
                 for l in vnf.layers:
                     new_layers[cnt] = vnf.layers[l]
                     R_ids.append(cnt)
                     R_vols.append(new_layers[cnt])
+                    if cnt not in lll:
+                        lll[cnt] = new_layers[cnt]
                     cnt = cnt + 1
                 vnf.layers = new_layers
+            req.layers = lll
         return R_ids, R_vols
 
     def solve(self, chain_req, t, sr):

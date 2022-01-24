@@ -569,6 +569,14 @@ def layer_num_test(inter_arrival):
 
 def no_share_test(inter_arrival):
     np.random.seed(1)
+    #Const.VNF_NUM = 10
+    #Const.LAYER_NUM = 20
+    #Const.LINK_BW = [100000, 1000000]
+    #Const.SERVER_DISK = [2000000, 3000000]
+    #Const.TAU1 = [150, 171]
+    #Const.TAU2 = [8, 21]
+    #Const.SFC_LEN = [1, 2]
+    Const.SFC_DELAY = [1000, 2000]
     my_net = NetGenerator().get_g()
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
@@ -580,7 +588,7 @@ def no_share_test(inter_arrival):
     solvers = [
         FfSolver(),
         GreedySolver(),
-        GurobiSingleRelax(2, 0.8, "popularity_learn", False),
+        GurobiSingleRelax(2, 0.8, "popularity_learn", True),
         GurobiSingleRelax(2, 0.8, "popularity_learn", True),
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
@@ -595,7 +603,7 @@ def no_share_test(inter_arrival):
     iterations = 3
     arrival_rate = 1.0 / inter_arrival
     layer_num = [2, 6, 10, 14]
-    vnf_size = 420
+    vnf_size = 42
     for i in range(len(layer_num)):
         np.random.seed(i * 100)
 
@@ -609,7 +617,7 @@ def no_share_test(inter_arrival):
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 50
+            req_num = 10
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
