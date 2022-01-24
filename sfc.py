@@ -6,6 +6,7 @@ class LayerDownload:
     def __init__(self):
         self.download_data = dict()
         self.added_layers = set()
+        self.canceled = False
 
     def add_data(self, t, l, r):
         if t not in self.download_data:
@@ -14,10 +15,12 @@ class LayerDownload:
         self.download_data[t].append((r, l))
 
     def cancel_download(self):
-        for t in self.download_data:
-            for r, l in self.download_data[t]:
-                l.rm_dl(t, r)
-        self.download_data = dict()
+        if not self.canceled:
+            for t in self.download_data:
+                for r, l in self.download_data[t]:
+                    l.rm_dl(t, r)
+            self.download_data = dict()
+            self.canceled = True
 
 
 class Vnf:
