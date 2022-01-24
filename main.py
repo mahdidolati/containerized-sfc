@@ -492,7 +492,7 @@ def layer_num_test(inter_arrival):
     solvers = [
         FfSolver(),
         GreedySolver(),
-        GurobiSingleRelax(2, 0.8, "popularity_learn")
+        #GurobiSingleRelax(2, 0.8, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,

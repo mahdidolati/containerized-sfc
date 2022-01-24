@@ -98,7 +98,6 @@ class FfSolver(CloudSolver):
 
         downloads = set()
         loc_of = dict()
-        selected_edges = set()
         cur = chain_req.entry_point
         chain_delay = 0
         chain_bw = 0
@@ -127,9 +126,11 @@ class FfSolver(CloudSolver):
         return tr.SU, dl_vol, chain_bw
 
     def place(self, chain_req, i, cur, chain_delay):
-        B = self.my_net.get_all_base_stations()
-        E = self.my_net.get_all_edge_nodes()
-        all_nodes = [cur] + B + E + ["c"]
+        if i == len(chain_req.vnfs):
+            E = self.my_net.get_all_edge_nodes()
+            all_nodes = [cur] + E + ["c"]
+        else:
+            all_nodes = [chain_req.entry_point]
         for e in all_nodes:
             st = self.place_e(cur, e, chain_req, i, chain_delay)
             if len(st) > 0:
@@ -211,11 +212,15 @@ class GreedySolver(FfSolver):
         super().__init__()
 
     def get_name(self):
-        return "FF"
+        return "IGA"
 
     def place(self, chain_req, i, cur, chain_delay):
         if len(chain_req.vnfs) == i:
-            return super().place(chain_req, i, cur, chain_delay)
+            st = self.place_e(cur, chain_req.entry_point, chain_req, i, chain_delay)
+            if len(st) > 0:
+                return st + ["c"]
+            else:
+                return []
 
         if cur == "c":
             st = self.place_e(cur, "c", chain_req, i, chain_delay)
@@ -249,6 +254,8 @@ class GreedySolver(FfSolver):
             st = self.place_e(cur, "c", chain_req, i, chain_delay)
             if len(st) > 0:
                 return st + ["c"]
+            else:
+                return []
         else:
             return best_node
 
