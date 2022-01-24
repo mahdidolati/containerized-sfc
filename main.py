@@ -405,7 +405,8 @@ def share_percentage_test(inter_arrival):
     solvers = [
         FfSolver(),
         GreedySolver(),
-        GurobiSingleRelax(2, 0.8, "popularity_learn", False)
+        GurobiSingleRelax(2, 0.8, "popularity_learn", False),
+        GurobiSingleRelax(2, 0.8, "popularity_learn", True),
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -492,7 +493,8 @@ def layer_num_test(inter_arrival):
     solvers = [
         FfSolver(),
         GreedySolver(),
-        GurobiSingleRelax(2, 0.8, "popularity_learn", False)
+        GurobiSingleRelax(2, 0.8, "popularity_learn", False),
+        GurobiSingleRelax(2, 0.8, "popularity_learn", True),
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -600,9 +602,9 @@ def no_share_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 3
+    iterations = 2
     arrival_rate = 1.0 / inter_arrival
-    layer_num = [2, 6, 10, 14]
+    layer_num = [2, 6]
     vnf_size = 42
     for i in range(len(layer_num)):
         np.random.seed(i * 100)
@@ -610,14 +612,12 @@ def no_share_test(inter_arrival):
         Const.VNF_LAYER = [layer_num[i], layer_num[i]+1]
         Const.LAYER_SIZE = [vnf_size/layer_num[i], (vnf_size/layer_num[i])+1]
         sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
-        R_ids = [i for i in sfc_gen.layers]
-        R_vols = [sfc_gen.layers[i] for i in R_ids]
 
         run_name = "{}".format(layer_num[i])
         print("run-name:", run_name)
         for itr in range(iterations):
             reqs = []
-            req_num = 10
+            req_num = 5
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -627,6 +627,9 @@ def no_share_test(inter_arrival):
                 np.random.seed(itr * 1234)
                 if solver.convert_layer:
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
+                else:
+                    R_ids = [i for i in sfc_gen.layers]
+                    R_vols = [sfc_gen.layers[i] for i in R_ids]
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:

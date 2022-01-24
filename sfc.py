@@ -44,7 +44,8 @@ class Vnf:
         vnf.cpu = self.cpu
         vnf.ram = self.ram
         vnf.alpha = self.alpha
-        self.layers = new_layers
+        vnf.layers = new_layers
+        return vnf
 
 
 class Sfc:

@@ -127,7 +127,7 @@ class FfSolver(CloudSolver):
         return tr.SU, dl_vol, chain_bw
 
     def place(self, chain_req, i, cur, chain_delay):
-        if i == len(chain_req.vnfs):
+        if i < len(chain_req.vnfs):
             E = self.my_net.get_all_edge_nodes()
             all_nodes = [cur] + E + ["c"]
         else:
