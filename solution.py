@@ -10,6 +10,7 @@ import numpy as np
 class Solver:
     def __init__(self):
         self.batch = False
+        self.convert_layer = False
 
     def get_name(self):
         pass
@@ -337,11 +338,12 @@ class GurobiSingle(Solver):
 
 
 class GurobiSingleRelax(Solver):
-    def __init__(self, Gamma, bs, eviction_strategy="default"):
+    def __init__(self, Gamma, bs, eviction_strategy="default", convert_layer=False):
         super().__init__()
         self.eviction_strategy = eviction_strategy
         self.Gamma = Gamma
         self.bw_scaler = bs
+        self.convert_layer = convert_layer
 
     def get_name(self):
         return "RCCO"
@@ -351,6 +353,21 @@ class GurobiSingleRelax(Solver):
         self.my_net.enable_layer_sharing()
         self.R_ids = R_ids
         self.R_vols = R_vols
+
+    def do_convert_no_share(self, reqs):
+        cnt = 0
+        R_ids = list()
+        R_vols = list()
+        for req in reqs:
+            for vnf in req.vnfs:
+                new_layers = dict()
+                for l in vnf.layers:
+                    new_layers[cnt] = vnf.layers[l]
+                    R_ids.append(cnt)
+                    R_vols.append(new_layers[cnt])
+                    cnt = cnt + 1
+                vnf.layers = new_layers
+        return R_ids, R_vols
 
     def solve(self, chain_req, t, sr):
         rs = RelaxSingle(self.my_net, self.R_ids, self.R_vols, self.Gamma, self.bw_scaler)

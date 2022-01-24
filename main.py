@@ -492,7 +492,8 @@ def layer_num_test(inter_arrival):
     solvers = [
         FfSolver(),
         GreedySolver(),
-        #GurobiSingleRelax(2, 0.8, "popularity_learn")
+        GurobiSingleRelax(2, 0.8, "popularity_learn", False),
+        GurobiSingleRelax(2, 0.8, "popularity_learn", True),
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -528,6 +529,8 @@ def layer_num_test(inter_arrival):
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
             for solver in solvers:
                 np.random.seed(itr * 1234)
+                if solver.convert_layer:
+                    R_ids, R_vols = solver.do_convert_no_share(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
