@@ -17,7 +17,6 @@ class IlpModel:
         self.w_var = None
         self.r_var = None
         self.T_all = None
-        self.R_id = None
         self.E_id = None
         self.Ec_id = None
         self.N_map = None
@@ -432,7 +431,6 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
     ilp_model.w_var = w_var
     ilp_model.r_var = r_var
     ilp_model.T_all = T_all
-    ilp_model.R_id = R_id
     ilp_model.E_id = E_id
     ilp_model.Ec_id = Ec_id
     ilp_model.N_map = N_map

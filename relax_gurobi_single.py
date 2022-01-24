@@ -174,8 +174,7 @@ class RelaxSingle:
     def round_dl(self, req, i):
         rounding_failed = False
         Rd_ei, _ = self.my_net.get_missing_layers(self.loc_of[i], req, i, req.tau1)
-        for rr in Rd_ei:
-            rr_id = self.ilp_model.R_id[rr]
+        for rr_id in Rd_ei:
             if i not in self.dl_paths:
                 self.dl_paths[i] = dict()
             pth_pr = []
