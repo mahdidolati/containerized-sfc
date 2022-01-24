@@ -344,6 +344,8 @@ class Link:
     def add_dl(self, t, r):
         if t not in self.dl:
             self.dl[t] = 0
+        if self.dl[t] + r > self.bw:
+            print("-------------------")
         self.dl[t] = self.dl[t] + r
 
     def rm_dl(self, t, r):

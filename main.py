@@ -433,7 +433,7 @@ def share_percentage_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 2
+    iterations = 3
     arrival_rate = 1.0 / inter_arrival
     layer_magnitude = [5, 10, 15, 20]
     layer_magnitude = [5]
@@ -451,7 +451,7 @@ def share_percentage_test(inter_arrival):
         for itr in range(iterations):
             reqs = []
             req_num = 50
-            req_num = 5
+            req_num = 15
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -462,9 +462,9 @@ def share_percentage_test(inter_arrival):
                 if solver.convert_layer:
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
                 else:
-                    # R_ids = [i for i in sfc_gen.layers]
-                    # R_vols = [sfc_gen.layers[i] for i in R_ids]
-                    R_ids, R_vols = solver.get_Rid_vol(reqs)
+                    R_ids = [i for i in sfc_gen.layers]
+                    R_vols = sfc_gen.layers
+                    # R_ids, R_vols = solver.get_Rid_vol(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
@@ -772,7 +772,7 @@ def test_qlearning(inter_arrival):
 if __name__ == "__main__":
     my_argv = sys.argv[1:]
     opts, args = getopt.getopt(my_argv, "", ["inter-arrival=", "test-type="])
-    test_type = "noshare"
+    test_type = "share"
     ia = 1.0
     for opt, arg in opts:
         if opt in ("--inter-arrival",):

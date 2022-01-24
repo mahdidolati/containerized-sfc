@@ -95,10 +95,8 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
     L, L_iii = my_net.get_link_sets()
 
     R_id = dict()
-    r_idx = 0
     for r in R:
-        R_id[r] = r_idx
-        r_idx = r_idx + 1
+        R_id[r] = r
 
     E_id = list()
     Ec_id = list()
@@ -136,9 +134,9 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
                     # print("{} -- {}: {} , {}".format(n1, n2, len(my_net.paths_links[n1][n2]), len(reqs[req_id].vnfs)+1))
                     q_var[req_id][N_map[n1]][N_map[n2]] = m.addVars(len(my_net.paths_links[n1][n2]), len(reqs[req_id].vnfs)+1,
                                                       vtype=GRB.BINARY, name="q,{},{},{},".format(req_id,n1,n2))
-                    w_var[req_id][N_map[n1]][N_map[n2]] = m.addVars(len(my_net.paths_links[n1][n2]), len(R),
+                    w_var[req_id][N_map[n1]][N_map[n2]] = m.addVars(len(my_net.paths_links[n1][n2]), R,
                                                       vtype=GRB.BINARY, name="w,{},{},{},".format(req_id,n1,n2))
-    r_var = m.addVars(E_id, len(R), T_all, vtype=GRB.BINARY, name="r")
+    r_var = m.addVars(E_id, R, T_all, vtype=GRB.BINARY, name="r")
 
     if ilp_model is not None:
         for req_id in range(len(reqs)-1):
@@ -217,7 +215,7 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
 
     m.addConstrs(
         (
-            v_var[req_id][e, i] <= r_var[e, R_id[r], t]
+            v_var[req_id][e, i] <= r_var[e, r, t]
             for e in E_id
             for req_id in range(len(reqs))
             for i in range(len(reqs[req_id].vnfs))
@@ -233,7 +231,7 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
     if 0 in T_all:
         m.addConstrs(
             (
-                r_var[e, R_id[r], 0] == 0
+                r_var[e, r, 0] == 0
                 for e in E_id
                 for r in R
             ), name="layer_0"
@@ -250,14 +248,14 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
                     continue
                 if my_net.g.nodes[N_map_inv[e]]["nd"].layer_avail(r, t):
                     if my_net.g.nodes[N_map_inv[e]]["nd"].layer_inuse(r):
-                        r_var[e, R_id[r], t].lb = 1.0
+                        r_var[e, r, t].lb = 1.0
                     else:
                         pass # may assume or not with no problem
                 else:
                     if t-1 not in T_all:
                         m.addConstr(
-                            r_var[e, R_id[r], t] <= gp.quicksum(
-                                w_var[req_id][e][N_map[cloud_node]][pth_id, R_id[r]]
+                            r_var[e, r, t] <= gp.quicksum(
+                                w_var[req_id][e][N_map[cloud_node]][pth_id, r]
                                 for req_id in range(len(reqs))
                                 if r in reqs[req_id].layers
                                 if t in reqs[req_id].T2
@@ -266,8 +264,8 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
                         )
                     else:
                         m.addConstr(
-                            r_var[e, R_id[r], t] <= r_var[e, R_id[r], t - 1] + gp.quicksum(
-                                w_var[req_id][e][N_map[cloud_node]][pth_id, R_id[r]]
+                            r_var[e, r, t] <= r_var[e, r, t - 1] + gp.quicksum(
+                                w_var[req_id][e][N_map[cloud_node]][pth_id, r]
                                 for req_id in range(len(reqs))
                                 if r in reqs[req_id].layers
                                 if t in reqs[req_id].T2
@@ -281,7 +279,7 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
     m.addConstrs(
         (
             gp.quicksum(
-                w_var[req_id][e][N_map[cloud_node]][pth_id, R_id[r]]
+                w_var[req_id][e][N_map[cloud_node]][pth_id, r]
                 for pth_id in range(len(my_net.paths_links[N_map_inv[e]][cloud_node]))
             ) <= 1
             for req_id in range(len(reqs))
@@ -297,7 +295,7 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
     m.addConstrs(
         (
             gp.quicksum(
-                r_var[e, R_id[r], t] * Rvol[R_id[r]]
+                r_var[e, r, t] * Rvol[r]
                 for r in R
             ) <= my_net.g.nodes[N_map_inv[e]]["nd"].disk
             for e in E_id
@@ -369,7 +367,7 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
     m.addConstrs(
         (
             gp.quicksum(
-                w_var[req_id][N_map[pth[0]]][N_map[pth[1]]][pth[2], R_id[r]] * Rvol[R_id[r]] / len(reqs[req_id].T1)
+                w_var[req_id][N_map[pth[0]]][N_map[pth[1]]][pth[2], r] * Rvol[r] / len(reqs[req_id].T1)
                 for req_id in range(len(reqs))
                 if t in reqs[req_id].T1
                 for r in reqs[req_id].layers
