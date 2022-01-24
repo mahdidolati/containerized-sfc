@@ -107,8 +107,8 @@ class RelaxSingle:
             self.undo_chaining(req, i)
             ## undo download
             if i in self.dl_paths:
-                for rr in self.dl_paths[i]:
-                    self.ilp_model.w_var[0][self.ilp_model.N_map[self.loc_of[i]]][self.ilp_model.N_map[self.ilp_model.cloud_node]][self.dl_paths[i][self.ilp_model.R_id[rr]], rr].lb = 0.0
+                for rr_id in self.dl_paths[i]:
+                    self.ilp_model.w_var[0][self.ilp_model.N_map[self.loc_of[i]]][self.ilp_model.N_map[self.ilp_model.cloud_node]][self.dl_paths[i][rr_id], rr_id].lb = 0.0
                 del self.dl_paths[i]
             if i in self.downloads:
                 for ld in self.downloads[i]:
@@ -174,18 +174,19 @@ class RelaxSingle:
         rounding_failed = False
         Rd_ei, _ = self.my_net.get_missing_layers(self.loc_of[i], req, i, req.tau1)
         for rr in Rd_ei:
+            rr_id = self.ilp_model.R_id[rr]
             if i not in self.dl_paths:
                 self.dl_paths[i] = dict()
             pth_pr = []
             pth_ids = range(len(self.my_net.paths_links[self.loc_of[i]][self.ilp_model.cloud_node]))
             for pth_id in pth_ids:
-                a = self.ilp_model.w_var[0][self.ilp_model.N_map[self.loc_of[i]]][self.ilp_model.N_map[self.ilp_model.cloud_node]][pth_id, rr].x
+                a = self.ilp_model.w_var[0][self.ilp_model.N_map[self.loc_of[i]]][self.ilp_model.N_map[self.ilp_model.cloud_node]][pth_id, rr_id].x
                 pth_pr.append(a)
             if sum(pth_pr) != 0.0:
                 if sum(pth_pr) < 1.0:
                     pth_pr = [pr / sum(pth_pr) for pr in pth_pr]
-                self.dl_paths[i][rr] = np.random.choice(a=pth_ids, p=pth_pr)
-                self.ilp_model.w_var[0][self.ilp_model.N_map[self.loc_of[i]]][self.ilp_model.N_map[self.ilp_model.cloud_node]][self.dl_paths[i][self.ilp_model.R_id[rr]], rr].lb = 1.0
+                self.dl_paths[i][rr_id] = np.random.choice(a=pth_ids, p=pth_pr)
+                self.ilp_model.w_var[0][self.ilp_model.N_map[self.loc_of[i]]][self.ilp_model.N_map[self.ilp_model.cloud_node]][self.dl_paths[i][rr_id], rr_id].lb = 1.0
             else:
                 print("one failed, no candidate path!")
                 rounding_failed = True

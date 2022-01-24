@@ -357,6 +357,9 @@ class GurobiSingleRelax(Solver):
         self.Gamma = Gamma
         self.bw_scaler = bs
         self.convert_layer = convert_layer
+        self.R_ids2 = list()
+        self.R_vols2 = list()
+        self.R_visited = set()
 
     def get_name(self):
         return "RCCO" + str(self.convert_layer)
