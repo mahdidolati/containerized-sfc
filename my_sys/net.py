@@ -258,6 +258,20 @@ class MyNetwork:
                 B.append(n)
         return B
 
+    def get_total_out_bw(self, n, T):
+        t_bw = 0
+        for e in self.g.edges():
+            if e[0] == n:
+                t_bw = t_bw + self.g[e[0]][e[1]]["li"].bw_min_avail(T)
+        return t_bw
+
+    def get_total_in_bw(self, n, T):
+        t_bw = 0
+        for e in self.g.edges():
+            if e[1] == n:
+                t_bw = t_bw + self.g[e[0]][e[1]]["li"].bw_min_avail(T)
+        return t_bw
+
     def reset(self):
         for n in self.g.nodes():
             self.g.nodes[n]["nd"].reset()

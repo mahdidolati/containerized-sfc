@@ -4,6 +4,7 @@ from sfc import SfcGenerator
 from my_sys.net import NetGenerator
 from solution import CloudSolver
 from solution import FfSolver
+from solution import GreedySolver
 from solution import GurobiSingle
 from solution import GurobiSingleRelax
 from solution import GurobiBatch
@@ -403,6 +404,7 @@ def share_percentage_test(inter_arrival):
     DL_ACC = "DL_ACC"
     solvers = [
         FfSolver(),
+        GreedySolver(),
         GurobiSingleRelax(2, 0.8, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
@@ -489,6 +491,7 @@ def layer_num_test(inter_arrival):
     DL_ACC = "DL_ACC"
     solvers = [
         FfSolver(),
+        GreedySolver(),
         GurobiSingleRelax(2, 0.8, "popularity_learn")
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,

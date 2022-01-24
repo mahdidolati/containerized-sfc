@@ -4,6 +4,7 @@ from relax_gurobi_single import RelaxSingle
 from opt_ilp import solve_batch_opt
 from sfc import LayerDownload
 from test import TestResult
+import numpy as np
 
 
 class Solver:
@@ -203,6 +204,53 @@ class FfSolver(CloudSolver):
                 if self.my_net.g.nodes[m]["nd"].disk_avail(t) < 0:
                     print("From {}: delete".format(m))
                     self.my_net.g.nodes[m]["nd"].empty_storage_random(t)
+
+
+class GreedySolver(FfSolver):
+    def __init__(self):
+        super().__init__()
+
+    def get_name(self):
+        return "FF"
+
+    def place(self, chain_req, i, cur, chain_delay):
+        if len(chain_req.vnfs) == i:
+            return super().place(chain_req, i, cur, chain_delay)
+
+        if cur == "c":
+            st = self.place_e(cur, "c", chain_req, i, chain_delay)
+            if len(st) > 0:
+                return st + ["c"]
+
+        E = self.my_net.get_all_edge_nodes()
+        all_nodes = [cur] + E
+        best_node = []
+        best_node_metric = 0
+        for e in all_nodes:
+            T = chain_req.T2
+            Rd_ei, d_ei = self.my_net.get_need_storage_layers(e, chain_req, i, chain_req.tau1)
+            e_metric_disk = self.my_net.g.nodes[e]["nd"].disk_min_avail_no_cache(T) / d_ei
+            e_metric_cpu = self.my_net.g.nodes[e]["nd"].cpu_min_avail(T) / chain_req.cpu_req(i)
+            e_metric_ram = self.my_net.g.nodes[e]["nd"].ram_min_avail(T) / chain_req.ram_req(i)
+            e_metric_in = np.infty
+            if e != cur:
+                e_metric_in = self.my_net.get_total_in_bw(e, T) / chain_req.vnf_in_rate(i)
+            e_metric_out = self.my_net.get_total_out_bw(e, T) / chain_req.vnf_in_rate(i + 1)
+            e_metric = min(
+                e_metric_disk, e_metric_cpu, e_metric_ram, e_metric_in, e_metric_out
+            )
+            if len(best_node) == 0 or e_metric > best_node_metric:
+                st = self.place_e(cur, e, chain_req, i, chain_delay)
+                if len(st) > 0:
+                    best_node = st + [e]
+                    best_node_metric = e_metric
+
+        if len(best_node) == 0:
+            st = self.place_e(cur, "c", chain_req, i, chain_delay)
+            if len(st) > 0:
+                return st + ["c"]
+        else:
+            return best_node
 
 
 class GurobiBatch(Solver):
