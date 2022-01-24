@@ -405,7 +405,7 @@ def share_percentage_test(inter_arrival):
     solvers = [
         FfSolver(),
         GreedySolver(),
-        GurobiSingleRelax(2, 0.8, "popularity_learn")
+        GurobiSingleRelax(2, 0.8, "popularity_learn", False)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -492,8 +492,7 @@ def layer_num_test(inter_arrival):
     solvers = [
         FfSolver(),
         GreedySolver(),
-        GurobiSingleRelax(2, 0.8, "popularity_learn", False),
-        GurobiSingleRelax(2, 0.8, "popularity_learn", True),
+        GurobiSingleRelax(2, 0.8, "popularity_learn", False)
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
