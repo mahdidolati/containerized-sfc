@@ -588,7 +588,7 @@ def no_share_test(inter_arrival):
     solvers = [
         FfSolver(),
         GreedySolver(),
-        GurobiSingleRelax(2, 0.8, "popularity_learn", True),
+        GurobiSingleRelax(2, 0.8, "popularity_learn", False),
         GurobiSingleRelax(2, 0.8, "popularity_learn", True),
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,

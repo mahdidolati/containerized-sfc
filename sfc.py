@@ -21,6 +21,13 @@ class LayerDownload:
 
 
 class Vnf:
+    def __int__(self):
+        self.vnf_id = 0
+        self.cpu = np.random.uniform(*Const.VNF_CPU)
+        self.ram = np.random.uniform(*Const.VNF_RAM)
+        self.alpha = np.random.uniform(*Const.ALPHA_RANGE)
+        self.layers = dict()
+
     def __init__(self, v_id, sharable_list, layer_cnt, layers, sharable_pr):
         self.vnf_id = v_id
         self.cpu = np.random.uniform(*Const.VNF_CPU)
@@ -36,6 +43,14 @@ class Vnf:
         n_layer = int(np.floor(v_layer * (1.0 - sharable_pr)))
         for n_id in range(layer_cnt, layer_cnt+n_layer):
             self.layers[n_id] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
+
+    def get_copy(self, new_layers):
+        vnf = Vnf()
+        vnf.vnf_id = self.vnf_id
+        vnf.cpu = self.cpu
+        vnf.ram = self.ram
+        vnf.alpha = self.alpha
+        self.layers = new_layers
 
 
 class Sfc:

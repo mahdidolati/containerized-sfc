@@ -360,6 +360,7 @@ class GurobiSingleRelax(Solver):
         R_vols = list()
         for req in reqs:
             lll = dict()
+            vnfs = list()
             for vnf in req.vnfs:
                 new_layers = dict()
                 for l in vnf.layers:
@@ -369,7 +370,8 @@ class GurobiSingleRelax(Solver):
                     if cnt not in lll:
                         lll[cnt] = new_layers[cnt]
                     cnt = cnt + 1
-                vnf.layers = new_layers
+                vnfs.append(vnf.get_copy(new_layers))
+            req.vnfs = vnfs
             req.layers = lll
         return R_ids, R_vols
 

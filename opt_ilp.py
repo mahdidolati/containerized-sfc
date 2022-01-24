@@ -210,6 +210,10 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
     # t2 = process_time()
     # print("ram_limit done {}".format(t2 - t1))
     # t1 = t2
+    # print("rid", R_id)
+    # for req_id in range(len(reqs)):
+    #     for i in range(len(reqs[req_id].vnfs)):
+    #         print(i, reqs[req_id].vnfs[i].layers)
 
     m.addConstrs(
         (
