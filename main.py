@@ -433,9 +433,10 @@ def share_percentage_test(inter_arrival):
     algs = [s.get_name() for s in solvers]
     stat_collector = StatCollector(algs, stats)
     #
-    iterations = 3
+    iterations = 2
     arrival_rate = 1.0 / inter_arrival
     layer_magnitude = [5, 10, 15, 20]
+    layer_magnitude = [5]
     vnf_num = 10
     for i in range(len(layer_magnitude)):
         np.random.seed(i * 100)
@@ -450,6 +451,7 @@ def share_percentage_test(inter_arrival):
         for itr in range(iterations):
             reqs = []
             req_num = 50
+            req_num = 5
             t = 0
             np.random.seed(itr * 4321)
             for _ in range(req_num):
@@ -460,9 +462,9 @@ def share_percentage_test(inter_arrival):
                 if solver.convert_layer:
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
                 else:
-                    R_ids = [i for i in sfc_gen.layers]
-                    R_vols = [sfc_gen.layers[i] for i in R_ids]
-                    # R_ids, R_vols = solver.get_Rid_vol(reqs)
+                    # R_ids = [i for i in sfc_gen.layers]
+                    # R_vols = [sfc_gen.layers[i] for i in R_ids]
+                    R_ids, R_vols = solver.get_Rid_vol(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
