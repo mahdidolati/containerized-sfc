@@ -444,8 +444,6 @@ def share_percentage_test(inter_arrival):
         Const.LAYER_NUM = vnf_num * layer_magnitude[i]
 
         sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
-        # R_ids = [i for i in sfc_gen.layers]
-        # R_vols = [sfc_gen.layers[i] for i in R_ids]
 
         run_name = "{}".format(layer_magnitude[i])
         print("run-name:", run_name)
@@ -462,7 +460,9 @@ def share_percentage_test(inter_arrival):
                 if solver.convert_layer:
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
                 else:
-                    R_ids, R_vols = solver.get_Rid_vol(reqs)
+                    R_ids = [i for i in sfc_gen.layers]
+                    R_vols = [sfc_gen.layers[i] for i in R_ids]
+                    # R_ids, R_vols = solver.get_Rid_vol(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
@@ -535,8 +535,6 @@ def layer_num_test(inter_arrival):
         Const.VNF_LAYER = [layer_num[i], layer_num[i]+1]
         Const.LAYER_SIZE = [vnf_size/layer_num[i], (vnf_size/layer_num[i])+1]
         sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
-        # R_ids = [i for i in sfc_gen.layers]
-        # R_vols = [sfc_gen.layers[i] for i in R_ids]
 
         run_name = "{}".format(layer_num[i])
         print("run-name:", run_name)
@@ -553,7 +551,9 @@ def layer_num_test(inter_arrival):
                 if solver.convert_layer:
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
                 else:
-                    R_ids, R_vols = solver.get_Rid_vol(reqs)
+                    R_ids = [i for i in sfc_gen.layers]
+                    R_vols = [sfc_gen.layers[i] for i in R_ids]
+                    # R_ids, R_vols = solver.get_Rid_vol(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
