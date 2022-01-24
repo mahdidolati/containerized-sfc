@@ -576,7 +576,7 @@ def no_share_test(inter_arrival):
     #Const.TAU1 = [150, 171]
     #Const.TAU2 = [8, 21]
     #Const.SFC_LEN = [1, 2]
-    Const.SFC_DELAY = [1000, 2000]
+    # Const.SFC_DELAY = [1000, 2000]
     my_net = NetGenerator().get_g()
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
