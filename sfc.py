@@ -21,28 +21,22 @@ class LayerDownload:
 
 
 class Vnf:
-    def __int__(self):
-        self.vnf_id = 0
-        self.cpu = np.random.uniform(*Const.VNF_CPU)
-        self.ram = np.random.uniform(*Const.VNF_RAM)
-        self.alpha = np.random.uniform(*Const.ALPHA_RANGE)
-        self.layers = dict()
-
-    def __init__(self, v_id, sharable_list, layer_cnt, layers, sharable_pr):
+    def __init__(self, v_id=0, sharable_list=[], layer_cnt=[], layers=[], sharable_pr=[]):
         self.vnf_id = v_id
         self.cpu = np.random.uniform(*Const.VNF_CPU)
         self.ram = np.random.uniform(*Const.VNF_RAM)
         self.alpha = np.random.uniform(*Const.ALPHA_RANGE)
         self.layers = dict()
-        v_layer = np.random.randint(*Const.VNF_LAYER)
-        s_layer = int(np.ceil(v_layer * sharable_pr))
-        s_layer_pr = [(s_lid+1.0)/(sum(sharable_list) + len(sharable_list)) for s_lid in sharable_list]
-        s_layer_list = np.random.choice(a=sharable_list, size=s_layer, p=s_layer_pr)
-        for l_id in s_layer_list:
-            self.layers[l_id] = layers[l_id]
-        n_layer = int(np.floor(v_layer * (1.0 - sharable_pr)))
-        for n_id in range(layer_cnt, layer_cnt+n_layer):
-            self.layers[n_id] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
+        if len(sharable_list) > 0:
+            v_layer = np.random.randint(*Const.VNF_LAYER)
+            s_layer = int(np.ceil(v_layer * sharable_pr))
+            s_layer_pr = [(s_lid+1.0)/(sum(sharable_list) + len(sharable_list)) for s_lid in sharable_list]
+            s_layer_list = np.random.choice(a=sharable_list, size=s_layer, p=s_layer_pr)
+            for l_id in s_layer_list:
+                self.layers[l_id] = layers[l_id]
+            n_layer = int(np.floor(v_layer * (1.0 - sharable_pr)))
+            for n_id in range(layer_cnt, layer_cnt+n_layer):
+                self.layers[n_id] = np.random.randint(*Const.LAYER_SIZE)  # in megabytes
 
     def get_copy(self, new_layers):
         vnf = Vnf()
