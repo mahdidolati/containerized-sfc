@@ -75,8 +75,8 @@ def batch_test(inter_arrival):
     req_nums = [6, 8, 10, 12, 14]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
-    R_ids = [i for i in sfc_gen.layers]
-    R_vols = [sfc_gen.layers[i] for i in R_ids]
+    # R_ids = [i for i in sfc_gen.layers]
+    # R_vols = [sfc_gen.layers[i] for i in R_ids]
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
@@ -111,6 +111,10 @@ def batch_test(inter_arrival):
             #
             for solver in solvers:
                 np.random.seed(itr * 1234)
+                if solver.convert_layer:
+                    R_ids, R_vols = solver.do_convert_no_share(reqs)
+                else:
+                    R_ids, R_vols = solver.get_Rid_vol(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = time()
                 if solver.batch:
@@ -151,8 +155,8 @@ def optimal_test(inter_arrival):
     req_nums = [6, 8, 10, 12, 14]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
-    R_ids = [i for i in sfc_gen.layers]
-    R_vols = [sfc_gen.layers[i] for i in R_ids]
+    # R_ids = [i for i in sfc_gen.layers]
+    # R_vols = [sfc_gen.layers[i] for i in R_ids]
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
@@ -187,6 +191,10 @@ def optimal_test(inter_arrival):
             #
             for solver in solvers:
                 np.random.seed(itr * 1234)
+                if solver.convert_layer:
+                    R_ids, R_vols = solver.do_convert_no_share(reqs)
+                else:
+                    R_ids, R_vols = solver.get_Rid_vol(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
@@ -226,8 +234,8 @@ def scaling_test(inter_arrival):
     req_num = 50
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
-    R_ids = [i for i in sfc_gen.layers]
-    R_vols = [sfc_gen.layers[i] for i in R_ids]
+    # R_ids = [i for i in sfc_gen.layers]
+    # R_vols = [sfc_gen.layers[i] for i in R_ids]
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
@@ -266,6 +274,10 @@ def scaling_test(inter_arrival):
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
                 print(reqs[-1])
             #
+            if solver.convert_layer:
+                R_ids, R_vols = solver.do_convert_no_share(reqs)
+            else:
+                R_ids, R_vols = solver.get_Rid_vol(reqs)
             solver.set_env(my_net, R_ids, R_vols)
             t1 = process_time()
             if solver.batch:
@@ -352,6 +364,10 @@ def backtrack_test(inter_arrival):
             #
             for solver in solvers:
                 np.random.seed(itr * 1234)
+                if solver.convert_layer:
+                    R_ids, R_vols = solver.do_convert_no_share(reqs)
+                else:
+                    R_ids, R_vols = solver.get_Rid_vol(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
@@ -428,8 +444,8 @@ def share_percentage_test(inter_arrival):
         Const.LAYER_NUM = vnf_num * layer_magnitude[i]
 
         sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
-        R_ids = [i for i in sfc_gen.layers]
-        R_vols = [sfc_gen.layers[i] for i in R_ids]
+        # R_ids = [i for i in sfc_gen.layers]
+        # R_vols = [sfc_gen.layers[i] for i in R_ids]
 
         run_name = "{}".format(layer_magnitude[i])
         print("run-name:", run_name)
@@ -443,6 +459,10 @@ def share_percentage_test(inter_arrival):
                 t = t + int(np.ceil(np.random.exponential(1.0 / arrival_rate)))
             for solver in solvers:
                 np.random.seed(itr * 1234)
+                if solver.convert_layer:
+                    R_ids, R_vols = solver.do_convert_no_share(reqs)
+                else:
+                    R_ids, R_vols = solver.get_Rid_vol(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
@@ -515,8 +535,8 @@ def layer_num_test(inter_arrival):
         Const.VNF_LAYER = [layer_num[i], layer_num[i]+1]
         Const.LAYER_SIZE = [vnf_size/layer_num[i], (vnf_size/layer_num[i])+1]
         sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
-        R_ids = [i for i in sfc_gen.layers]
-        R_vols = [sfc_gen.layers[i] for i in R_ids]
+        # R_ids = [i for i in sfc_gen.layers]
+        # R_vols = [sfc_gen.layers[i] for i in R_ids]
 
         run_name = "{}".format(layer_num[i])
         print("run-name:", run_name)
@@ -532,6 +552,8 @@ def layer_num_test(inter_arrival):
                 np.random.seed(itr * 1234)
                 if solver.convert_layer:
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
+                else:
+                    R_ids, R_vols = solver.get_Rid_vol(reqs)
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
@@ -604,7 +626,7 @@ def no_share_test(inter_arrival):
     #
     iterations = 2
     arrival_rate = 1.0 / inter_arrival
-    layer_num = [2, 6]
+    layer_num = [2, 6, 10, 14]
     vnf_size = 42
     for i in range(len(layer_num)):
         np.random.seed(i * 100)
@@ -628,8 +650,9 @@ def no_share_test(inter_arrival):
                 if solver.convert_layer:
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
                 else:
-                    R_ids = [i for i in sfc_gen.layers]
-                    R_vols = [sfc_gen.layers[i] for i in R_ids]
+                    R_ids, R_vols = solver.get_Rid_vol(reqs)
+                    # R_ids = [i for i in sfc_gen.layers]
+                    # R_vols = [sfc_gen.layers[i] for i in R_ids]
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
@@ -646,7 +669,7 @@ def no_share_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), DL_ACC, run_name, tr.avg_dl_per_acc)
 
     machine_id = "ut"
-    fig_test_id = "{}_layer_num".format(machine_id)
+    fig_test_id = "{}_no_share".format(machine_id)
     inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', layer_num, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)

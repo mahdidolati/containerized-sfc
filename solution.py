@@ -34,6 +34,19 @@ class Solver:
     def pre_arrival_procedure(self, t):
         pass
 
+    def get_Rid_vol(self, reqs):
+        R_ids = list()
+        R_vols = list()
+        visited = set()
+        for req in reqs:
+            for vnf in req.vnfs:
+                for l in vnf.layers:
+                    if l not in visited:
+                        visited.add(l)
+                        R_ids.append(l)
+                        R_vols.append(vnf.layers[l])
+        return R_ids, R_vols
+
     def post_arrival_procedure(self, status, t, chain_req):
         pass
 
