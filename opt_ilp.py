@@ -39,7 +39,7 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
     tr = TestResult()
     ilp_model = None
     for req_id in range(req_len):
-        ilp_model2 = get_ilp(a_reqs + [reqs[req_id]], my_net, R, Rvol, ilp_model)
+        ilp_model2 = get_ilp(a_reqs + [reqs[req_id]], my_net, R, Rvol, None)
         ilp_model2.m.setParam("LogToConsole", False)
         ilp_model2.m.setParam("Threads", 6)
         ilp_model2.m.setParam("TIME_LIMIT", 100)
