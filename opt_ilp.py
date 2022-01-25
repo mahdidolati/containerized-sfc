@@ -38,29 +38,30 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
     a_reqs = list()
     tr = TestResult()
     ilp_model = None
-    for req_id in range(req_len):
-        ilp_model2 = get_ilp(a_reqs + [reqs[req_id]], my_net, R, Rvol, None)
-        ilp_model2.m.setParam("LogToConsole", False)
-        ilp_model2.m.setParam("Threads", 6)
-        ilp_model2.m.setParam("TIME_LIMIT", 100)
-        ilp_model2.m.optimize()
-        # m.write("out.lp")
+    # for req_id in range(req_len):
+    ilp_model2 = get_ilp(reqs, my_net, R, Rvol, None)
+    ilp_model2.m.setParam("LogToConsole", False)
+    ilp_model2.m.setParam("Threads", 6)
+    ilp_model2.m.setParam("TIME_LIMIT", 100)
+    ilp_model2.m.optimize()
+    # m.write("out.lp")
 
-        if ilp_model2.m.status == GRB.INFEASIBLE or ilp_model2.m.status == GRB.INF_OR_UNBD or ilp_model2.m.getAttr("SolCount") <= 0:
-            # m.computeIIS()
-            # m.write("s_model.ilp")
-            # return False, 1, 0
-            print("rejected one!")
-            tr.res_groups[tr.SF] = tr.res_groups[tr.SF] + 1
-        else:
-            ilp_model = ilp_model2
-            a_reqs.append(reqs[req_id])
+    if ilp_model2.m.status == GRB.INFEASIBLE or ilp_model2.m.status == GRB.INF_OR_UNBD or ilp_model2.m.getAttr("SolCount") <= 0:
+        # m.computeIIS()
+        # m.write("s_model.ilp")
+        # return False, 1, 0
+        print("rejected one!")
+        tr.res_groups[tr.SF] = tr.res_groups[tr.SF] + 1
+    else:
+        ilp_model = ilp_model2
+        # a_reqs.append(reqs[req_id])
+        for req_id in range(req_len):
             for vnf_id in range(len(reqs[req_id].vnfs) + 1):
                 tr.revenue = tr.revenue + reqs[req_id].vnf_in_rate(vnf_id)
-            print(ilp_model2.m.objVal)
-            tr.avg_admit = 1.0 * (len(a_reqs)) / req_len
-            tr.chain_bw = ilp_model2.m.objVal
-            tr.res_groups[tr.SU] = tr.res_groups[tr.SU] + 1
+        print(ilp_model2.m.objVal)
+        tr.avg_admit = 1.0 * (len(a_reqs)) / req_len
+        tr.chain_bw = ilp_model2.m.objVal
+        tr.res_groups[tr.SU] = tr.res_groups[tr.SU] + 1
 
     if ilp_model is not None:
         dl_layer = dict()
