@@ -114,11 +114,12 @@ def batch_test(inter_arrival):
                 if solver.convert_layer:
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
                 else:
-                    R_ids, R_vols = solver.get_Rid_vol(reqs)
+                    R_ids = [i for i in sfc_gen.layers]
+                    R_vols = sfc_gen.layers
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = time()
                 if solver.batch:
-                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, reqs)
                 else:
                     tr = test(solver, reqs)
                     reqs = tr.accepted_reqs

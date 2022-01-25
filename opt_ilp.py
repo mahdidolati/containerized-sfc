@@ -37,47 +37,44 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
     req_len = len(reqs)
     a_reqs = list()
     tr = TestResult()
-    feasEid = None
-    feasM = None
     feasV = None
     ilp_model = None
     for req_id in range(req_len):
-        ilp_model = get_ilp(a_reqs + [reqs[req_id]], my_net, R, Rvol, ilp_model)
-        ilp_model.m.setParam("LogToConsole", False)
-        ilp_model.m.setParam("Threads", 6)
-        ilp_model.m.setParam("TIME_LIMIT", 100)
-        ilp_model.m.optimize()
+        ilp_model2 = get_ilp(a_reqs + [reqs[req_id]], my_net, R, Rvol, ilp_model)
+        ilp_model2.m.setParam("LogToConsole", False)
+        ilp_model2.m.setParam("Threads", 6)
+        ilp_model2.m.setParam("TIME_LIMIT", 100)
+        ilp_model2.m.optimize()
         # m.write("out.lp")
 
-        if ilp_model.m.status == GRB.INFEASIBLE or ilp_model.m.status == GRB.INF_OR_UNBD or ilp_model.m.getAttr("SolCount") <= 0:
+        if ilp_model2.m.status == GRB.INFEASIBLE or ilp_model2.m.status == GRB.INF_OR_UNBD or ilp_model2.m.getAttr("SolCount") <= 0:
             # m.computeIIS()
             # m.write("s_model.ilp")
             # return False, 1, 0
             print("rejected one!")
             tr.res_groups[tr.SF] = tr.res_groups[tr.SF] + 1
         else:
-            feasEid = ilp_model.E_id
-            feasM = ilp_model.m
-            feasV = ilp_model.v_var
+            ilp_model = ilp_model2.m
             a_reqs.append(reqs[req_id])
             for vnf_id in range(len(reqs[req_id].vnfs) + 1):
                 tr.revenue = tr.revenue + reqs[req_id].vnf_in_rate(vnf_id)
-            print(ilp_model.m.objVal)
+            print(ilp_model2.m.objVal)
             tr.avg_admit = 1.0 * (len(a_reqs)) / req_len
-            tr.chain_bw = ilp_model.m.objVal
+            tr.chain_bw = ilp_model2.m.objVal
             tr.res_groups[tr.SU] = tr.res_groups[tr.SU] + 1
 
-    dl_layer = dict()
-    for req_id in range(len(a_reqs)):
-        for e in feasEid:
-            for i in range(len(a_reqs[req_id].vnfs)):
-                if feasV[req_id][e, i].x > 1 - 0.0001:
-                    if e not in dl_layer:
-                        dl_layer[e] = set()
-                    for l in a_reqs[req_id].vnfs[i].layers:
-                        if l not in dl_layer[e]:
-                            tr.avg_dl = tr.avg_dl + a_reqs[req_id].vnfs[i].layers[l]
-                            dl_layer[e].add(l)
+    if ilp_model is not None:
+        dl_layer = dict()
+        for req_id in range(len(a_reqs)):
+            for e in ilp_model.E_id:
+                for i in range(len(a_reqs[req_id].vnfs)):
+                    if ilp_model.v_var[req_id][e, i].x > 1 - 0.0001:
+                        if e not in dl_layer:
+                            dl_layer[e] = set()
+                        for l in a_reqs[req_id].vnfs[i].layers:
+                            if l not in dl_layer[e]:
+                                tr.avg_dl = tr.avg_dl + a_reqs[req_id].vnfs[i].layers[l]
+                                dl_layer[e].add(l)
 
     return tr
 
