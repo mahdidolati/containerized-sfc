@@ -37,7 +37,6 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
     req_len = len(reqs)
     a_reqs = list()
     tr = TestResult()
-    feasV = None
     ilp_model = None
     for req_id in range(req_len):
         ilp_model2 = get_ilp(a_reqs + [reqs[req_id]], my_net, R, Rvol, ilp_model)
@@ -54,7 +53,7 @@ def solve_batch_opt(reqs, my_net, R, Rvol):
             print("rejected one!")
             tr.res_groups[tr.SF] = tr.res_groups[tr.SF] + 1
         else:
-            ilp_model = ilp_model2.m
+            ilp_model = ilp_model2
             a_reqs.append(reqs[req_id])
             for vnf_id in range(len(reqs[req_id].vnfs) + 1):
                 tr.revenue = tr.revenue + reqs[req_id].vnf_in_rate(vnf_id)
