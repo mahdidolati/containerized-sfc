@@ -93,10 +93,6 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
 
     L, L_iii = my_net.get_link_sets()
 
-    R_id = dict()
-    for r in R:
-        R_id[r] = r
-
     E_id = list()
     Ec_id = list()
     N_map = dict()

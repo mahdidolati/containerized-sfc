@@ -152,6 +152,7 @@ def batch_test(inter_arrival):
 def optimal_test(inter_arrival, scale_bw=False):
     np.random.seed(1)
     if scale_bw:
+        print("Using scaled bandwidth!")
         Const.LINK_BW = [10000, 20000]
     my_net = NetGenerator().get_g()
     req_nums = [6, 8, 10, 12, 14]
@@ -781,7 +782,7 @@ if __name__ == "__main__":
         elif opt in ("--test-type",):
             test_type = arg
         elif opt in ("--scale-bw",):
-            scale_bw = bool(arg)
+            scale_bw = arg == "True"
     if test_type == "scaling" or test_type == "all":
         print("running scaling because of {}".format(test_type))
         scaling_test(ia)
