@@ -120,7 +120,8 @@ def batch_test(inter_arrival):
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = time()
                 if solver.batch:
-                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, reqs)
+                    solver.reset()
+                    tr = solver.solve_batch2(my_net, sfc_gen.vnfs_list, reqs)
                 else:
                     tr = test(solver, reqs)
                     reqs = tr.accepted_reqs
@@ -204,6 +205,7 @@ def optimal_test(inter_arrival, scale_bw=False):
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
+                    solver.reset()
                     tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, reqs)
                 else:
                     tr = test(solver, reqs)

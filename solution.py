@@ -2,6 +2,7 @@ import heapq
 from opt_gurobi_single import solve_single
 from relax_gurobi_single import RelaxSingle
 from opt_ilp import solve_batch_opt
+from opt_ilp import solve_batch_opt2
 from sfc import LayerDownload
 from test import TestResult
 import numpy as np
@@ -22,6 +23,9 @@ class Solver:
         self.R_vols = R_vols
 
     def solve_batch(self, my_net, vnfs_list, reqs):
+        pass
+
+    def solve_batch2(self, my_net, vnfs_list, reqs):
         pass
 
     def solve(self, chain_req, t, sr):
@@ -290,6 +294,9 @@ class GurobiBatch(Solver):
 
     def solve_batch(self, my_net, vnfs_list, reqs):
         return solve_batch_opt(reqs, self.my_net, self.R_ids, self.R_vols)
+
+    def solve_batch2(self, my_net, vnfs_list, reqs):
+        return solve_batch_opt2(reqs, self.my_net, self.R_ids, self.R_vols)
 
     def reset(self):
         self.my_net.reset()
