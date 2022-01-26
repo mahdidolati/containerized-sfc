@@ -285,11 +285,12 @@ def scaling_test(inter_arrival):
             if solver.convert_layer:
                 R_ids, R_vols = solver.do_convert_no_share(reqs)
             else:
-                R_ids, R_vols = solver.get_Rid_vol(reqs)
+                R_ids = [i for i in sfc_gen.layers]
+                R_vols = sfc_gen.layers
             solver.set_env(my_net, R_ids, R_vols)
             t1 = process_time()
             if solver.batch:
-                tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, reqs)
             else:
                 tr = test(solver, reqs)
                 print("Solver: {} got {}".format(solver.get_name(), tr))
@@ -331,8 +332,8 @@ def backtrack_test(inter_arrival):
     req_nums = [50]
     sfc_gen = SfcGenerator(my_net, {1: 1.0}, 1.0)
     sfc_gen.print()
-    R_ids = [i for i in sfc_gen.layers]
-    R_vols = [sfc_gen.layers[i] for i in R_ids]
+    # R_ids = [i for i in sfc_gen.layers]
+    # R_vols = [sfc_gen.layers[i] for i in R_ids]
     # my_net.print()
     ACCEPT_RATIO = "Accept Ratio"
     DOWNLOAD_LAYER = "Download (MB)"
@@ -375,11 +376,12 @@ def backtrack_test(inter_arrival):
                 if solver.convert_layer:
                     R_ids, R_vols = solver.do_convert_no_share(reqs)
                 else:
-                    R_ids, R_vols = solver.get_Rid_vol(reqs)
+                    R_ids = [i for i in sfc_gen.layers]
+                    R_vols = sfc_gen.layers
                 solver.set_env(my_net, R_ids, R_vols)
                 t1 = process_time()
                 if solver.batch:
-                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, R_ids, R_vols, reqs)
+                    tr = solver.solve_batch(my_net, sfc_gen.vnfs_list, reqs)
                 else:
                     tr = test(solver, reqs)
                     print("Solver: {} got {}".format(solver.get_name(), tr))
