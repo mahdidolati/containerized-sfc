@@ -280,6 +280,7 @@ class RelaxSingle:
             gamma = min(self.Gamma, gamma+1)
 
         print("success!")
+        self.ilp_model.m.optimize()
         for ii in range(len(req.vnfs)):
             if ii in self.loc_of:
                 self.my_net.g.nodes[self.loc_of[ii]]["nd"].finalize_layer()

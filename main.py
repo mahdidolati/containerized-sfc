@@ -66,6 +66,7 @@ def test(solver, reqs):
     tr.run_avg_admit = run_avg_admit
     tr.chain_bw = chain_bw_total
     tr.avg_dl_per_acc = 0.0 if accepted == 0 else avg_dl / accepted
+    print(tr.chain_bw)
     return tr
 
 
@@ -803,7 +804,7 @@ if __name__ == "__main__":
         print("running qlearn because of {}".format(test_type))
         test_qlearning(ia)
     if test_type == "batch" or test_type == "all":
-        print("running qlearn because of {}".format(test_type))
+        print("running batch because of {}".format(test_type))
         batch_test(ia)
     if test_type == "noshare" or test_type == "all":
         print("running no share because of {}".format(test_type))
