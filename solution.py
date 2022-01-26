@@ -413,8 +413,8 @@ class GurobiSingleRelax(Solver):
                         self.my_net.g.nodes[m]["nd"].empty_storage_popularity(t)
                     else:
                         self.my_net.g.nodes[m]["nd"].empty_storage_random(t)
-        # self.my_net.check_health(chain_req.T1)
-        # self.my_net.check_health(chain_req.T2)
+        self.my_net.check_health(chain_req.T1)
+        self.my_net.check_health(chain_req.T2)
 
     def reset(self):
         self.my_net.reset()
