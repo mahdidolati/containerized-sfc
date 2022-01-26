@@ -73,7 +73,7 @@ def test(solver, reqs):
 def batch_test(inter_arrival):
     np.random.seed(1)
     my_net = NetGenerator().get_g()
-    req_nums = [12]
+    req_nums = [6, 8, 10, 12, 14]
     sfc_gen = SfcGenerator(my_net, { 1: 1.0 }, 1.0)
     sfc_gen.print()
     # R_ids = [i for i in sfc_gen.layers]
@@ -86,7 +86,7 @@ def batch_test(inter_arrival):
     REVENUE = "Revenue"
     solvers = [
         GurobiSingleRelax(2, 0.8, "popularity_learn"),
-        # GurobiBatch()
+        GurobiBatch()
     ]
     stats = {ACCEPT_RATIO: Stat.MEAN_MODE,
              DOWNLOAD_LAYER: Stat.MEAN_MODE,
@@ -134,7 +134,7 @@ def batch_test(inter_arrival):
                 stat_collector.add_stat(solver.get_name(), REVENUE, run_name, tr.revenue)
 
     machine_id = "ut"
-    fig_test_id = "{}_batch2".format(machine_id)
+    fig_test_id = "{}_batch".format(machine_id)
     inter_arrival = str(inter_arrival).replace(".", "_")
     fig_2 = './result/{}_accept_ia{}'.format(fig_test_id, inter_arrival)
     stat_collector.write_to_file(fig_2 + '.txt', req_nums, 0, ACCEPT_RATIO, algs, 'Share Percentage', ACCEPT_RATIO)

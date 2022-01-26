@@ -284,6 +284,10 @@ class MyNetwork:
             for n in self.g.nodes():
                 if self.g.nodes[n]["nd"].disk_avail(t) < 0:
                     print("bad disk at {}: {} with {}".format(t, n, self.g.nodes[n]["nd"].disk_avail(t)))
+                if self.g.nodes[n]["nd"].cpu_avail(t) < 0:
+                    print("bad cpu at {}: {} with {}".format(t, n, self.g.nodes[n]["nd"].cpu_avail(t)))
+                if self.g.nodes[n]["nd"].ram_avail(t) < 0:
+                    print("bad ram at {}: {} with {}".format(t, n, self.g.nodes[n]["nd"].ram_avail(t)))
             for e in self.g.edges():
                 if self.g[e[0]][e[1]]["li"].bw_avail(t) < 0:
                     print("bad link at {}: {} with {}".format(t, e, self.g[e[0]][e[1]]["li"].bw_avail(t)))
