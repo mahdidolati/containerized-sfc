@@ -143,7 +143,6 @@ class RelaxSingle:
                     del self.loc_of[j]
             return True, i_back, first_bt, gamma, True
 
-
         self.cleanup(req)
         return False, i, first_bt, gamma, scaled
 
