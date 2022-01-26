@@ -282,8 +282,8 @@ class MyNetwork:
     def check_health(self, T):
         for t in T:
             for n in self.g.nodes():
-                if self.g.nodes[n]["nd"].disk_avail() < 0:
-                    print("bad disk at {}: {} with {}".format(t, n, self.g.nodes[n]["nd"].disk_avail()))
+                if self.g.nodes[n]["nd"].disk_avail(t) < 0:
+                    print("bad disk at {}: {} with {}".format(t, n, self.g.nodes[n]["nd"].disk_avail(t)))
             for e in self.g.edges():
                 if self.g[e[0]][e[1]]["li"].bw_avail(t) < 0:
                     print("bad link at {}: {} with {}".format(t, e, self.g[e[0]][e[1]]["li"].bw_avail(t)))
