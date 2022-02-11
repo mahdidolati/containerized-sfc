@@ -181,9 +181,6 @@ def get_ilp(reqs, my_net, R, Rvol, ilp_model=None):
                         for i in range(len(reqs[req_id].vnfs)+1):
                             if ilp_model.q_var[req_id][N_map[n1]][N_map[n2]][j, i].x > 1.0 - 0.0001:
                                 q_var[req_id][N_map[n1]][N_map[n2]][j, i].lb = 1.0
-                        # for r in range(len(R)):
-                        #     if ilp_model.w_var[req_id][N_map[n1]][N_map[n2]][j, R_id[r]].x > 1.0 - 0.0001:
-                        #         w_var[req_id][N_map[n1]][N_map[n2]][j, R_id[r]].lb = 1.0
 
 
     # t2 = process_time()

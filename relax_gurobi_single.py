@@ -1,7 +1,5 @@
 import gurobipy as gp
 from gurobipy import GRB
-from constants import Const
-from itertools import chain
 from sfc import LayerDownload
 from opt_ilp import get_ilp
 import numpy as np
