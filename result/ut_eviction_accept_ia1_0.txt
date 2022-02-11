@@ -1,6 +1,0 @@
-ys_err;[[[100], [100]], [[100], [100]]]
-x;[1]
-ys;[[0.991], [0.985]]
-ls;['RCCOFalsepopularity_learn', 'RCCOFalsedefault']
-xtitle;No. of Layers
-ytitle;Accept Ratio

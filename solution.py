@@ -1,5 +1,3 @@
-import heapq
-from opt_gurobi_single import solve_single
 from relax_gurobi_single import RelaxSingle
 from opt_ilp import solve_batch_opt
 from opt_ilp import solve_batch_opt2

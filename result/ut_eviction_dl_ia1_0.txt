@@ -1,6 +1,0 @@
-ys_err;[[[100], [100]], [[100], [100]]]
-x;[1]
-ys;[[883646.0], [1007036.0]]
-ls;['RCCOFalsepopularity_learn', 'RCCOFalsedefault']
-xtitle;No. of Layers
-ytitle;Download (MB)

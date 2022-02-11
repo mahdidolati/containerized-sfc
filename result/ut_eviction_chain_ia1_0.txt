@@ -1,6 +1,0 @@
-ys_err;[[[100], [100]], [[100], [100]]]
-x;[1]
-ys;[[7033.2632482623], [6979.159974954176]]
-ls;['RCCOFalsepopularity_learn', 'RCCOFalsedefault']
-xtitle;Chaining BW
-ytitle;Chain (mbps)

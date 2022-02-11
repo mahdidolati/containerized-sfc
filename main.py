@@ -2,10 +2,8 @@ from scipy.integrate import Radau
 
 from sfc import SfcGenerator
 from my_sys.net import NetGenerator
-from solution import CloudSolver
 from solution import FfSolver
 from solution import GreedySolver
-from solution import GurobiSingle
 from solution import GurobiSingleRelax
 from solution import GurobiBatch
 from constants import Const
@@ -13,7 +11,7 @@ from statistic_collector import StatCollector, Stat
 import heapq
 import numpy as np
 import sys, getopt
-from time import process_time, sleep, time
+from time import process_time, time
 from test import TestResult
 
 
@@ -56,7 +54,6 @@ def test(solver, reqs):
                 print("{}, {}, {}".format(arrivals, run_avg_admit[-1], vol_consumed[-1]))
         elif ev == "FINISH":
             solver.handle_sfc_eviction(s, t)
-        # sleep(1)
     avg_rate = accepted / len(reqs)
     avg_dl = layer_dl_vol
     tr.revenue = rev
