@@ -1,4 +1,8 @@
-from scipy.integrate import Radau
+import numpy as np
+
+import heapq
+import sys, getopt
+from time import process_time, time
 
 from sfc import SfcGenerator
 from my_sys.net import NetGenerator
@@ -8,10 +12,6 @@ from solution import GurobiSingleRelax
 from solution import GurobiBatch
 from constants import Const
 from statistic_collector import StatCollector, Stat
-import heapq
-import numpy as np
-import sys, getopt
-from time import process_time, time
 from test import TestResult
 
 

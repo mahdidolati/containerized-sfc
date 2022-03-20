@@ -1,9 +1,8 @@
-import gurobipy as gp
 from gurobipy import GRB
+import numpy as np
+
 from sfc import LayerDownload
 from opt_ilp import get_ilp
-import numpy as np
-from time import process_time
 from test import TestResult
 
 

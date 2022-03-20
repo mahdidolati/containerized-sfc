@@ -1,5 +1,15 @@
 # RCCO: Rounding-based Containerized Chain Orchestration
 
+## Requirements
+```
+Python 3.7
+Gurobi 9
+matplotlib-3.1.1
+networkx-2.4
+numpy-1.16.5
+```
+
+## Run
 Use `main.py` to launch experiments.
 
 ```
