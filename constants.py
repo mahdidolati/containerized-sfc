@@ -1,3 +1,4 @@
+# RCCO, (C) Mahdi Dolati. License: AGPLv3
 class Const:
     VNF_NUM = 50
     VNF_CPU = [0.25, 0.5]

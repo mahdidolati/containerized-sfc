@@ -1,3 +1,4 @@
+# RCCO, (C) Mahdi Dolati. License: AGPLv3
 class TestResult:
     def __init__(self):
         self.SU = "Success"

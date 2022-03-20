@@ -1,3 +1,4 @@
+# RCCO, (C) Mahdi Dolati. License: AGPLv3
 import itertools
 import heapq
 

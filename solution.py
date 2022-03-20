@@ -1,9 +1,11 @@
+# RCCO, (C) Mahdi Dolati. License: AGPLv3
+import numpy as np
+
 from relax_gurobi_single import RelaxSingle
 from opt_ilp import solve_batch_opt
 from opt_ilp import solve_batch_opt2
 from sfc import LayerDownload
 from test import TestResult
-import numpy as np
 
 
 class Solver:

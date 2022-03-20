@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+# RCCO, (C) Mahdi Dolati. License: AGPLv3
 import numpy as np
 
 

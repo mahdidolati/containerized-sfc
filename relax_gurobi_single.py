@@ -1,3 +1,4 @@
+# RCCO, (C) Mahdi Dolati. License: AGPLv3
 from gurobipy import GRB
 import numpy as np
 
