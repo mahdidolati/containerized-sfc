@@ -1,3 +1,4 @@
+# RCCO, (C) Mahdi Dolati. License: AGPLv3
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
