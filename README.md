@@ -1,7 +1,20 @@
 # RCCO: Rounding-based Containerized Chain Orchestration
 
 ## About
-This repository hosts the open-source implementation of our research paper "Layer-Aware Containerized Service Orchestration in Edge Networks," accepted for publication by the IEEE Transactions on Network and Service Management journal.
+This repository hosts the open-source implementation of our research paper "Layer-Aware Containerized Service Orchestration in Edge Networks," accepted for publication by the IEEE Transactions on Network and Service Management journal. [Link to article.](https://ieeexplore.ieee.org/document/9930836)
+
+```
+@ARTICLE{9930836,
+  author={Dolati, Mahdi and Rastegar, Seyed Hamed and Khonsari, Ahmad and Ghaderi, Majid},
+  journal={IEEE Transactions on Network and Service Management}, 
+  title={Layer-Aware Containerized Service Orchestration in Edge Networks}, 
+  year={2022},
+  volume={},
+  number={},
+  pages={1-1},
+  doi={10.1109/TNSM.2022.3217134}
+}
+```
 
 ## Requirements
 ```
