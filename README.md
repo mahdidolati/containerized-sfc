@@ -8,10 +8,10 @@ This repository hosts the open-source implementation of our research paper "Laye
   author={Dolati, Mahdi and Rastegar, Seyed Hamed and Khonsari, Ahmad and Ghaderi, Majid},
   journal={IEEE Transactions on Network and Service Management}, 
   title={Layer-Aware Containerized Service Orchestration in Edge Networks}, 
-  year={2022},
-  volume={},
-  number={},
-  pages={1-1},
+  year={2023},
+  volume={20},
+  number={2},
+  pages={1830-1846},
   doi={10.1109/TNSM.2022.3217134}
 }
 ```
